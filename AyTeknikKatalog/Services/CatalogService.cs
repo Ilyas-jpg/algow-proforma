@@ -18,17 +18,27 @@ public class CatalogService
 
     public Catalog Load(string path)
     {
-        var json = File.ReadAllText(path);
-        var catalog = JsonSerializer.Deserialize<Catalog>(json, JsonOptions);
-        if (catalog is null)
-            throw new InvalidDataException("Geçersiz katalog dosyası: içerik okunamadı.");
-        return catalog;
+        string json;
+        try { json = File.ReadAllText(path); }
+        catch (Exception ex) { throw new InvalidDataException($"Katalog dosyası okunamadı: {Path.GetFileName(path)}", ex); }
+        try
+        {
+            var catalog = JsonSerializer.Deserialize<Catalog>(json, JsonOptions);
+            if (catalog is null)
+                throw new InvalidDataException("Geçersiz katalog dosyası: içerik okunamadı.");
+            return catalog;
+        }
+        catch (JsonException ex)
+        {
+            // Bozuk JSON ham JsonException yerine temiz hata — çağıran (ListEntries/cleanup) güvenle yakalar.
+            throw new InvalidDataException($"Katalog dosyası bozuk: {Path.GetFileName(path)}", ex);
+        }
     }
 
     public void Save(string path, Catalog catalog)
     {
         catalog.LastModified = DateTime.Now;
         var json = JsonSerializer.Serialize(catalog, JsonOptions);
-        File.WriteAllText(path, json);
+        AtomicFile.WriteAllText(path, json);   // atomik (R-1): autosave/katalog yazımı yarıda kalsa bozulmaz
     }
 }

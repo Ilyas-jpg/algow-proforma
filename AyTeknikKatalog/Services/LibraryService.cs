@@ -22,8 +22,8 @@ public class LibraryService
     }
 
     /// <summary>
-    /// images/ klasöründeki dosyalardan, hiçbir katalog JSON'unda referansı olmayanları siler.
-    /// Kütüphane açılırken bir kez çağrılır. Disk şişmesini önler.
+    /// images/ klasöründe hiçbir katalog tarafından referans verilmeyen "öksüz" görselleri ayıklar.
+    /// Kütüphane açılırken bir kez çağrılır. Kalıcı SİLMEZ — geri-dönülebilir images\.trash'e taşır.
     /// </summary>
     public int CleanupOrphanImages(IReadOnlyCollection<string>? protectedPaths = null)
     {
@@ -31,46 +31,82 @@ public class LibraryService
         var imagesDir = ImageStorage.Directory;
         if (!Directory.Exists(imagesDir)) return 0;
 
-        var referencedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var referenced = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         // 0. Açık çalışma oturumunun (henüz kaydedilmemiş olabilir) görselleri — ASLA silinmez.
-        //    Hafıza bug fix: önceden sadece kayıtlı kütüphane JSON'ları taranıyordu, çalışma
-        //    kataloğunun görselleri "öksüz" sanılıp siliniyordu.
         if (protectedPaths != null)
             foreach (var pp in protectedPaths)
-                if (!string.IsNullOrWhiteSpace(pp)) referencedPaths.Add(pp);
+                if (!string.IsNullOrWhiteSpace(pp)) referenced.Add(pp);
 
-        // 1. Tüm katalog JSON'larını oku, referans verilen path'leri topla
+        // 1. Tüm kayıtlı katalogları DESERIALIZE et, gerçek görsel referanslarını topla.
+        //    DL-1 fix: eski "string search" anahtarı tek-backslash, JSON ise çift-backslash (\\) yazıyordu
+        //    → IndexOf HİÇ eşleşmiyor → kayıtlı-ama-açık-olmayan katalogların görselleri siliniyordu.
+        //    Artık modelden topluyoruz (marka logo + kapak + kapak elementleri + ürünler + referanslar).
         foreach (var jsonPath in Directory.GetFiles(LibraryPath, "*.json"))
         {
-            try
-            {
-                var json = File.ReadAllText(jsonPath);
-                // basit string search — performant + güvenli (JSON parse exception'a düşmez)
-                var idx = 0;
-                while ((idx = json.IndexOf(imagesDir, idx, StringComparison.OrdinalIgnoreCase)) >= 0)
-                {
-                    var end = json.IndexOfAny(new[] { '"', '\\' }, idx + imagesDir.Length + 1);
-                    if (end < 0) break;
-                    var path = json.Substring(idx, end - idx).Replace("\\\\", "\\");
-                    referencedPaths.Add(path);
-                    idx = end;
-                }
-            }
-            catch { /* bozuk json - geç */ }
+            try { CollectImagePaths(_catalogService.Load(jsonPath), referenced); }
+            catch { /* katalog değil / bozuk — atla */ }
         }
 
-        // 2. images/ klasöründekileri tara, referans olmayanları sil
-        int deleted = 0;
-        foreach (var file in Directory.GetFiles(imagesDir))
+        // 2. Kalıcı marka profili + crash-recovery autosave katalogu da korunur (DL-2 fix).
+        try
         {
-            if (!referencedPaths.Contains(file))
-            {
-                try { File.Delete(file); deleted++; }
-                catch { /* read-only veya kilitli — atla */ }
-            }
+            var bp = BrandProfileService.Load();
+            if (bp != null && !string.IsNullOrWhiteSpace(bp.LogoPath)) referenced.Add(bp.LogoPath);
         }
-        return deleted;
+        catch { }
+        try
+        {
+            if (File.Exists(AppPaths.AutoSaveFile))
+                CollectImagePaths(_catalogService.Load(AppPaths.AutoSaveFile), referenced);
+        }
+        catch { }
+
+        // 3. Referansı olmayanları KALICI SİLME yerine .trash'e taşı (geri-dönülebilir, R-5).
+        //    14 günden eski trash gerçekten silinir → disk geri kazanılır + 2 haftalık güvenlik penceresi.
+        var trashDir = Path.Combine(imagesDir, ".trash");
+        PurgeOldTrash(trashDir);
+
+        int moved = 0;
+        foreach (var file in Directory.GetFiles(imagesDir))   // alt klasör (.trash) dahil DEĞİL
+        {
+            if (referenced.Contains(file)) continue;
+            try
+            {
+                Directory.CreateDirectory(trashDir);
+                var dest = Path.Combine(trashDir, Path.GetFileName(file));
+                if (File.Exists(dest)) File.Delete(dest);
+                File.Move(file, dest);
+                try { File.SetLastWriteTime(dest, DateTime.Now); } catch { } // trash-zamanı = purge penceresi başlangıcı
+                moved++;
+            }
+            catch { /* read-only / kilitli — atla */ }
+        }
+        return moved;
+    }
+
+    /// <summary>Bir kataloğun kullandığı tüm görsel yollarını topla. (internal: test bu DL-1 çekirdeğini doğrular)</summary>
+    internal static void CollectImagePaths(Catalog c, HashSet<string> set)
+    {
+        void Add(string? p) { if (!string.IsNullOrWhiteSpace(p)) set.Add(p!); }
+        Add(c.Brand?.LogoPath);
+        Add(c.Cover?.CustomCoverImagePath);
+        if (c.Cover?.Elements != null)
+            foreach (var el in c.Cover.Elements)
+                if (el.Type == CoverElementType.Image) Add(el.Content);
+        if (c.Products != null)
+            foreach (var p in c.Products) Add(p?.ImagePath);
+        if (c.References != null)
+            foreach (var r in c.References) Add(r?.LogoPath);
+    }
+
+    /// <summary>14 günden eski .trash dosyalarını gerçekten siler (disk reclaim + güvenlik penceresi).</summary>
+    private static void PurgeOldTrash(string trashDir)
+    {
+        if (!Directory.Exists(trashDir)) return;
+        var cutoff = DateTime.Now.AddDays(-14);
+        foreach (var f in Directory.GetFiles(trashDir))
+            try { if (File.GetLastWriteTime(f) < cutoff) File.Delete(f); } catch { }
     }
 
     public List<CatalogEntry> ListEntries()

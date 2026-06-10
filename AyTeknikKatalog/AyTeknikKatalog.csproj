@@ -56,4 +56,9 @@
     <Resource Include="Resources\algow_icon.png" Condition="Exists('Resources\algow_icon.png')" />
   </ItemGroup>
 
+  <!-- Test projesi internal (CollectImagePaths — DL-1 çekirdeği) görebilsin -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="AyTeknikKatalog.Tests" />
+  </ItemGroup>
+
 </Project>

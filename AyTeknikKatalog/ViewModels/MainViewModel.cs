@@ -44,9 +44,8 @@ public partial class MainViewModel : ObservableObject
         TryAutoSave();
     }
 
-    private static string GetAutoSavePath() => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "AlgowProforma", "autosave.json");
+    // Tek kaynak: AppPaths.AutoSaveFile — LibraryService.CleanupOrphanImages da buradan okur (DL-2).
+    private static string GetAutoSavePath() => AppPaths.AutoSaveFile;
 
     private void TryDeleteAutoSave()
     {

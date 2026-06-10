@@ -21,7 +21,7 @@ public class QuoteService
         quote.UpdatedAt = DateTime.Now;
 
         var path = Path.Combine(AppPaths.QuotesDir, quote.Id + ".json");
-        File.WriteAllText(path, JsonSerializer.Serialize(quote, JsonStore.Options));
+        AtomicFile.WriteAllText(path, JsonSerializer.Serialize(quote, JsonStore.Options));   // atomik (R-1)
     }
 
     public Quote? Load(string id)
@@ -29,7 +29,7 @@ public class QuoteService
         var path = Path.Combine(AppPaths.QuotesDir, id + ".json");
         if (!File.Exists(path)) return null;
         try { return JsonSerializer.Deserialize<Quote>(File.ReadAllText(path), JsonStore.Options); }
-        catch { return null; }
+        catch { AtomicFile.BackupCorrupt(path); return null; }
     }
 
     /// <summary>Tüm teklifleri yükler (en yeni önce). Bozuk dosyaları atlar.</summary>
