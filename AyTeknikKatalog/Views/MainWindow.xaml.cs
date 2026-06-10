@@ -16,6 +16,7 @@ public partial class MainWindow : Window
             var vm = DataContext as MainViewModel;
             vm?.CheckCrashRecovery();
             vm?.RefreshCoverPreview();
+            vm?.EnsureDesignThumbnails();   // tasarım kartlarının gerçek kapak önizlemelerini arka-thread render et
         };
     }
 

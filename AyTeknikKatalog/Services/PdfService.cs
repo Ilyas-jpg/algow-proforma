@@ -2300,30 +2300,38 @@ public class PdfService
     /// Sadece kapak sayfasını PNG byte array olarak render eder. Canlı önizleme için kullanılır.
     /// Düşük DPI (96) hız için. Hata durumunda null döner (UI çökmemeli).
     /// </summary>
+    // Önizleme render'larını serileştirir. ApplyTheme/ActiveDesign PAYLAŞILAN STATIK olduğundan,
+    // tasarım thumbnail'leri toplu render'ı + canlı kapak önizlemesi aynı anda dönerse renkler
+    // birbirine karışır (race). Lock ile tek-seferde bir render → güvenli. (Tam çözüm: RenderContext.)
+    private static readonly object _previewRenderLock = new();
+
     public static byte[]? GenerateCoverPreviewBytes(Catalog catalog)
     {
-        try
+        lock (_previewRenderLock)
         {
-            QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
-            ApplyTheme(catalog.ThemeId);
-            ActiveDesign = PdfDesign.GetById(catalog.DesignId);
-
-            var doc = QuestPDF.Fluent.Document.Create(container =>
+            try
             {
-                container.Page(p => RenderCover(p, catalog.Brand, catalog.Cover));
-            });
+                QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+                ApplyTheme(catalog.ThemeId);
+                ActiveDesign = PdfDesign.GetById(catalog.DesignId);
 
-            var images = doc.GenerateImages(new QuestPDF.Infrastructure.ImageGenerationSettings
+                var doc = QuestPDF.Fluent.Document.Create(container =>
+                {
+                    container.Page(p => RenderCover(p, catalog.Brand, catalog.Cover));
+                });
+
+                var images = doc.GenerateImages(new QuestPDF.Infrastructure.ImageGenerationSettings
+                {
+                    ImageFormat = QuestPDF.Infrastructure.ImageFormat.Png,
+                    RasterDpi = 96
+                });
+                foreach (var img in images) return img;
+                return null;
+            }
+            catch
             {
-                ImageFormat = QuestPDF.Infrastructure.ImageFormat.Png,
-                RasterDpi = 96
-            });
-            foreach (var img in images) return img;
-            return null;
-        }
-        catch
-        {
-            return null;
+                return null;
+            }
         }
     }
 

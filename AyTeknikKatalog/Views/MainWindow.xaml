@@ -955,7 +955,7 @@
 
                         <Border Margin="0,20,0,0" />
 
-                        <ItemsControl ItemsSource="{Binding AvailableDesigns}">
+                        <ItemsControl ItemsSource="{Binding DesignCards}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel Orientation="Horizontal" />
@@ -966,7 +966,7 @@
                                     <Button Width="220" Margin="0,0,16,16" Padding="0" Cursor="Hand"
                                             Background="Transparent" BorderThickness="0"
                                             Command="{Binding DataContext.SelectDesignCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                            CommandParameter="{Binding Id}">
+                                            CommandParameter="{Binding Design.Id}">
                                         <Button.Template>
                                             <ControlTemplate TargetType="Button">
                                                 <Border x:Name="DesignCardBorder" CornerRadius="10" Padding="14"
@@ -977,16 +977,21 @@
                                                         <Border CornerRadius="6" ClipToBounds="True"
                                                                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                                                                 HorizontalAlignment="Center" Margin="0,0,0,12">
-                                                            <ContentControl Content="{Binding}"
-                                                                            ContentTemplateSelector="{StaticResource DesignPreviewSelector}"
-                                                                            Width="170" Height="240" />
+                                                            <!-- Gerçek kapak önizlemesi (DesignCardVM.Thumbnail) — elle çizilen XAML mini'lerin yerine -->
+                                                            <Grid Width="170" Height="240" Background="{DynamicResource BackgroundBrush}">
+                                                                <Image Source="{Binding Thumbnail}" Stretch="Uniform"
+                                                                       RenderOptions.BitmapScalingMode="HighQuality" />
+                                                                <TextBlock Text="önizleme…" Style="{StaticResource MutedText}"
+                                                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                           Visibility="{Binding Thumbnail, Converter={StaticResource NullToVisibility}, ConverterParameter=Inverted}" />
+                                                            </Grid>
                                                         </Border>
                                                         <Grid>
                                                             <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="*" />
                                                                 <ColumnDefinition Width="Auto" />
                                                             </Grid.ColumnDefinitions>
-                                                            <TextBlock Grid.Column="0" Text="{Binding Name}" Style="{StaticResource BodyText}"
+                                                            <TextBlock Grid.Column="0" Text="{Binding Design.Name}" Style="{StaticResource BodyText}"
                                                                        FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
                                                             <Border x:Name="SelectedBadge" Grid.Column="1"
                                                                     Background="{StaticResource AlgoYellowBrush}"
@@ -996,7 +1001,7 @@
                                                                            VerticalAlignment="Center" />
                                                             </Border>
                                                         </Grid>
-                                                        <TextBlock Text="{Binding Description}" Style="{StaticResource MutedText}"
+                                                        <TextBlock Text="{Binding Design.Description}" Style="{StaticResource MutedText}"
                                                                    TextWrapping="Wrap" Margin="0,6,0,0" />
                                                     </StackPanel>
                                                 </Border>
@@ -1008,7 +1013,7 @@
                                                         <DataTrigger.Binding>
                                                             <MultiBinding Converter="{StaticResource StringEquals}">
                                                                 <Binding Path="DataContext.Catalog.DesignId" RelativeSource="{RelativeSource AncestorType=Window}" />
-                                                                <Binding Path="Id" />
+                                                                <Binding Path="Design.Id" />
                                                             </MultiBinding>
                                                         </DataTrigger.Binding>
                                                         <Setter TargetName="DesignCardBorder" Property="BorderBrush" Value="{StaticResource AlgoYellowBrush}" />

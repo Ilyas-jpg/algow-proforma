@@ -171,6 +171,10 @@ public partial class MainViewModel : ObservableObject
     public System.Collections.Generic.IReadOnlyList<PdfDesign> AvailableDesigns => PdfDesign.All;
     public System.Collections.Generic.IReadOnlyList<PageLayout> AvailableLayouts => PageLayout.All;
 
+    // Tasarımlar sekmesi kartları — gerçek kapak önizlemesi thumbnail'li (bkz. EnsureDesignThumbnails).
+    public System.Collections.ObjectModel.ObservableCollection<DesignCardVM> DesignCards { get; }
+        = new(PdfDesign.All.Select(d => new DesignCardVM(d)));
+
     [RelayCommand]
     private void SelectTheme(string? themeId)
     {
@@ -204,29 +208,68 @@ public partial class MainViewModel : ObservableObject
         var catalogSnapshot = Catalog; // closure capture
         System.Threading.Tasks.Task.Run(() =>
         {
-            var bytes = PdfService.GenerateCoverPreviewBytes(catalogSnapshot);
-            System.Windows.Media.Imaging.BitmapSource? bmp = null;
-            if (bytes is { Length: > 0 })
-            {
-                try
-                {
-                    using var ms = new MemoryStream(bytes);
-                    var bi = new System.Windows.Media.Imaging.BitmapImage();
-                    bi.BeginInit();
-                    bi.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-                    bi.StreamSource = ms;
-                    bi.EndInit();
-                    bi.Freeze();
-                    bmp = bi;
-                }
-                catch { }
-            }
+            var bmp = BytesToFrozenBitmap(PdfService.GenerateCoverPreviewBytes(catalogSnapshot));
             System.Windows.Application.Current?.Dispatcher.Invoke(() =>
             {
                 CoverPreviewImage = bmp;
                 IsCoverPreviewLoading = false;
             });
         });
+    }
+
+    private bool _designThumbsStarted;
+
+    /// <summary>
+    /// Tasarım kartlarının GERÇEK kapak önizlemelerini (sabit örnek katalog) arka-thread render edip
+    /// thumbnail'lere bağlar. Bir kez çalışır. Önizleme tasarımın yapı/düzenini gösterir (temadan
+    /// bağımsız karşılaştırma). Elle çizilmiş XAML mini'lerin yerini alır → render/thumbnail drift yok,
+    /// yeni kapak eklerken thumbnail authoring gerekmez.
+    /// </summary>
+    public void EnsureDesignThumbnails()
+    {
+        if (_designThumbsStarted) return;
+        _designThumbsStarted = true;
+        System.Threading.Tasks.Task.Run(() =>
+        {
+            var sample = BuildThumbnailSampleCatalog();
+            foreach (var card in DesignCards)
+            {
+                sample.DesignId = card.Design.Id;   // GenerateCoverPreviewBytes lock'lu → seri render, race yok
+                var bmp = BytesToFrozenBitmap(PdfService.GenerateCoverPreviewBytes(sample));
+                var c = card;
+                System.Windows.Application.Current?.Dispatcher.Invoke(() => c.Thumbnail = bmp);
+            }
+        });
+    }
+
+    /// <summary>Thumbnail'ler için temsili örnek katalog (sabit marka/başlık) — kapak dolu görünsün.</summary>
+    private static Catalog BuildThumbnailSampleCatalog()
+    {
+        var c = Catalog.CreateDefault();
+        c.Brand.Name = "Marka Adı";
+        c.Cover.MainTitle = "Ürün Kataloğu";
+        c.Cover.Subtitle = "2026 Koleksiyonu";
+        c.Cover.SectionLabel = "ÜRÜN KATALOĞU";
+        c.Cover.YearText = "2026";
+        return c;
+    }
+
+    /// <summary>PNG byte → dondurulmuş BitmapSource (UI thread-safe paylaşım). Boş/hatalı → null.</summary>
+    private static System.Windows.Media.Imaging.BitmapSource? BytesToFrozenBitmap(byte[]? bytes)
+    {
+        if (bytes is not { Length: > 0 }) return null;
+        try
+        {
+            using var ms = new MemoryStream(bytes);
+            var bi = new System.Windows.Media.Imaging.BitmapImage();
+            bi.BeginInit();
+            bi.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            bi.StreamSource = ms;
+            bi.EndInit();
+            bi.Freeze();
+            return bi;
+        }
+        catch { return null; }
     }
 
     [RelayCommand]
