@@ -545,6 +545,15 @@ public class PdfService
             case CoverLayout.Sertifika:
                 RenderCoverSertifika(page, brand, cover);
                 break;
+            case CoverLayout.Blueprint:
+                RenderCoverBlueprint(page, brand, cover);
+                break;
+            case CoverLayout.Akis:
+                RenderCoverAkis(page, brand, cover);
+                break;
+            case CoverLayout.YatayBant:
+                RenderCoverYatayBant(page, brand, cover);
+                break;
             default:
                 RenderCoverKlasik(page, brand, cover);
                 break;

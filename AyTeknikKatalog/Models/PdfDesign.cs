@@ -14,6 +14,9 @@ public enum CoverLayout
     Diyagonal, // sağ üst diyagonal şerit + kavis + dikey çizgili bant
     Minimalist, // sade tipografi, geniş whitespace, ince hat aksanı
     Sertifika,  // çift çizgi çerçeve + köşe motifleri, ortalı klasik panel
+    Blueprint,  // mühendislik teknik çizim — koordinat etiketleri, metadata, vana sembolü
+    Akis,       // sayfayı kat eden akış eğrileri, sağa hizalı dinamik kompozisyon
+    YatayBant,  // ortada koyu bant — editöryel sinematik, krem üst/alt
 }
 
 public enum CardStyle
@@ -135,6 +138,33 @@ public class PdfDesign
         ShowYearLargeOnCover = false,
     };
 
+    public static PdfDesign Blueprint { get; } = new()
+    {
+        Id = "blueprint",
+        Name = "Teknik Çizim",
+        Description = "Mühendislik blueprint — koordinat etiketleri, teknik metadata, vana sembolü",
+        CoverLayout = CoverLayout.Blueprint,
+        ShowGearOnCover = false,
+        ShowAccentDecorationOnCover = true,
+        ShowYearLargeOnCover = false,
+    };
+
+    public static PdfDesign Akis { get; } = new()
+    {
+        Id = "akis",
+        Name = "Akış",
+        Description = "Sayfayı kat eden akış eğrileri, sağa hizalı dinamik kompozisyon + büyük yıl",
+        CoverLayout = CoverLayout.Akis,
+    };
+
+    public static PdfDesign YatayBant { get; } = new()
+    {
+        Id = "yatay-bant",
+        Name = "Yatay Bant",
+        Description = "Ortada koyu bant — editöryel sinematik, krem üst/alt + büyük başlık",
+        CoverLayout = CoverLayout.YatayBant,
+    };
+
     public static IReadOnlyList<PdfDesign> All { get; } = new List<PdfDesign>
     {
         Klasik,
@@ -147,6 +177,9 @@ public class PdfDesign
         Diyagonal,
         Minimalist,
         Sertifika,
+        Blueprint,
+        Akis,
+        YatayBant,
     };
 
     public static PdfDesign GetById(string? id)
