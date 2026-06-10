@@ -903,6 +903,12 @@
                                     ToolTip="Kataloğa eklemeden tek sayfalık ürün bilgi formu PNG görseli oluştur" />
                             <Button Style="{StaticResource SecondaryButton}" Content="Excel'den İçe Aktar"
                                     Margin="0,0,8,0" Command="{Binding ImportProductsFromExcelCommand}" />
+                            <Button Style="{StaticResource SecondaryButton}" Content="Kütüphaneden Ekle"
+                                    Margin="0,0,8,0" Command="{Binding OpenProductLibraryCommand}"
+                                    ToolTip="Kayıtlı görsel ürün kütüphanesinden ürün ekle" />
+                            <Button Style="{StaticResource SecondaryButton}" Content="Kütüphaneye Kaydet"
+                                    Margin="0,0,8,0" Command="{Binding SaveProductsToLibraryCommand}"
+                                    ToolTip="Bu katalogdaki ürünleri (görselleriyle) kütüphaneye kaydet — yeniden kullanım için" />
                             <Button Style="{StaticResource PrimaryButton}" Content="Ürün Ekle"
                                     Command="{Binding AddProductCommand}" />
                         </StackPanel>

@@ -62,6 +62,15 @@ public class LibraryService
         }
         catch { }
 
+        // 2b. Görsel ürün kütüphanesi (product-library.json) görselleri de korunur — reference-counted (Faz 2).
+        //     Bir görsel hiçbir katalogda olmasa bile kütüphanede yaşıyorsa silinmez.
+        try
+        {
+            foreach (var p in new ProductLibraryService().Load())
+                if (!string.IsNullOrWhiteSpace(p.ImagePath)) referenced.Add(p.ImagePath);
+        }
+        catch { }
+
         // 3. Referansı olmayanları KALICI SİLME yerine .trash'e taşı (geri-dönülebilir, R-5).
         //    14 günden eski trash gerçekten silinir → disk geri kazanılır + 2 haftalık güvenlik penceresi.
         var trashDir = Path.Combine(imagesDir, ".trash");

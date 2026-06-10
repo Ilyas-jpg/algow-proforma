@@ -24,6 +24,7 @@ public static class AppPaths
     public static string AutoSaveFile => Path.Combine(AppDataDir, "autosave.json");
 
     public static string PriceBookFile => Path.Combine(DataDir, "pricebook.json");
+    public static string ProductLibraryFile => Path.Combine(DataDir, "product-library.json");
     public static string CustomersFile => Path.Combine(DataDir, "customers.json");
     public static string CountersFile => Path.Combine(DataDir, "counters.json");
     public static string SettingsFile => Path.Combine(DataDir, "settings.json");

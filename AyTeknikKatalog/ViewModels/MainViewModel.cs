@@ -764,6 +764,30 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    /// <summary>Görsel ürün kütüphanesini aç — seçilen ürünler (görselleriyle) kataloğa eklenir (Faz 2).</summary>
+    [RelayCommand]
+    private void OpenProductLibrary()
+    {
+        var vm = new ProductLibraryViewModel(p =>
+        {
+            Catalog.Products.Add(p);
+            StatusMessage = $"Kütüphaneden eklendi: {p.Name}";
+        });
+        new ProductLibraryWindow(vm) { Owner = ActiveWindow() }.ShowDialog();
+    }
+
+    /// <summary>Bu katalogdaki ürünleri kalıcı ürün kütüphanesine kaydet (kod/ad ile tekilleştirme).</summary>
+    [RelayCommand]
+    private void SaveProductsToLibrary()
+    {
+        if (Catalog.Products.Count == 0) { StatusMessage = "Kütüphaneye kaydedilecek ürün yok."; return; }
+        var service = new ProductLibraryService();
+        var lib = service.Load();
+        int added = ProductLibraryService.UpsertAll(lib, Catalog.Products);
+        service.Save(lib);
+        StatusMessage = $"{Catalog.Products.Count} ürün kütüphaneye kaydedildi (+{added} yeni · {lib.Count} toplam).";
+    }
+
     [RelayCommand]
     private void ImportProductsFromExcel()
     {
