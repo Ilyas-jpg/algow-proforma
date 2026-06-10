@@ -9,6 +9,7 @@
 **/publish/
 out/
 installer/out/
+publish-log.txt
 
 # Visual Studio / Rider / VS Code
 .vs/

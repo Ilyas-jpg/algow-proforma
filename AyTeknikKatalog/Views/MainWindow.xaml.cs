@@ -39,6 +39,9 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnThemeToggleClick(object sender, RoutedEventArgs e)
+        => Services.ThemeManager.Toggle();
+
     private void OnNewQuoteClick(object sender, RoutedEventArgs e)
         => new QuoteEditorWindow { Owner = this }.ShowDialog();
 

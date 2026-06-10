@@ -4,7 +4,7 @@
         Title="Fiyat Listesi — Algow Proforma PDF"
         Width="1120" Height="720"
         WindowStartupLocation="CenterOwner"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource BodyFont}"
         TextOptions.TextFormattingMode="Ideal">
     <Grid Margin="24">
@@ -25,7 +25,7 @@
             <Button Style="{StaticResource SecondaryButton}" Content="Sil" Margin="0,0,8,0" Command="{Binding DeleteSelectedCommand}" />
             <Button Style="{StaticResource SecondaryButton}" Content="Excel'den İçe Aktar" Margin="0,0,8,0" Command="{Binding ImportExcelCommand}" />
             <Button Style="{StaticResource SecondaryButton}" Content="Excel'e Aktar" Margin="0,0,20,0" Command="{Binding ExportExcelCommand}" />
-            <TextBlock Text="Toplu %" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
+            <TextBlock Text="Toplu %" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
             <TextBox Style="{StaticResource ModernTextBox}" Width="64" VerticalAlignment="Center"
                      Text="{Binding BulkPercent, UpdateSourceTrigger=PropertyChanged}" />
             <Button Style="{StaticResource SecondaryButton}" Content="Uygula" Margin="6,0,0,0" Command="{Binding ApplyBulkCommand}"
@@ -48,7 +48,7 @@
 
         <DockPanel Grid.Row="3" Margin="0,14,0,0">
             <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Kaydet" Command="{Binding SaveCommand}" />
-            <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" />
         </DockPanel>
     </Grid>
 </Window>

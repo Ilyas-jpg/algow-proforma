@@ -16,6 +16,7 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly LibraryService _libraryService = new();
     private System.Windows.Threading.DispatcherTimer? _autoSaveTimer;
+    private bool _brandDirty;   // kullanıcı marka alanı düzenledi mi → autosave kalıcı marka profilini yazar
 
     private void StartAutoSaveTimer()
     {
@@ -152,6 +153,13 @@ public partial class MainViewModel : ObservableObject
             var path = GetAutoSavePath();
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             new CatalogService().Save(path, Catalog);
+            // Marka profili: kullanıcı marka alanlarını düzenlediyse kalıcı sakla.
+            // (data\ klasörü = kurulum DIŞI → güncellemede kaybolmaz; yeni kataloglara uygulanır.)
+            if (_brandDirty && !string.IsNullOrWhiteSpace(Catalog.Brand.Name))
+            {
+                BrandProfileService.Save(Catalog.Brand);
+                _brandDirty = false;
+            }
             StatusMessage = $"Otomatik kaydedildi: {DateTime.Now:HH:mm}";
         }
         catch { /* sessiz — auto-save UI kesintisi yapmaz */ }
@@ -381,10 +389,24 @@ public partial class MainViewModel : ObservableObject
 
     public MainViewModel()
     {
-        SubscribeToCatalog(Catalog);
         StartAutoSaveTimer();
+        // Kayıtlı marka profilini uygula (kurulum markası yeni kataloğa taşınır).
+        // Catalog set'i OnCatalogChanged'i tetikler → SubscribeToCatalog otomatik çalışır.
+        Catalog = NewCatalogWithProfile();
         RefreshRecentEntries();
     }
+
+    /// <summary>Yeni boş katalog + (varsa) kayıtlı kalıcı marka profili uygulanmış.</summary>
+    private static Catalog NewCatalogWithProfile()
+    {
+        var c = Catalog.CreateDefault();
+        var profile = BrandProfileService.Load();
+        if (profile is not null) c.Brand = profile;
+        return c;
+    }
+
+    /// <summary>Kullanıcı marka alanı düzenleyince işaretle — autosave bunu kalıcı profile yazar.</summary>
+    private void OnBrandChanged(object? sender, PropertyChangedEventArgs e) => _brandDirty = true;
 
     partial void OnCatalogChanged(Catalog? oldValue, Catalog newValue)
     {
@@ -397,6 +419,7 @@ public partial class MainViewModel : ObservableObject
     {
         catalog.PropertyChanged += OnGraphChanged;
         catalog.Brand.PropertyChanged += OnGraphChanged;
+        catalog.Brand.PropertyChanged += OnBrandChanged;
         catalog.Cover.PropertyChanged += OnGraphChanged;
         catalog.Products.CollectionChanged += OnProductsChanged;
         catalog.References.CollectionChanged += OnReferencesChanged;
@@ -408,6 +431,7 @@ public partial class MainViewModel : ObservableObject
     {
         catalog.PropertyChanged -= OnGraphChanged;
         catalog.Brand.PropertyChanged -= OnGraphChanged;
+        catalog.Brand.PropertyChanged -= OnBrandChanged;
         catalog.Cover.PropertyChanged -= OnGraphChanged;
         catalog.Products.CollectionChanged -= OnProductsChanged;
         catalog.References.CollectionChanged -= OnReferencesChanged;
@@ -452,10 +476,10 @@ public partial class MainViewModel : ObservableObject
     private void NewCatalog()
     {
         if (!ConfirmDiscardChanges()) return;
-        Catalog = Catalog.CreateDefault();
+        Catalog = NewCatalogWithProfile();   // kayıtlı marka profili otomatik uygulanır
         ActiveName = "Yeni Katalog";
         IsDirty = false;
-        StatusMessage = "Yeni boş şablon hazırlandı.";
+        StatusMessage = "Yeni katalog — kayıtlı marka bilgileri uygulandı.";
     }
 
     [RelayCommand]
@@ -559,6 +583,7 @@ public partial class MainViewModel : ObservableObject
             if (el.Type == CoverElementType.Image) Add(el.Content);
         foreach (var p in Catalog.Products) Add(p.ImagePath);
         foreach (var r in Catalog.References) Add(r.LogoPath);
+        Add(BrandProfileService.Load()?.LogoPath);   // kalıcı marka profili logosu da korunur
         return paths;
     }
 

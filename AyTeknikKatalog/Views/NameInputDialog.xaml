@@ -13,8 +13,8 @@
         TextOptions.TextRenderingMode="ClearType"
         UseLayoutRounding="True">
 
-    <Border Background="{StaticResource BackgroundBrush}"
-            BorderBrush="{StaticResource BorderBrush}"
+    <Border Background="{DynamicResource BackgroundBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1"
             CornerRadius="12"
             Margin="16">
@@ -54,7 +54,7 @@
                 <TextBox x:Name="NameBox" Style="{StaticResource ModernTextBox}" />
             </StackPanel>
 
-            <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="22,16">
+            <Border Grid.Row="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="22,16">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Style="{StaticResource SecondaryButton}" Content="İptal"
                             Margin="0,0,8,0" Click="OnCancel" IsCancel="True" />

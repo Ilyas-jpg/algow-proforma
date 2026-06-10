@@ -18,8 +18,8 @@
         <conv:PathToImageConverter x:Key="PathToImage" />
     </Window.Resources>
 
-    <Border Background="{StaticResource BackgroundBrush}"
-            BorderBrush="{StaticResource BorderBrush}"
+    <Border Background="{DynamicResource BackgroundBrush}"
+            BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="1"
             CornerRadius="12"
             Margin="16">
@@ -137,7 +137,7 @@
 
             <!-- Preview list -->
             <Border Grid.Row="2" Margin="22,0,22,12"
-                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8">
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8">
                 <Grid>
                     <TextBlock x:Name="EmptyHint"
                                Text="Bir Excel dosyası seçin, ardından sütun eşlemesi yapın."
@@ -155,7 +155,7 @@
                         </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Padding="12" BorderBrush="{StaticResource BorderBrush}"
+                                <Border Padding="12" BorderBrush="{DynamicResource BorderBrush}"
                                         BorderThickness="0,0,0,1">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -167,7 +167,7 @@
                                         </Grid.ColumnDefinitions>
 
                                         <Border Grid.Column="0" Width="56" Height="56"
-                                                Background="{StaticResource SurfaceBrush}" CornerRadius="6">
+                                                Background="{DynamicResource SurfaceBrush}" CornerRadius="6">
                                             <Image Source="{Binding ImagePath, Converter={StaticResource PathToImage}}"
                                                    Stretch="Uniform" Margin="4" />
                                         </Border>
@@ -189,7 +189,7 @@
             </Border>
 
             <!-- Footer -->
-            <Border Grid.Row="3" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="22,16">
+            <Border Grid.Row="3" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="22,16">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />

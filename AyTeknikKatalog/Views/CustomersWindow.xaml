@@ -6,7 +6,7 @@
         Title="Müşteriler — Algow Proforma PDF"
         Width="1160" Height="720"
         WindowStartupLocation="CenterOwner"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource BodyFont}"
         TextOptions.TextFormattingMode="Ideal">
     <Window.Resources>
@@ -63,7 +63,7 @@
 
         <DockPanel Grid.Row="3" Margin="0,14,0,0">
             <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Kaydet" Command="{Binding SaveCommand}" />
-            <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" />
         </DockPanel>
     </Grid>
 </Window>

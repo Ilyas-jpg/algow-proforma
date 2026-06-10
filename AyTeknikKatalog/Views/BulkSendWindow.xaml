@@ -6,7 +6,7 @@
         Title="Toplu Teklif Gönderimi — Algow Proforma PDF"
         Width="1080" Height="760"
         WindowStartupLocation="CenterOwner"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource BodyFont}"
         TextOptions.TextFormattingMode="Ideal">
     <Window.Resources>
@@ -34,7 +34,7 @@
         <!-- Teklif seçimi -->
         <Grid Grid.Row="1" Margin="0,16,0,0">
             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Gönderilecek Teklif" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" />
+            <TextBlock Grid.Column="0" Text="Gönderilecek Teklif" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0" />
             <ComboBox Grid.Column="1" Height="34" ItemsSource="{Binding SavedQuotes}" DisplayMemberPath="DisplayTitle" SelectedItem="{Binding SelectedQuote}" />
         </Grid>
 
@@ -69,7 +69,7 @@
         </DataGrid>
 
         <DockPanel Grid.Row="4" Margin="0,14,0,0">
-            <TextBlock DockPanel.Dock="Left" Text="{Binding StatusText}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
+            <TextBlock DockPanel.Dock="Left" Text="{Binding StatusText}" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
             <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Önizle &amp; Gönder" Command="{Binding SendCommand}"
                     HorizontalAlignment="Right" />
         </DockPanel>

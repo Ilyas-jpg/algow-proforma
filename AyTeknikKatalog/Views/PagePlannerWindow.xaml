@@ -5,7 +5,7 @@
         xmlns:m="clr-namespace:AyTeknikKatalog.Models"
         Width="1280" Height="820" MinWidth="1100" MinHeight="700"
         WindowStartupLocation="CenterOwner"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource BodyFont}"
         Title="Sayfa Planlayıcı"
         PreviewMouseMove="OnWindowMouseMove"
@@ -27,8 +27,8 @@
         </Grid.RowDefinitions>
 
         <!-- Üst başlık -->
-        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" Padding="24,14"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+        <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}" Padding="24,14"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -63,7 +63,7 @@
                 <!-- A4 oranlı sayfa container -->
                 <Viewbox Grid.Row="0" Stretch="Uniform">
                     <Border Width="595" Height="842" Background="White"
-                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1.5">
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1.5">
                         <Grid Margin="36,12">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -112,8 +112,8 @@
                 </Viewbox>
 
                 <!-- Sayfa kontrolleri -->
-                <Border Grid.Row="1" Background="{StaticResource SurfaceBrush}" Padding="14,10"
-                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6"
+                <Border Grid.Row="1" Background="{DynamicResource SurfaceBrush}" Padding="14,10"
+                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="6"
                         Margin="0,14,0,0">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -168,8 +168,8 @@
             </Grid>
 
             <!-- Sağ: Ürün listesi -->
-            <Border Grid.Column="1" Background="{StaticResource SurfaceBrush}" Margin="12,18,24,18"
-                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8">
+            <Border Grid.Column="1" Background="{DynamicResource SurfaceBrush}" Margin="12,18,24,18"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -177,7 +177,7 @@
                     </Grid.RowDefinitions>
 
                     <Border Grid.Row="0" Padding="14,12"
-                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
                         <StackPanel>
                             <TextBlock Text="ÜRÜNLER" Style="{StaticResource LabelText}" Margin="0" FontSize="10" />
                             <TextBlock Style="{StaticResource MutedText}" Margin="0,3,0,0">
@@ -192,8 +192,8 @@
                         <ItemsControl x:Name="ProductPalette" ItemsSource="{Binding Catalog.Products}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border x:Name="ProductRow" Background="{StaticResource BackgroundBrush}"
-                                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                    <Border x:Name="ProductRow" Background="{DynamicResource BackgroundBrush}"
+                                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                                             CornerRadius="6" Margin="0,0,0,6" Padding="8"
                                             PreviewMouseLeftButtonDown="OnProductMouseDown"
                                             PreviewMouseLeftButtonUp="OnProductMouseUp"
@@ -207,14 +207,14 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <Border Grid.Column="0" Width="48" Height="48"
-                                                    Background="{StaticResource SurfaceBrush}" CornerRadius="4">
+                                                    Background="{DynamicResource SurfaceBrush}" CornerRadius="4">
                                                 <Image Source="{Binding ImagePath, Converter={StaticResource PathToImage}}"
                                                        Stretch="Uniform" Margin="4" />
                                             </Border>
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12"
-                                                               Foreground="{StaticResource TextBrush}"
+                                                               Foreground="{DynamicResource TextBrush}"
                                                                TextTrimming="CharacterEllipsis" MaxWidth="160" />
                                                     <Border Margin="6,0,0,0" Background="{StaticResource AlgoYellowBrush}" CornerRadius="3"
                                                             Padding="4,1" VerticalAlignment="Center"
@@ -268,8 +268,8 @@
         </Grid>
 
         <!-- Alt status -->
-        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" Padding="24,10"
-                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
+        <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}" Padding="24,10"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
             <TextBlock x:Name="StatusText" Style="{StaticResource MutedText}" FontSize="11" />
         </Border>
     </Grid>

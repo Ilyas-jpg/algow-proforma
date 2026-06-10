@@ -4,7 +4,7 @@
         Title="E-posta Onizleme - Algow Proforma PDF"
         Width="820" Height="720"
         WindowStartupLocation="CenterOwner"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource BodyFont}"
         TextOptions.TextFormattingMode="Ideal">
     <Grid Margin="24">
@@ -18,7 +18,7 @@
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="16" Margin="0,0,0,16">
+                <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16" Margin="0,0,0,16">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="150" />
@@ -32,20 +32,20 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Firma" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,8" />
-                        <TextBlock x:Name="CompanyText" Grid.Row="0" Grid.Column="1" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Firma" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8" />
+                        <TextBlock x:Name="CompanyText" Grid.Row="0" Grid.Column="1" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" Margin="0,0,0,8" />
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Yetkili" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,8" />
-                        <TextBlock x:Name="ContactText" Grid.Row="1" Grid.Column="1" Foreground="{StaticResource TextBrush}" Margin="0,0,0,8" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Yetkili" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8" />
+                        <TextBlock x:Name="ContactText" Grid.Row="1" Grid.Column="1" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8" />
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="E-posta" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,8" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="E-posta" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8" />
                         <TextBox x:Name="ToEmailBox" Grid.Row="2" Grid.Column="1" Style="{StaticResource ModernTextBox}" Margin="0,0,0,8" />
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Ek" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,8" />
-                        <TextBlock x:Name="AttachmentText" Grid.Row="3" Grid.Column="1" Foreground="{StaticResource TextBrush}" Margin="0,0,0,8" />
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Ek" Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,8" />
+                        <TextBlock x:Name="AttachmentText" Grid.Row="3" Grid.Column="1" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,8" />
 
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Gonderici" Foreground="{StaticResource MutedBrush}" />
-                        <TextBlock x:Name="ProviderText" Grid.Row="4" Grid.Column="1" Foreground="{StaticResource TextBrush}" />
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Gonderici" Foreground="{DynamicResource MutedBrush}" />
+                        <TextBlock x:Name="ProviderText" Grid.Row="4" Grid.Column="1" Foreground="{DynamicResource TextBrush}" />
                     </Grid>
                 </Border>
 
@@ -59,7 +59,7 @@
         </ScrollViewer>
 
         <DockPanel Grid.Row="2" Margin="0,14,0,0">
-            <TextBlock x:Name="StatusText" DockPanel.Dock="Left" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
+            <TextBlock x:Name="StatusText" DockPanel.Dock="Left" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="GmailButton" Style="{StaticResource PrimaryButton}" Content="Send with Gmail" Click="OnSendGmail" />
                 <Button x:Name="SmtpButton" Style="{StaticResource SecondaryButton}" Content="Send with SMTP" Margin="8,0,0,0" Click="OnSendSmtp" />

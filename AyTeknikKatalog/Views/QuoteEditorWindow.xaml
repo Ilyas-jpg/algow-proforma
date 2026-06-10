@@ -6,7 +6,7 @@
         Title="Fiyat Teklifi — Algow Proforma PDF"
         Width="1240" Height="820"
         WindowStartupLocation="CenterOwner"
-        Background="{StaticResource BackgroundBrush}"
+        Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource BodyFont}"
         TextOptions.TextFormattingMode="Ideal">
     <Window.Resources>
@@ -38,7 +38,7 @@
                 <ColumnDefinition Width="380" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="14">
+            <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="14">
                 <StackPanel>
                     <TextBlock Text="MÜŞTERİ" Style="{StaticResource MutedText}" FontWeight="SemiBold" FontSize="11" />
                     <Grid Margin="0,8,0,0">
@@ -51,28 +51,28 @@
                         <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Uygula" Margin="8,0,0,0"
                                 Command="{Binding ApplySelectedCustomerCommand}" />
                     </Grid>
-                    <TextBlock Margin="0,10,0,0" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}"
+                    <TextBlock Margin="0,10,0,0" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"
                                Text="{Binding Quote.CustomerCompany}" />
-                    <TextBlock FontSize="12" Foreground="{StaticResource MutedBrush}" Text="{Binding Quote.CustomerContact}" />
-                    <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Text="{Binding Quote.CustomerAddress}" />
+                    <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}" Text="{Binding Quote.CustomerContact}" />
+                    <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Text="{Binding Quote.CustomerAddress}" />
                 </StackPanel>
             </Border>
 
-            <Border Grid.Column="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="14">
+            <Border Grid.Column="2" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="14">
                 <StackPanel>
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Teklif No" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Width="92" />
-                        <TextBlock Grid.Column="1" Text="{Binding Quote.QuoteNo, TargetNullValue='(kayıtta atanır)', FallbackValue='(kayıtta atanır)'}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="0" Text="Teklif No" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92" />
+                        <TextBlock Grid.Column="1" Text="{Binding Quote.QuoteNo, TargetNullValue='(kayıtta atanır)', FallbackValue='(kayıtta atanır)'}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
                     </Grid>
                     <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Geçerlilik (gün)" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Width="92" />
+                        <TextBlock Grid.Column="0" Text="Geçerlilik (gün)" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92" />
                         <TextBox Grid.Column="1" Style="{StaticResource ModernTextBox}" Text="{Binding Quote.ValidityDays, UpdateSourceTrigger=PropertyChanged}" />
                     </Grid>
                     <Grid Margin="0,8,0,0">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Para Birimi" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Width="92" />
+                        <TextBlock Grid.Column="0" Text="Para Birimi" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92" />
                         <ComboBox Grid.Column="1" Height="34" SelectedValue="{Binding Quote.Currency}" SelectedValuePath="Content">
                             <ComboBoxItem Content="TL" />
                             <ComboBoxItem Content="USD" />
@@ -87,7 +87,7 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,16,0,10">
             <ComboBox Width="320" Height="34" ItemsSource="{Binding PriceBookItems}" DisplayMemberPath="Name"
                       SelectedItem="{Binding SelectedPriceItem}" ToolTip="Fiyat havuzundan ürün" />
-            <TextBlock Text="Miktar" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="12,0,6,0" />
+            <TextBlock Text="Miktar" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="12,0,6,0" />
             <TextBox Style="{StaticResource ModernTextBox}" Width="64" VerticalAlignment="Center"
                      Text="{Binding AddQuantity, UpdateSourceTrigger=PropertyChanged}" />
             <Button Style="{StaticResource SecondaryButton}" Content="Havuzdan Ekle" Margin="8,0,0,0" Command="{Binding AddFromPriceBookCommand}" />
@@ -137,28 +137,28 @@
                          Text="{Binding Quote.Notes, UpdateSourceTrigger=PropertyChanged}" />
             </StackPanel>
 
-            <Border Grid.Column="2" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="14">
+            <Border Grid.Column="2" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="14">
                 <StackPanel>
                     <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Genel İskonto" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="0" Text="Genel İskonto" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" />
                         <StackPanel Grid.Column="1" Orientation="Horizontal">
                             <ComboBox Width="86" Height="30" ItemsSource="{Binding Source={StaticResource DiscountModes}}" SelectedItem="{Binding Quote.DiscountMode}" />
                             <TextBox Style="{StaticResource ModernTextBox}" Width="70" Margin="6,0,0,0" Text="{Binding Quote.DiscountValue, UpdateSourceTrigger=PropertyChanged}" />
                         </StackPanel>
                     </Grid>
-                    <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,2,0,8" />
+                    <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,2,0,8" />
                     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Ara Toplam" Foreground="{StaticResource MutedBrush}" />
-                        <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.LinesNet, StringFormat=N2}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" />
+                        <TextBlock Grid.Column="0" Text="Ara Toplam" Foreground="{DynamicResource MutedBrush}" />
+                        <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.LinesNet, StringFormat=N2}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" />
                     </Grid>
                     <Grid Margin="0,4,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="İskonto" Foreground="{StaticResource MutedBrush}" />
-                        <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.GeneralDiscount, StringFormat=N2}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" />
+                        <TextBlock Grid.Column="0" Text="İskonto" Foreground="{DynamicResource MutedBrush}" />
+                        <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.GeneralDiscount, StringFormat=N2}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" />
                     </Grid>
                     <Grid Margin="0,4,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="KDV" Foreground="{StaticResource MutedBrush}" />
-                        <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.VatTotal, StringFormat=N2}" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" />
+                        <TextBlock Grid.Column="0" Text="KDV" Foreground="{DynamicResource MutedBrush}" />
+                        <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.VatTotal, StringFormat=N2}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" />
                     </Grid>
                     <Border Background="{StaticResource PrimaryBrush}" Margin="0,8,0,0" Padding="10,8">
                         <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
@@ -172,7 +172,7 @@
 
         <!-- Alt butonlar -->
         <DockPanel Grid.Row="5" Margin="0,16,0,0">
-            <TextBlock DockPanel.Dock="Left" Text="{Binding StatusText}" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" />
+            <TextBlock DockPanel.Dock="Left" Text="{Binding StatusText}" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" />
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Style="{StaticResource SecondaryButton}" Content="Revizyon Oluştur" Margin="0,0,8,0" Command="{Binding CreateRevisionCommand}" />
                 <Button Style="{StaticResource SecondaryButton}" Content="Kaydet" Margin="0,0,8,0" Command="{Binding SaveCommand}" />

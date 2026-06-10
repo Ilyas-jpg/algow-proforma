@@ -121,6 +121,7 @@ public partial class App : Application
         {
             Settings.License = LicenseType.Community;
             RegisterFonts();
+            Services.ThemeManager.Initialize(); // kayıtlı temayı (dark/light) uygula
 
             var tr = new CultureInfo("tr-TR");
             Thread.CurrentThread.CurrentCulture = tr;
