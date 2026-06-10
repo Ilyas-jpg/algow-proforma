@@ -21,8 +21,11 @@ public partial class MainWindow : Window
 
     private void OnWindowClosing(object? sender, CancelEventArgs e)
     {
-        if (DataContext is MainViewModel vm && !vm.ConfirmDiscardChanges())
-            e.Cancel = true;
+        if (DataContext is MainViewModel vm)
+        {
+            vm.SaveSessionNow(); // kapanışta bekleyen değişikliği session'a yaz → "kaldığın yerden devam"
+            if (!vm.ConfirmDiscardChanges()) e.Cancel = true;
+        }
     }
 
     private void OnRecentButtonClick(object sender, RoutedEventArgs e)

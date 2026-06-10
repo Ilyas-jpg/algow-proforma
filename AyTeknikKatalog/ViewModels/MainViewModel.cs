@@ -19,18 +19,38 @@ public partial class MainViewModel : ObservableObject
 
     private void StartAutoSaveTimer()
     {
-        // Otomatik kaydet — her 5 dakikada bir IsDirty true ise %LOCALAPPDATA%/AlgowProforma/autosave.json'a yaz
+        // Anlık autosave (debounce): son değişiklikten 2 sn sonra session'a yazılır.
+        // 5 dk beklemek yerine her düzenleme korunur — kapanış/çökme sonrası iş kaybolmaz.
         _autoSaveTimer = new System.Windows.Threading.DispatcherTimer
         {
-            Interval = TimeSpan.FromMinutes(5)
+            Interval = TimeSpan.FromSeconds(2)
         };
-        _autoSaveTimer.Tick += (_, _) => TryAutoSave();
+        _autoSaveTimer.Tick += (_, _) => { _autoSaveTimer?.Stop(); TryAutoSave(); };
+    }
+
+    /// <summary>Bir değişiklik olunca debounce sayacını sıfırlar (2 sn sessizlikten sonra autosave).</summary>
+    private void ScheduleAutoSave()
+    {
+        if (_autoSaveTimer is null) return;
+        _autoSaveTimer.Stop();
         _autoSaveTimer.Start();
+    }
+
+    /// <summary>Pencere kapanırken çağrılır — bekleyen değişikliği anında session'a yazar.</summary>
+    public void SaveSessionNow()
+    {
+        _autoSaveTimer?.Stop();
+        TryAutoSave();
     }
 
     private static string GetAutoSavePath() => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "AlgowProforma", "autosave.json");
+
+    private void TryDeleteAutoSave()
+    {
+        try { var p = GetAutoSavePath(); if (File.Exists(p)) File.Delete(p); } catch { }
+    }
 
     /// <summary>
     /// Window Loaded'da çağrılır. Autosave dosyası varsa kullanıcıya yükleme/atma sorusu sorar.
@@ -398,6 +418,7 @@ public partial class MainViewModel : ObservableObject
     private void OnGraphChanged(object? sender, PropertyChangedEventArgs e)
     {
         IsDirty = true;
+        ScheduleAutoSave();
         OnPropertyChanged(nameof(CalculatedPageCount));
     }
 
@@ -414,6 +435,7 @@ public partial class MainViewModel : ObservableObject
             }
         }
         IsDirty = true;
+        ScheduleAutoSave();
         OnPropertyChanged(nameof(CalculatedPageCount));
         OnPropertyChanged(nameof(UnassignedProducts));
     }
@@ -423,6 +445,7 @@ public partial class MainViewModel : ObservableObject
         if (e.NewItems is not null) foreach (Reference r in e.NewItems) r.PropertyChanged += OnGraphChanged;
         if (e.OldItems is not null) foreach (Reference r in e.OldItems) r.PropertyChanged -= OnGraphChanged;
         IsDirty = true;
+        ScheduleAutoSave();
     }
 
     [RelayCommand]
@@ -503,6 +526,7 @@ public partial class MainViewModel : ObservableObject
             var entry = _libraryService.Save(Catalog);
             ActiveName = string.IsNullOrWhiteSpace(entry.LibraryLabel) ? entry.BrandName : entry.LibraryLabel;
             IsDirty = false;
+            TryDeleteAutoSave(); // iş artık kütüphanede güvende — eski oturum geri-yükleme sorusunu önle
             StatusMessage = $"PDF üretildi ve kütüphaneye eklendi: {entry.DisplayTitle}";
             Process.Start(new ProcessStartInfo(entry.PdfPath) { UseShellExecute = true });
         }
@@ -521,11 +545,28 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex) { ShowError("Klasör açılamadı", ex.Message); }
     }
 
+    /// <summary>
+    /// Açık çalışma kataloğunun kullandığı tüm görsel yolları — orphan temizliği bunları ASLA silmez.
+    /// Kullanıcı henüz kütüphaneye kaydetmemiş olsa bile yüklediği görseller korunur (hafıza bug fix).
+    /// </summary>
+    private System.Collections.Generic.IReadOnlyCollection<string> CurrentSessionImagePaths()
+    {
+        var paths = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        void Add(string? p) { if (!string.IsNullOrWhiteSpace(p)) paths.Add(p!); }
+        Add(Catalog.Brand.LogoPath);
+        Add(Catalog.Cover.CustomCoverImagePath);
+        foreach (var el in Catalog.Cover.Elements)
+            if (el.Type == CoverElementType.Image) Add(el.Content);
+        foreach (var p in Catalog.Products) Add(p.ImagePath);
+        foreach (var r in Catalog.References) Add(r.LogoPath);
+        return paths;
+    }
+
     [RelayCommand]
     private void OpenLibrary()
     {
-        // Library açılırken orphan görselleri temizle — disk şişmesini önle
-        try { var n = _libraryService.CleanupOrphanImages(); if (n > 0) StatusMessage = $"{n} kullanılmayan görsel temizlendi."; }
+        // Library açılırken orphan görselleri temizle — AMA açık oturumun görsellerini ASLA silme (hafıza bug fix)
+        try { var n = _libraryService.CleanupOrphanImages(CurrentSessionImagePaths()); if (n > 0) StatusMessage = $"{n} kullanılmayan görsel temizlendi."; }
         catch { /* sessiz */ }
 
         var window = new LibraryWindow(_libraryService) { Owner = ActiveWindow() };

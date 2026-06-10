@@ -25,14 +25,22 @@ public class LibraryService
     /// images/ klasöründeki dosyalardan, hiçbir katalog JSON'unda referansı olmayanları siler.
     /// Kütüphane açılırken bir kez çağrılır. Disk şişmesini önler.
     /// </summary>
-    public int CleanupOrphanImages()
+    public int CleanupOrphanImages(IReadOnlyCollection<string>? protectedPaths = null)
     {
         if (!Directory.Exists(LibraryPath)) return 0;
         var imagesDir = ImageStorage.Directory;
         if (!Directory.Exists(imagesDir)) return 0;
 
-        // 1. Tüm katalog JSON'larını oku, referans verilen path'leri topla
         var referencedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // 0. Açık çalışma oturumunun (henüz kaydedilmemiş olabilir) görselleri — ASLA silinmez.
+        //    Hafıza bug fix: önceden sadece kayıtlı kütüphane JSON'ları taranıyordu, çalışma
+        //    kataloğunun görselleri "öksüz" sanılıp siliniyordu.
+        if (protectedPaths != null)
+            foreach (var pp in protectedPaths)
+                if (!string.IsNullOrWhiteSpace(pp)) referencedPaths.Add(pp);
+
+        // 1. Tüm katalog JSON'larını oku, referans verilen path'leri topla
         foreach (var jsonPath in Directory.GetFiles(LibraryPath, "*.json"))
         {
             try
