@@ -1,0 +1,81 @@
+# ────────────────────────────────────────────────────────────
+#  Algow Proforma PDF — .gitignore
+#  PUBLIC repo: build çıktıları, sırlar ve kullanıcı verisi ASLA commitlenmez.
+# ────────────────────────────────────────────────────────────
+
+# Build outputs
+**/bin/
+**/obj/
+**/publish/
+out/
+installer/out/
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userprefs
+*.userosscache
+*.sln.docstates
+
+# OS
+Thumbs.db
+ehthumbs.db
+.DS_Store
+Desktop.ini
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# .NET runtime / debug
+*.pdb
+*.dll.config
+launchSettings.json
+**/startup-error.log
+
+# Test output
+TestResults/
+coverage*
+
+# ── SIRLAR & KOD İMZALAMA (kritik — public repoya asla) ──
+*.pfx
+*.p12
+*.snk
+codesign/
+
+# ── RUNTIME KULLANICI VERİSİ / TOKEN (kritik) ──
+#  Gmail OAuth client_secret, DPAPI token, SMTP parola — hepsi kullanıcı makinesinde, repoda değil
+settings.json
+secrets.json
+*.secret
+*.bin
+google-gmail.bin
+smtp.bin
+
+# Yedekler / geçici / araç çıktıları
+*.bak
+*.bak-*
+*~
+.backups/
+.codex-tmp/
+.codex-*/
+Resources/_*.png
+*.log
+
+# Lokal sample artifacts (sızmışsa)
+*.aykt
+
+# Claude Code lokal config
+.claude/
+
+# Stale / Cerkar-deploy'a özel / eski-marka dev artefaktları (public generic repoya girmez, lokalde kalır)
+MUSTERI_ONCESI_KONTROL.md
+docs/
+tools/
+
+# Büyük redistributable (MS'ten indirilir, repoda tutulmaz — installer/AlgowProforma.iss notuna bak)
+installer/vc_redist.x64.exe

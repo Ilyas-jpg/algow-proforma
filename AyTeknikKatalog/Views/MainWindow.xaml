@@ -1,0 +1,1250 @@
+<Window x:Class="AyTeknikKatalog.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:AyTeknikKatalog.ViewModels"
+        xmlns:conv="clr-namespace:AyTeknikKatalog.Converters"
+        xmlns:m="clr-namespace:AyTeknikKatalog.Models"
+        xmlns:local="clr-namespace:AyTeknikKatalog.Views"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        Title="{Binding WindowTitle}"
+        Width="1280" Height="820"
+        MinWidth="1080" MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        Icon="pack://application:,,,/Resources/AppIcon.ico"
+        Background="{StaticResource BackgroundBrush}"
+        FontFamily="{StaticResource BodyFont}"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="ClearType"
+        UseLayoutRounding="True"
+        Closing="OnWindowClosing">
+
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <conv:PathToImageConverter x:Key="PathToImage" />
+        <!-- NullToVisibility App.xaml'da global tanimli, burada redundant local define kaldirildi -->
+        <conv:ProductIdLookupConverter x:Key="ProductIdLookup" />
+        <conv:CountToVisibilityConverter x:Key="CountToVisibility" />
+        <conv:PriceFormatConverter x:Key="PriceFormat" />
+        <conv:StringEqualsConverter x:Key="StringEquals" />
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+        <SolidColorBrush x:Key="PvPrimary" Color="#2E338F" />
+        <SolidColorBrush x:Key="PvSecondary" Color="#5368A6" />
+        <SolidColorBrush x:Key="PvAccent" Color="#7C84C7" />
+        <SolidColorBrush x:Key="PvSurface" Color="#EEEEF1" />
+        <SolidColorBrush x:Key="PvMuted" Color="#9DA0A8" />
+        <SolidColorBrush x:Key="PvText" Color="#1A1A1F" />
+        <SolidColorBrush x:Key="PvPaper" Color="#FFFFFF" />
+
+        <DataTemplate x:Key="PreviewKlasik">
+            <Canvas Width="170" Height="240" Background="{StaticResource PvPaper}" ClipToBounds="True">
+                <Rectangle Canvas.Left="14" Canvas.Top="22" Width="14" Height="3" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="116" Canvas.Top="20" Width="40" Height="8" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="0" Canvas.Top="34" Width="170" Height="84" Fill="{StaticResource PvPrimary}" />
+                <Ellipse Canvas.Left="100" Canvas.Top="36" Width="80" Height="80" Stroke="{StaticResource PvAccent}" StrokeThickness="0.6" Fill="Transparent" Opacity="0.7" />
+                <Ellipse Canvas.Left="118" Canvas.Top="54" Width="44" Height="44" Stroke="{StaticResource PvAccent}" StrokeThickness="0.5" Fill="Transparent" Opacity="0.6" />
+                <Rectangle Canvas.Left="14" Canvas.Top="58" Width="60" Height="6" Fill="{StaticResource PvPaper}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="68" Width="42" Height="3" Fill="{StaticResource PvAccent}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="124" Width="3" Height="22" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="22" Canvas.Top="126" Width="20" Height="14" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="40" Canvas.Top="158" Width="90" Height="2" Fill="{StaticResource PvMuted}" />
+                <Rectangle Canvas.Left="40" Canvas.Top="164" Width="80" Height="2" Fill="{StaticResource PvMuted}" />
+                <Rectangle Canvas.Left="40" Canvas.Top="170" Width="86" Height="2" Fill="{StaticResource PvMuted}" />
+                <Ellipse Canvas.Left="22" Canvas.Top="186" Width="14" Height="14" Stroke="{StaticResource PvPrimary}" StrokeThickness="0.7" Fill="Transparent" />
+                <Ellipse Canvas.Left="64" Canvas.Top="186" Width="14" Height="14" Stroke="{StaticResource PvPrimary}" StrokeThickness="0.7" Fill="Transparent" />
+                <Ellipse Canvas.Left="106" Canvas.Top="186" Width="14" Height="14" Stroke="{StaticResource PvPrimary}" StrokeThickness="0.7" Fill="Transparent" />
+                <Ellipse Canvas.Left="148" Canvas.Top="186" Width="14" Height="14" Stroke="{StaticResource PvPrimary}" StrokeThickness="0.7" Fill="Transparent" />
+                <Rectangle Canvas.Left="0" Canvas.Top="216" Width="170" Height="24" Fill="{StaticResource PvPrimary}" />
+            </Canvas>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PreviewEgri">
+            <Canvas Width="170" Height="240" Background="{StaticResource PvSecondary}" ClipToBounds="True">
+                <Path Stroke="{StaticResource PvPrimary}" StrokeThickness="0.5" Opacity="0.5">
+                    <Path.Data>
+                        <GeometryGroup>
+                            <LineGeometry StartPoint="118,8" EndPoint="170,8" />
+                            <LineGeometry StartPoint="118,14" EndPoint="170,14" />
+                            <LineGeometry StartPoint="118,20" EndPoint="170,20" />
+                            <LineGeometry StartPoint="118,26" EndPoint="170,26" />
+                            <LineGeometry StartPoint="118,32" EndPoint="170,32" />
+                            <LineGeometry StartPoint="118,38" EndPoint="170,38" />
+                            <LineGeometry StartPoint="118,44" EndPoint="170,44" />
+                        </GeometryGroup>
+                    </Path.Data>
+                </Path>
+                <Ellipse Canvas.Left="-100" Canvas.Top="-180" Width="380" Height="380" Fill="{StaticResource PvPaper}" />
+                <Ellipse Canvas.Left="-100" Canvas.Top="-180" Width="380" Height="380" Stroke="{StaticResource PvAccent}" StrokeThickness="0.6" Fill="Transparent" />
+                <Ellipse Canvas.Left="-80" Canvas.Top="170" Width="190" Height="190" Fill="{StaticResource PvSurface}" />
+                <Ellipse Canvas.Left="-80" Canvas.Top="170" Width="190" Height="190" Stroke="{StaticResource PvAccent}" StrokeThickness="0.6" Fill="Transparent" />
+            </Canvas>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PreviewCerceve">
+            <Canvas Width="170" Height="240" Background="{StaticResource PvPaper}" ClipToBounds="True">
+                <Polygon Points="0,0 60,0 0,72" Fill="{StaticResource PvPrimary}" />
+                <Polygon Points="170,240 110,240 170,168" Fill="{StaticResource PvPrimary}" />
+                <Polygon Points="14,0 60,0 14,42" Fill="{StaticResource PvSecondary}" />
+                <Polygon Points="170,225 142,240 110,240" Fill="{StaticResource PvSecondary}" />
+                <Polygon Points="22,14 152,14 158,22 158,218 144,224 26,224 12,218 12,22"
+                         Fill="Transparent" Stroke="{StaticResource PvPrimary}" StrokeThickness="0.7" />
+                <Polygon Points="26,18 148,18 154,26 154,214 142,220 30,220 16,214 16,26"
+                         Fill="Transparent" Stroke="{StaticResource PvPrimary}" StrokeThickness="0.4" Opacity="0.6" />
+                <Rectangle Canvas.Left="56" Canvas.Top="100" Width="58" Height="3" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="44" Canvas.Top="112" Width="82" Height="6" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="56" Canvas.Top="124" Width="58" Height="2" Fill="{StaticResource PvAccent}" />
+                <Rectangle Canvas.Left="60" Canvas.Top="142" Width="50" Height="2" Fill="{StaticResource PvMuted}" />
+                <Rectangle Canvas.Left="64" Canvas.Top="148" Width="42" Height="2" Fill="{StaticResource PvMuted}" />
+            </Canvas>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PreviewGeometri">
+            <Canvas Width="170" Height="240" Background="{StaticResource PvPaper}" ClipToBounds="True">
+                <Polygon Points="125,0 170,0 170,76 110,52" Fill="{StaticResource PvSurface}" />
+                <Polygon Points="170,76 170,124 110,104 110,52" Fill="{StaticResource PvSecondary}" />
+                <Polygon Points="170,124 170,184 92,156 110,104" Fill="{StaticResource PvPrimary}" />
+                <Path Stroke="{StaticResource PvPaper}" StrokeThickness="0.4" Opacity="0.6">
+                    <Path.Data>
+                        <GeometryGroup>
+                            <LineGeometry StartPoint="115,128" EndPoint="170,142" />
+                            <LineGeometry StartPoint="113,134" EndPoint="168,148" />
+                            <LineGeometry StartPoint="111,140" EndPoint="166,154" />
+                            <LineGeometry StartPoint="109,146" EndPoint="164,160" />
+                        </GeometryGroup>
+                    </Path.Data>
+                </Path>
+                <Polygon Points="170,184 170,240 80,240 92,156" Fill="{StaticResource PvSurface}" />
+                <Polygon Points="0,206 0,240 60,240" Fill="{StaticResource PvText}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="60" Width="40" Height="6" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="100" Width="58" Height="3" Fill="{StaticResource PvMuted}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="112" Width="80" Height="8" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="160" Width="20" Height="14" Fill="{StaticResource PvPrimary}" />
+            </Canvas>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PreviewMadalya">
+            <Canvas Width="170" Height="240" Background="{StaticResource PvSurface}" ClipToBounds="True">
+                <Polygon Points="0,52 0,154 56,124 56,80" Fill="{StaticResource PvSecondary}" />
+                <Polygon Points="170,52 170,154 114,124 114,80" Fill="{StaticResource PvSecondary}" />
+                <Polygon Points="0,86 0,132 32,120 32,96" Fill="{StaticResource PvPrimary}" />
+                <Polygon Points="170,86 170,132 138,120 138,96" Fill="{StaticResource PvPrimary}" />
+                <Polygon Points="52,22 118,22 118,206 85,228 52,206" Fill="{StaticResource PvPaper}" />
+                <Polygon Points="52,206 118,206 85,228" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="62" Canvas.Top="38" Width="46" Height="2" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="58" Canvas.Top="68" Width="54" Height="3" Fill="{StaticResource PvMuted}" />
+                <Rectangle Canvas.Left="56" Canvas.Top="86" Width="58" Height="10" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="62" Canvas.Top="104" Width="46" Height="3" Fill="{StaticResource PvSecondary}" />
+                <Rectangle Canvas.Left="68" Canvas.Top="120" Width="34" Height="2" Fill="{StaticResource PvMuted}" />
+                <Rectangle Canvas.Left="64" Canvas.Top="158" Width="42" Height="14" Fill="{StaticResource PvPrimary}" />
+            </Canvas>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PreviewKatman">
+            <Canvas Width="170" Height="240" Background="{StaticResource PvPaper}" ClipToBounds="True">
+                <Polygon Points="100,0 170,0 170,120 102,102" Fill="{StaticResource PvSurface}" />
+                <Polygon Points="102,102 170,120 170,166 80,160" Fill="{StaticResource PvSecondary}" />
+                <Polygon Points="80,160 170,166 170,240 64,240" Fill="{StaticResource PvPrimary}" />
+                <Path Stroke="{StaticResource PvMuted}" StrokeThickness="0.3" Opacity="0.5">
+                    <Path.Data>
+                        <GeometryGroup>
+                            <LineGeometry StartPoint="6,210" EndPoint="78,166" />
+                            <LineGeometry StartPoint="6,214" EndPoint="78,170" />
+                            <LineGeometry StartPoint="6,218" EndPoint="78,174" />
+                        </GeometryGroup>
+                    </Path.Data>
+                </Path>
+                <Rectangle Canvas.Left="132" Canvas.Top="202" Width="22" Height="22" Stroke="{StaticResource PvAccent}" StrokeThickness="0.6" Fill="Transparent" />
+                <Rectangle Canvas.Left="14" Canvas.Top="40" Width="20" Height="3" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="78" Width="60" Height="3" Fill="{StaticResource PvMuted}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="86" Width="80" Height="10" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="100" Width="60" Height="3" Fill="{StaticResource PvSecondary}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="118" Width="14" Height="2" Fill="{StaticResource PvPrimary}" />
+            </Canvas>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PreviewMozaik">
+            <Canvas Width="170" Height="240" Background="{StaticResource PvPaper}" ClipToBounds="True">
+                <Rectangle Canvas.Left="0" Canvas.Top="0" Width="100" Height="240" Fill="{StaticResource PvPrimary}" />
+                <Polygon Points="100,0 132,0 132,26 116,46 100,52" Fill="{StaticResource PvSecondary}" />
+                <Polygon Points="132,0 170,0 170,60 152,48 132,26" Fill="{StaticResource PvPaper}" />
+                <Polygon Points="132,26 152,48 170,60 170,74 134,72 116,46" Fill="{StaticResource PvSurface}" />
+                <Polygon Points="100,52 116,46 134,72 134,132 108,148 100,120" Fill="{StaticResource PvSecondary}" />
+                <Polygon Points="134,72 170,74 170,148 134,132" Fill="{StaticResource PvText}" />
+                <Path Stroke="{StaticResource PvMuted}" StrokeThickness="0.3" Opacity="0.6">
+                    <Path.Data>
+                        <GeometryGroup>
+                            <LineGeometry StartPoint="140,80" EndPoint="140,142" />
+                            <LineGeometry StartPoint="146,82" EndPoint="146,144" />
+                            <LineGeometry StartPoint="152,80" EndPoint="152,142" />
+                            <LineGeometry StartPoint="158,82" EndPoint="158,144" />
+                            <LineGeometry StartPoint="164,82" EndPoint="164,144" />
+                        </GeometryGroup>
+                    </Path.Data>
+                </Path>
+                <Polygon Points="100,120 108,148 134,132 134,148 116,182 100,154" Fill="{StaticResource PvSurface}" />
+                <Polygon Points="100,154 116,182 100,206" Fill="{StaticResource PvSecondary}" />
+                <Polygon Points="134,148 170,148 170,240 100,240 100,206 116,182" Fill="{StaticResource PvSurface}" />
+                <Polygon Points="100,206 116,182 134,148 134,186 116,240 100,240" Fill="{StaticResource PvSecondary}" />
+                <Polygon Points="116,240 134,186 152,214 146,240" Fill="{StaticResource PvText}" />
+                <Rectangle Canvas.Left="12" Canvas.Top="22" Width="14" Height="3" Fill="{StaticResource PvPaper}" />
+                <Rectangle Canvas.Left="12" Canvas.Top="74" Width="50" Height="3" Fill="{StaticResource PvAccent}" />
+                <Rectangle Canvas.Left="12" Canvas.Top="84" Width="74" Height="10" Fill="{StaticResource PvPaper}" />
+                <Rectangle Canvas.Left="12" Canvas.Top="98" Width="56" Height="3" Fill="{StaticResource PvAccent}" />
+                <Rectangle Canvas.Left="12" Canvas.Top="166" Width="22" Height="14" Fill="{StaticResource PvPaper}" />
+            </Canvas>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PreviewDiyagonal">
+            <Canvas Width="170" Height="240" Background="{StaticResource PvSurface}" ClipToBounds="True">
+                <Polygon Points="103,0 137,0 137,74 103,40" Fill="{StaticResource PvPrimary}" />
+                <Polygon Points="137,0 170,0 170,60 152,48 137,26" Fill="{StaticResource PvSecondary}" />
+                <Path Fill="{StaticResource PvSurface}" Stroke="{StaticResource PvMuted}" StrokeThickness="0.7" Opacity="0.7">
+                    <Path.Data>
+                        <PathGeometry>
+                            <PathFigure StartPoint="170,57">
+                                <ArcSegment Point="134,131" Size="74,74" SweepDirection="Counterclockwise" />
+                                <LineSegment Point="170,131" />
+                            </PathFigure>
+                        </PathGeometry>
+                    </Path.Data>
+                </Path>
+                <Rectangle Canvas.Left="140" Canvas.Top="131" Width="30" Height="86" Fill="{StaticResource PvText}" />
+                <Path Stroke="{StaticResource PvMuted}" StrokeThickness="0.5" Opacity="0.6">
+                    <Path.Data>
+                        <GeometryGroup>
+                            <LineGeometry StartPoint="143,135" EndPoint="143,213" />
+                            <LineGeometry StartPoint="148,135" EndPoint="148,213" />
+                            <LineGeometry StartPoint="153,135" EndPoint="153,213" />
+                            <LineGeometry StartPoint="158,135" EndPoint="158,213" />
+                            <LineGeometry StartPoint="163,135" EndPoint="163,213" />
+                        </GeometryGroup>
+                    </Path.Data>
+                </Path>
+                <Rectangle Canvas.Left="103" Canvas.Top="200" Width="38" Height="40" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="140" Canvas.Top="217" Width="30" Height="23" Fill="{StaticResource PvSecondary}" />
+                <Path Fill="{StaticResource PvMuted}" Opacity="0.35">
+                    <Path.Data>
+                        <PathGeometry>
+                            <PathFigure StartPoint="0,217">
+                                <ArcSegment Point="80,240" Size="80,80" SweepDirection="Clockwise" />
+                                <LineSegment Point="0,240" />
+                            </PathFigure>
+                        </PathGeometry>
+                    </Path.Data>
+                </Path>
+                <Rectangle Canvas.Left="14" Canvas.Top="22" Width="14" Height="3" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="74" Width="50" Height="3" Fill="{StaticResource PvMuted}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="84" Width="74" Height="10" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="98" Width="56" Height="3" Fill="{StaticResource PvSecondary}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="116" Width="14" Height="2" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="14" Canvas.Top="156" Width="22" Height="14" Fill="{StaticResource PvPrimary}" />
+            </Canvas>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PreviewMinimalist">
+            <Canvas Width="170" Height="240" Background="{StaticResource PvPaper}" ClipToBounds="True">
+                <!-- Geniş whitespace, sade tipografi: üstte ince accent çizgi, ortada başlık + alt metin, alt-orta'da küçük bilgi bloğu -->
+                <Rectangle Canvas.Left="68" Canvas.Top="34" Width="34" Height="1" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="40" Canvas.Top="96" Width="90" Height="6" Fill="{StaticResource PvText}" />
+                <Rectangle Canvas.Left="50" Canvas.Top="108" Width="70" Height="3" Fill="{StaticResource PvMuted}" Opacity="0.7" />
+                <Rectangle Canvas.Left="78" Canvas.Top="128" Width="14" Height="1" Fill="{StaticResource PvAccent}" />
+                <Rectangle Canvas.Left="56" Canvas.Top="186" Width="58" Height="2" Fill="{StaticResource PvMuted}" Opacity="0.5" />
+                <Rectangle Canvas.Left="72" Canvas.Top="196" Width="26" Height="2" Fill="{StaticResource PvMuted}" Opacity="0.5" />
+            </Canvas>
+        </DataTemplate>
+
+        <DataTemplate x:Key="PreviewSertifika">
+            <Canvas Width="170" Height="240" Background="{StaticResource PvPaper}" ClipToBounds="True">
+                <!-- Çift çizgi çerçeve + 4 köşe motifi (kare-içinde-kare) + orta'da prestijli metin blokları -->
+                <Rectangle Canvas.Left="8" Canvas.Top="8" Width="154" Height="224" Stroke="{StaticResource PvPrimary}" StrokeThickness="1.2" Fill="Transparent" />
+                <Rectangle Canvas.Left="14" Canvas.Top="14" Width="142" Height="212" Stroke="{StaticResource PvPrimary}" StrokeThickness="0.5" Fill="Transparent" />
+                <!-- 4 köşe motifi -->
+                <Rectangle Canvas.Left="4" Canvas.Top="4" Width="8" Height="8" Fill="{StaticResource PvAccent}" />
+                <Rectangle Canvas.Left="158" Canvas.Top="4" Width="8" Height="8" Fill="{StaticResource PvAccent}" />
+                <Rectangle Canvas.Left="4" Canvas.Top="228" Width="8" Height="8" Fill="{StaticResource PvAccent}" />
+                <Rectangle Canvas.Left="158" Canvas.Top="228" Width="8" Height="8" Fill="{StaticResource PvAccent}" />
+                <!-- Orta metin kompozisyon -->
+                <Rectangle Canvas.Left="44" Canvas.Top="74" Width="82" Height="5" Fill="{StaticResource PvPrimary}" />
+                <Rectangle Canvas.Left="56" Canvas.Top="86" Width="58" Height="3" Fill="{StaticResource PvMuted}" />
+                <Rectangle Canvas.Left="60" Canvas.Top="104" Width="50" Height="1.5" Fill="{StaticResource PvAccent}" />
+                <Rectangle Canvas.Left="42" Canvas.Top="126" Width="86" Height="14" Fill="{StaticResource PvSecondary}" Opacity="0.85" />
+                <Rectangle Canvas.Left="52" Canvas.Top="158" Width="66" Height="3" Fill="{StaticResource PvMuted}" />
+                <Rectangle Canvas.Left="64" Canvas.Top="168" Width="42" Height="3" Fill="{StaticResource PvMuted}" Opacity="0.6" />
+                <!-- Alt madalya iz -->
+                <Ellipse Canvas.Left="73" Canvas.Top="190" Width="24" Height="24" Stroke="{StaticResource PvPrimary}" StrokeThickness="0.8" Fill="Transparent" />
+                <Rectangle Canvas.Left="82" Canvas.Top="199" Width="6" Height="6" Fill="{StaticResource PvAccent}" />
+            </Canvas>
+        </DataTemplate>
+
+        <local:DesignPreviewSelector x:Key="DesignPreviewSelector"
+            Klasik="{StaticResource PreviewKlasik}"
+            Egri="{StaticResource PreviewEgri}"
+            Cerceve="{StaticResource PreviewCerceve}"
+            Geometri="{StaticResource PreviewGeometri}"
+            Madalya="{StaticResource PreviewMadalya}"
+            Katman="{StaticResource PreviewKatman}"
+            Mozaik="{StaticResource PreviewMozaik}"
+            Diyagonal="{StaticResource PreviewDiyagonal}"
+            Minimalist="{StaticResource PreviewMinimalist}"
+            Sertifika="{StaticResource PreviewSertifika}" />
+
+        <DataTemplate x:Key="LayoutPreviewTemplate">
+            <Border Width="170" Height="240" Background="{StaticResource PvPaper}" ClipToBounds="True">
+                <StackPanel>
+                    <Border Height="20" Background="{StaticResource PvPrimary}" Margin="0,0,0,2" />
+                    <Border Height="2" Background="{StaticResource PvAccent}" />
+                    <Border Margin="10,12,10,0" Height="186">
+                        <ItemsControl ItemsSource="{Binding Cells}" Tag="{Binding}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="{Binding DataContext.Columns, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                 Rows="{Binding DataContext.Rows, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="2" Background="{StaticResource PvSurface}" CornerRadius="2">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Border Grid.Row="0" Margin="3" Background="{StaticResource PvMuted}" Opacity="0.25" CornerRadius="1" />
+                                            <Border Grid.Row="1" Background="{StaticResource PvPrimary}" Height="6" CornerRadius="0,0,2,2" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                    <Border Height="14" Background="{StaticResource PvPrimary}" Margin="0,4,0,0" />
+                </StackPanel>
+            </Border>
+        </DataTemplate>
+
+        <x:Array x:Key="CurrencyOptions" Type="sys:String">
+            <sys:String>TL</sys:String>
+            <sys:String>USD</sys:String>
+            <sys:String>EUR</sys:String>
+        </x:Array>
+
+        <DataTemplate DataType="{x:Type m:Reference}">
+            <Border x:Name="ReferenceCard" Margin="0,0,12,12" Background="{StaticResource BackgroundBrush}"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8"
+                    Padding="16">
+                <Grid>
+                    <StackPanel>
+                        <Border Height="80" Background="{StaticResource SurfaceBrush}" CornerRadius="6">
+                            <Grid>
+                                <Image Source="{Binding LogoPath, Converter={StaticResource PathToImage}}"
+                                       Stretch="Uniform" Margin="10"
+                                       Visibility="{Binding LogoPath, Converter={StaticResource NullToVisibility}}" />
+                                <TextBlock Text="{Binding Name}" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           FontFamily="{StaticResource DisplayFont}" FontSize="20" FontWeight="SemiBold"
+                                           Foreground="{StaticResource MutedBrush}"
+                                           Visibility="{Binding LogoPath, Converter={StaticResource NullToVisibility}, ConverterParameter=Inverted}" />
+                            </Grid>
+                        </Border>
+                        <TextBlock Text="{Binding Name}" Style="{StaticResource BodyText}"
+                                   FontWeight="SemiBold" Margin="0,12,0,0" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border, Mode=FindAncestor}}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        <Button Style="{StaticResource IconButton}" Width="28" Height="28"
+                                Command="{Binding DataContext.EditReferenceCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}" ToolTip="Düzenle">
+                            <Path Data="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z M15 5l4 4"
+                                  Width="14" Height="14" Stretch="Uniform"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.6" Fill="Transparent" />
+                        </Button>
+                        <Button Style="{StaticResource DangerIconButton}" Width="28" Height="28"
+                                Command="{Binding DataContext.DeleteReferenceCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}" ToolTip="Sil">
+                            <Path Data="M3 6h18 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2 M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6 M10 11v6 M14 11v6"
+                                  Width="14" Height="14" Stretch="Uniform"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.6" Fill="Transparent" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type m:Product}">
+            <Border Margin="0,0,0,8" Background="{StaticResource BackgroundBrush}"
+                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8"
+                    Padding="14">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="64" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Width="64" Height="64" Background="{StaticResource SurfaceBrush}" CornerRadius="6">
+                        <Image Source="{Binding ImagePath, Converter={StaticResource PathToImage}}" Stretch="Uniform" Margin="6" />
+                    </Border>
+
+                    <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding Name}" Style="{StaticResource BodyText}" FontWeight="SemiBold"
+                                       FontSize="13" TextTrimming="CharacterEllipsis" />
+                            <Border Margin="10,0,0,0" Background="{StaticResource AlgoYellowBrush}" CornerRadius="3" Padding="6,2"
+                                    VerticalAlignment="Center"
+                                    Visibility="{Binding IsFeatured, Converter={StaticResource BoolToVisibility}}">
+                                <TextBlock Text="ÖNE ÇIKAN" FontSize="9" FontWeight="Bold" Foreground="#FF1A1A1F" />
+                            </Border>
+                            <Border Margin="6,0,0,0" CornerRadius="3" Padding="6,2"
+                                    VerticalAlignment="Center"
+                                    Visibility="{Binding HasTable, Converter={StaticResource BoolToVisibility}}">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#F5F6F7" Offset="0" />
+                                        <GradientStop Color="#D6D8DC" Offset="0.55" />
+                                        <GradientStop Color="#A9ADB3" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <TextBlock Text="TABLOLU" FontSize="9" FontWeight="Bold" Foreground="#FF1A1A1F" />
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                            <TextBlock Text="{Binding Code}" Style="{StaticResource MutedText}"
+                                       Visibility="{Binding Code, Converter={StaticResource NullToVisibility}}" />
+                            <TextBlock Text=" · " Style="{StaticResource MutedText}"
+                                       Visibility="{Binding Code, Converter={StaticResource NullToVisibility}}" />
+                            <TextBlock Style="{StaticResource BodyText}" FontWeight="SemiBold"
+                                       Foreground="{StaticResource PrimaryBrush}">
+                                <Run Text="{Binding Price, Converter={StaticResource PriceFormat}, Mode=OneWay}" />
+                                <Run Text=" " />
+                                <Run Text="{Binding Currency, Mode=OneWay}" />
+                            </TextBlock>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Style="{StaticResource IconButton}"
+                                Command="{Binding DataContext.MoveProductUpCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}" ToolTip="Yukarı taşı">
+                            <Path Data="M12 19V5 M5 12l7-7 7 7" Width="14" Height="14" Stretch="Uniform"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.6" Fill="Transparent" />
+                        </Button>
+                        <Button Style="{StaticResource IconButton}"
+                                Command="{Binding DataContext.MoveProductDownCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}" ToolTip="Aşağı taşı">
+                            <Path Data="M12 5v14 M19 12l-7 7-7-7" Width="14" Height="14" Stretch="Uniform"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.6" Fill="Transparent" />
+                        </Button>
+                        <Button Style="{StaticResource IconButton}"
+                                Command="{Binding DataContext.GenerateSingleProductPdfCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}" ToolTip="Ürün bilgi formu (tek sayfa PNG)">
+                            <Path Data="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6 M9 13h6 M9 17h4"
+                                  Width="14" Height="14" Stretch="Uniform"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.6" Fill="Transparent" />
+                        </Button>
+                        <Button Style="{StaticResource IconButton}"
+                                Command="{Binding DataContext.EditProductCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}" ToolTip="Düzenle">
+                            <Path Data="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z M15 5l4 4"
+                                  Width="14" Height="14" Stretch="Uniform"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.6" Fill="Transparent" />
+                        </Button>
+                        <Button Style="{StaticResource DangerIconButton}"
+                                Command="{Binding DataContext.DeleteProductCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}" ToolTip="Sil">
+                            <Path Data="M3 6h18 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2 M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6 M10 11v6 M14 11v6"
+                                  Width="14" Height="14" Stretch="Uniform"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.6" Fill="Transparent" />
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Window.InputBindings>
+        <KeyBinding Key="N" Modifiers="Control" Command="{Binding NewCatalogCommand}" />
+        <KeyBinding Key="O" Modifiers="Control" Command="{Binding OpenLatestPdfCommand}" />
+        <KeyBinding Key="L" Modifiers="Control" Command="{Binding OpenLibraryCommand}" />
+        <KeyBinding Key="P" Modifiers="Control" Command="{Binding GeneratePdfCommand}" />
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding GeneratePdfCommand}" />
+        <KeyBinding Key="F5" Command="{Binding RefreshPreviewCommand}" />
+    </Window.InputBindings>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1"
+                Background="{StaticResource BackgroundBrush}" Padding="24,18">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" Grid.Column="0">
+                    <Image Source="pack://application:,,,/Resources/algow_wordmark.png"
+                           Width="132" Height="40" Stretch="Uniform" HorizontalAlignment="Left" RenderOptions.BitmapScalingMode="HighQuality" />
+                    <StackPanel VerticalAlignment="Center" Margin="16,0,0,0">
+                        <TextBlock Text="Katalog &amp; Teklif Stüdyosu" Style="{StaticResource DisplayText}" FontSize="15" FontWeight="SemiBold" />
+                        <TextBlock Text="Teklif · Proforma · Katalog Üretim Aracı" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
+                    </StackPanel>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource IconButton}" Width="36" Height="36" Margin="0,0,8,0"
+                            Command="{Binding OpenPdfFolderCommand}" ToolTip="PDF klasörünü Dosya Gezgini'nde aç">
+                        <Path Data="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                              Width="18" Height="18" Stretch="Uniform"
+                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.6" Fill="Transparent"
+                              StrokeLineJoin="Round" />
+                    </Button>
+                    <Button Style="{StaticResource SecondaryButton}" Content="Yeni" Margin="0,0,8,0"
+                            Command="{Binding NewCatalogCommand}" ToolTip="Boş şablonla başla — Ctrl+N" />
+                    <Button Style="{StaticResource SecondaryButton}" Content="Aç" Margin="0,0,8,0"
+                            Command="{Binding OpenLatestPdfCommand}" ToolTip="En son PDF'i görüntüle — Ctrl+O" />
+                    <Button Style="{StaticResource SecondaryButton}" Content="Kütüphane" Margin="0,0,8,0"
+                            Command="{Binding OpenLibraryCommand}" ToolTip="Tüm üretilmiş PDF'ler — Ctrl+L" />
+                    <Button x:Name="RecentBtn" Style="{StaticResource SecondaryButton}" Content="Son Kataloglar ▾" Margin="0,0,12,0"
+                            ToolTip="Son açılan kataloglar"
+                            Click="OnRecentButtonClick">
+                        <Button.ContextMenu>
+                            <ContextMenu ItemsSource="{Binding RecentEntries}">
+                                <ContextMenu.ItemContainerStyle>
+                                    <Style TargetType="MenuItem">
+                                        <Setter Property="Header" Value="{Binding Name}" />
+                                        <Setter Property="Command" Value="{Binding DataContext.LoadRecentCatalogCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                        <Setter Property="CommandParameter" Value="{Binding}" />
+                                    </Style>
+                                </ContextMenu.ItemContainerStyle>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
+                    <Border Width="1" Background="{StaticResource BorderBrush}" Margin="0,6,12,6" />
+                    <Button Style="{StaticResource SecondaryButton}" Content="Teklif" Margin="0,0,8,0"
+                            Click="OnNewQuoteClick" ToolTip="Yeni fiyat teklifi oluştur" />
+                    <Button Style="{StaticResource SecondaryButton}" Content="Toplu Gönderim" Margin="0,0,8,0"
+                            Click="OnBulkSendClick" ToolTip="Excel/CRM/elle alıcılara toplu teklif e-postası" />
+                    <Button Style="{StaticResource SecondaryButton}" Content="Fiyat Listesi" Margin="0,0,8,0"
+                            Click="OnPriceBookClick" ToolTip="Ürün ve birim fiyat havuzu" />
+                    <Button Style="{StaticResource SecondaryButton}" Content="Müşteriler" Margin="0,0,8,0"
+                            Click="OnCustomersClick" ToolTip="Müşteri / kişi listesi" />
+                    <Button Style="{StaticResource SecondaryButton}" Content="Ayarlar" Margin="0,0,12,0"
+                            Click="OnSettingsClick" ToolTip="Mail hesabı ve e-posta şablonu" />
+                    <Button Style="{StaticResource PrimaryButton}" Content="PDF Üret"
+                            Command="{Binding GeneratePdfCommand}" ToolTip="Düzenlemeyi tamamla ve PDF üret — Ctrl+P" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <TabControl Grid.Row="1" Style="{StaticResource ModernTabControl}" Padding="0" Margin="24,0">
+            <TabControl.ItemContainerStyle>
+                <Style TargetType="TabItem" BasedOn="{StaticResource ModernTabItem}" />
+            </TabControl.ItemContainerStyle>
+
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock Text="Marka Bilgileri" FontFamily="{StaticResource BodyFont}"
+                               FontSize="13" FontWeight="SemiBold" />
+                </TabItem.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,16,0,32">
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="280" />
+                            <ColumnDefinition Width="32" />
+                            <ColumnDefinition Width="*" MaxWidth="640" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="8" Height="200">
+                                <Grid>
+                                    <Image Source="{Binding Catalog.Brand.LogoPath, Converter={StaticResource PathToImage}}"
+                                           Stretch="Uniform" Margin="20"
+                                           Visibility="{Binding Catalog.Brand.LogoPath, Converter={StaticResource NullToVisibility}}" />
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                Visibility="{Binding Catalog.Brand.LogoPath, Converter={StaticResource NullToVisibility}, ConverterParameter=Inverted}">
+                                        <Path Data="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z M9 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4z M21 15l-5-5L5 21"
+                                              Width="32" Height="32" Stretch="Uniform"
+                                              Stroke="{StaticResource MutedBrush}" StrokeThickness="1.5" Fill="Transparent" />
+                                        <TextBlock Text="Henüz logo yüklenmedi" Style="{StaticResource MutedText}"
+                                                   Margin="0,12,0,0" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <Button Style="{StaticResource SecondaryButton}" Content="Logo Seç"
+                                    Margin="0,12,0,0" HorizontalAlignment="Stretch"
+                                    Command="{Binding BrowseBrandLogoCommand}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Marka Adı (zorunlu)" Style="{StaticResource LabelText}" />
+                            <TextBox Style="{StaticResource ModernTextBox}"
+                                     Text="{Binding Catalog.Brand.Name, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <TextBlock Text="Slogan / Alt Başlık" Style="{StaticResource LabelText}" Margin="0,16,0,6" />
+                            <TextBox Style="{StaticResource ModernTextBox}"
+                                     Text="{Binding Catalog.Brand.Tagline, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <TextBlock Text="Filigran (boşsa kapatılır — örn: TASLAK, ÖRNEKTİR, ÇERKAR 2026)" Style="{StaticResource LabelText}" Margin="0,16,0,6" />
+                            <TextBox Style="{StaticResource ModernTextBox}"
+                                     Text="{Binding Catalog.Brand.WatermarkText, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <CheckBox Style="{StaticResource ModernCheckBox}" Margin="0,16,0,0"
+                                      Content="Logonun arkasında beyaz dikdörtgen göster"
+                                      IsChecked="{Binding Catalog.Brand.ShowLogoBackground}"
+                                      ToolTip="Açıksa logo beyaz kart içinde gözükür. Kapalıysa logo direkt sayfada (şeffaf arka plan)." />
+
+                            <TextBlock Text="Hakkımızda Metni" Style="{StaticResource LabelText}" Margin="0,16,0,6" />
+                            <TextBox Style="{StaticResource ModernTextBox}" Height="120"
+                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Auto" VerticalContentAlignment="Top"
+                                     Text="{Binding Catalog.Brand.About, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <Grid Margin="0,16,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Telefon" Style="{StaticResource LabelText}" />
+                                    <TextBox Style="{StaticResource ModernTextBox}"
+                                             Text="{Binding Catalog.Brand.Phone, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="E-posta" Style="{StaticResource LabelText}" />
+                                    <TextBox Style="{StaticResource ModernTextBox}"
+                                             Text="{Binding Catalog.Brand.Email, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid Margin="0,16,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Web" Style="{StaticResource LabelText}" />
+                                    <TextBox Style="{StaticResource ModernTextBox}"
+                                             Text="{Binding Catalog.Brand.Web, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Adres" Style="{StaticResource LabelText}" />
+                                    <TextBox Style="{StaticResource ModernTextBox}"
+                                             Text="{Binding Catalog.Brand.Address, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock Text="Kapak Sayfası" FontFamily="{StaticResource BodyFont}"
+                               FontSize="13" FontWeight="SemiBold" />
+                </TabItem.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,16,0,32">
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MaxWidth="640" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="1" Margin="24,0,0,0" VerticalAlignment="Top">
+                            <TextBlock Text="Canlı Önizleme" Style="{StaticResource LabelText}" Margin="0,0,0,6" />
+                            <TextBlock Text="Seçili tasarım + yüklenen görsel ile A4 kapağın nasıl görüneceği. Tasarım değiştirince veya görsel yükleyince otomatik yenilenir."
+                                       Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                            <Border Background="{StaticResource BackgroundBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6"
+                                    Width="320" Height="452" HorizontalAlignment="Left">
+                                <Grid>
+                                    <Image Source="{Binding CoverPreviewImage}" Stretch="Uniform" Margin="2" />
+                                    <TextBlock Text="Önizleme yükleniyor..." Style="{StaticResource MutedText}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Visibility="{Binding IsCoverPreviewLoading, Converter={StaticResource BoolToVisibility}}" />
+                                </Grid>
+                            </Border>
+                            <Button Style="{StaticResource SecondaryButton}" Content="Önizlemeyi Yenile"
+                                    Command="{Binding RefreshPreviewCommand}" Margin="0,12,0,0" HorizontalAlignment="Left" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Bu alandaki düzenlemeler sadece PDF'in ilk sayfasını etkiler. Boş bırakılan alanlar varsayılan değerle (marka adı/yıl/açıklama) doldurulur."
+                                       Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,18" />
+
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="🎨 Kapak Tasarım Stüdyosu (Canva tarzı sürükle-bırak)" Style="{StaticResource LabelText}" Margin="0,0,0,4" FontWeight="SemiBold" />
+                                    <TextBlock Text="Tam kontrol: fotoğraf, başlık, metin, kutu, çizgi elementlerini sürükle-bırak ile yerleştir. Katman sıralı (z-index), kırpma + boyutlandırma. Boş bırakırsan seçili tasarım kullanılır."
+                                               Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Style="{StaticResource PrimaryButton}" Content="Kapak Tasarla"
+                                                Command="{Binding OpenCoverDesignerCommand}" Margin="0,0,8,0" />
+                                        <Button Style="{StaticResource SecondaryButton}" Content="Tasarımı Temizle"
+                                                Command="{Binding ClearCoverDesignCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,24">
+                                <StackPanel>
+                                    <TextBlock Text="Özel Kapak Görseli (opsiyonel — Stüdyo'yu kullanmıyorsan)" Style="{StaticResource LabelText}" Margin="0,0,0,4" />
+                                    <TextBlock Text="Bir görsel yüklerseniz aşağıdaki alanlar görmezden gelinir. Yerleşim modunu seçin, sonra görseli yükleyin — kırpma penceresi seçtiğiniz mod için doğru oranı kilitler."
+                                               Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                                    <TextBlock Text="Yerleşim modu" Style="{StaticResource LabelText}" Margin="0,0,0,4" />
+                                    <ComboBox SelectedValue="{Binding Catalog.Cover.CustomCoverImageMode}"
+                                              SelectedValuePath="Tag" Margin="0,0,0,12">
+                                        <ComboBoxItem Content="Tam sayfa — görsel A4'ün tamamı, üstüne marka paneli" Tag="{x:Static m:CoverImageMode.FullPage}" />
+                                        <ComboBoxItem Content="Üst yarı foto + alt yarı marka şeridi (logo, başlık, iletişim)" Tag="{x:Static m:CoverImageMode.TopWithBrandBar}" />
+                                        <ComboBoxItem Content="Sağ yarı foto + sol yarı tipografi (başlık, slogan, year)" Tag="{x:Static m:CoverImageMode.BackgroundWithOverlay}" />
+                                    </ComboBox>
+                                    <Border Background="{StaticResource BackgroundBrush}" CornerRadius="6" Height="180"
+                                            BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                                        <Grid>
+                                            <Image Source="{Binding Catalog.Cover.CustomCoverImagePath, Converter={StaticResource PathToImage}}"
+                                                   Stretch="Uniform" Margin="14"
+                                                   Visibility="{Binding Catalog.Cover.CustomCoverImagePath, Converter={StaticResource NullToVisibility}}" />
+                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                        Visibility="{Binding Catalog.Cover.CustomCoverImagePath, Converter={StaticResource NullToVisibility}, ConverterParameter=Inverted}">
+                                                <Path Data="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z M9 9a2 2 0 1 1 0-4 2 2 0 0 1 0 4z M21 15l-5-5L5 21"
+                                                      Width="32" Height="32" Stretch="Uniform"
+                                                      Stroke="{StaticResource MutedBrush}" StrokeThickness="1.5" Fill="Transparent" />
+                                                <TextBlock Text="Henüz özel kapak yüklenmedi" Style="{StaticResource MutedText}"
+                                                           Margin="0,12,0,0" HorizontalAlignment="Center" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                        <Button Style="{StaticResource SecondaryButton}" Content="Kapak Görseli Yükle"
+                                                Margin="0,0,8,0" Command="{Binding BrowseCoverImageCommand}" />
+                                        <Button Style="{StaticResource SecondaryButton}" Content="Kaldır"
+                                                Command="{Binding ClearCoverImageCommand}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock Text="Ana Başlık (boşsa marka adı kullanılır)" Style="{StaticResource LabelText}" />
+                            <TextBox Style="{StaticResource ModernTextBox}"
+                                     Text="{Binding Catalog.Cover.MainTitle, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <TextBlock Text="Alt Başlık" Style="{StaticResource LabelText}" Margin="0,16,0,6" />
+                            <TextBox Style="{StaticResource ModernTextBox}"
+                                     Text="{Binding Catalog.Cover.Subtitle, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <Grid Margin="0,16,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="2*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Yıl (boşsa içinde bulunulan yıl)" Style="{StaticResource LabelText}" />
+                                    <TextBox Style="{StaticResource ModernTextBox}"
+                                             Text="{Binding Catalog.Cover.YearText, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Bölüm Başlığı" Style="{StaticResource LabelText}" />
+                                    <TextBox Style="{StaticResource ModernTextBox}"
+                                             Text="{Binding Catalog.Cover.SectionLabel, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Text="Tarih (boşsa yıl gösterilir, doluysa onun yerine basılır — örn: Mayıs 2026)" Style="{StaticResource LabelText}" Margin="0,16,0,6" />
+                            <TextBox Style="{StaticResource ModernTextBox}"
+                                     Text="{Binding Catalog.Cover.DateText, UpdateSourceTrigger=PropertyChanged}" />
+
+                            <TextBlock Text="Hakkımızda Metni" Style="{StaticResource LabelText}" Margin="0,24,0,6" />
+                            <CheckBox Style="{StaticResource ModernCheckBox}"
+                                      Content="Hakkımızda metnini kapakta göster"
+                                      IsChecked="{Binding Catalog.Cover.ShowAbout}" />
+
+                            <CheckBox Style="{StaticResource ModernCheckBox}" Margin="0,16,0,0"
+                                      Content="İletişim şeridini göster (telefon · e-posta · web · adres)"
+                                      IsChecked="{Binding Catalog.Cover.ShowContactBar}" />
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" TextElement.FontFamily="{StaticResource BodyFont}"
+                                TextElement.FontSize="13" TextElement.FontWeight="SemiBold">
+                        <TextBlock Text="Referanslar" />
+                        <TextBlock Text="{Binding Catalog.References.Count, StringFormat=' ({0})'}"
+                                   Foreground="{StaticResource MutedBrush}" />
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Margin="0,16,0,32">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Referanslar" Style="{StaticResource DisplayText}" FontSize="22" />
+                            <TextBlock Text="İş ortakları ve değerli müşteriler — kapak sonrası sayfada listelenir."
+                                       Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <CheckBox Style="{StaticResource ModernCheckBox}"
+                                      Content="Referans sayfası istemiyorum" VerticalAlignment="Center" Margin="0,0,12,0"
+                                      IsChecked="{Binding Catalog.SkipReferencesPage}"
+                                      ToolTip="İşaretliyse üretilen PDF'e referans sayfası eklenmez." />
+                            <Button Style="{StaticResource PrimaryButton}" Content="Referans Ekle"
+                                    Command="{Binding AddReferenceCommand}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Grid.Row="1" Margin="0,28,0,0">
+                        <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="48"
+                                Visibility="{Binding Catalog.References.Count, Converter={StaticResource CountToVisibility}}">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Path Data="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2 M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2 M10 6h4 M10 10h4 M10 14h4 M10 18h4"
+                                      Width="40" Height="40" Stretch="Uniform"
+                                      Stroke="{StaticResource MutedBrush}" StrokeThickness="1.5" Fill="Transparent" />
+                                <TextBlock Text="Henüz referans eklenmedi" Style="{StaticResource BodyText}"
+                                           FontWeight="SemiBold" Margin="0,16,0,4" HorizontalAlignment="Center" />
+                                <TextBlock Text="Yukarıdan 'Referans Ekle' ile firma logosu ve adı ekleyin."
+                                           Style="{StaticResource MutedText}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      Visibility="{Binding Catalog.References.Count, Converter={StaticResource CountToVisibility}, ConverterParameter=Inverted}">
+                            <ItemsControl ItemsSource="{Binding Catalog.References}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="4" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" TextElement.FontFamily="{StaticResource BodyFont}"
+                                TextElement.FontSize="13" TextElement.FontWeight="SemiBold">
+                        <TextBlock Text="Ürünler" />
+                        <TextBlock Text="{Binding Catalog.Products.Count, StringFormat=' ({0})'}"
+                                   Foreground="{StaticResource MutedBrush}" />
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid Margin="0,16,0,32">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Ürünler" Style="{StaticResource DisplayText}" FontSize="22" />
+                            <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0">
+                                <Run Text="{Binding Catalog.Products.Count, Mode=OneWay}" />
+                                <Run Text=" ürün · " />
+                                <Run Text="{Binding CalculatedPageCount, Mode=OneWay}" />
+                                <Run Text=" sayfalık katalog (sayfa başına " />
+                                <Run Text="{Binding ProductsPerLayoutPage, Mode=OneWay}" />
+                                <Run Text=" ürün)" />
+                            </TextBlock>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource SecondaryButton}" Content="Tekli Ürün PNG"
+                                    Margin="0,0,8,0" Command="{Binding CreateStandaloneProductPdfCommand}"
+                                    ToolTip="Kataloğa eklemeden tek sayfalık ürün bilgi formu PNG görseli oluştur" />
+                            <Button Style="{StaticResource SecondaryButton}" Content="Excel'den İçe Aktar"
+                                    Margin="0,0,8,0" Command="{Binding ImportProductsFromExcelCommand}" />
+                            <Button Style="{StaticResource PrimaryButton}" Content="Ürün Ekle"
+                                    Command="{Binding AddProductCommand}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Grid.Row="1" Margin="0,28,0,0">
+                        <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="48"
+                                Visibility="{Binding Catalog.Products.Count, Converter={StaticResource CountToVisibility}}">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Path Data="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M3.27 6.96 12 12.01l8.73-5.05 M12 22.08V12"
+                                      Width="40" Height="40" Stretch="Uniform"
+                                      Stroke="{StaticResource MutedBrush}" StrokeThickness="1.5" Fill="Transparent" />
+                                <TextBlock Text="Henüz ürün eklenmedi" Style="{StaticResource BodyText}"
+                                           FontWeight="SemiBold" Margin="0,16,0,4" HorizontalAlignment="Center" />
+                                <TextBlock Text="Yukarıdan 'Ürün Ekle' ile katalogun ürünlerini ekleyin."
+                                           Style="{StaticResource MutedText}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      Visibility="{Binding Catalog.Products.Count, Converter={StaticResource CountToVisibility}, ConverterParameter=Inverted}">
+                            <ItemsControl ItemsSource="{Binding Catalog.Products}" />
+                        </ScrollViewer>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock Text="Tasarımlar" FontFamily="{StaticResource BodyFont}"
+                               FontSize="13" FontWeight="SemiBold" />
+                </TabItem.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,16,0,32">
+                    <StackPanel Margin="0,12,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="PDF Tasarımları" Style="{StaticResource DisplayText}" FontSize="22" />
+                                <TextBlock Style="{StaticResource MutedText}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                           Text="Aşağıdan kapak için bir tasarım seç. Üzerine tema renkleri ile marka ve katalog bilgileri yazılır." />
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Görsel Klasörü"
+                                    VerticalAlignment="Top" Margin="12,0,0,0"
+                                    Command="{Binding OpenCoversFolderCommand}"
+                                    ToolTip="Yüklenen tasarım görsellerinin bulunduğu klasörü aç" />
+                        </Grid>
+
+                        <Border Margin="0,20,0,0" />
+
+                        <ItemsControl ItemsSource="{Binding AvailableDesigns}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Width="220" Margin="0,0,16,16" Padding="0" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0"
+                                            Command="{Binding DataContext.SelectDesignCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding Id}">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="DesignCardBorder" CornerRadius="10" Padding="14"
+                                                        Background="{StaticResource SurfaceBrush}"
+                                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="2">
+                                                    <StackPanel>
+                                                        <Border CornerRadius="6" ClipToBounds="True"
+                                                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                                                HorizontalAlignment="Center" Margin="0,0,0,12">
+                                                            <ContentControl Content="{Binding}"
+                                                                            ContentTemplateSelector="{StaticResource DesignPreviewSelector}"
+                                                                            Width="170" Height="240" />
+                                                        </Border>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0" Text="{Binding Name}" Style="{StaticResource BodyText}"
+                                                                       FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
+                                                            <Border x:Name="SelectedBadge" Grid.Column="1"
+                                                                    Background="{StaticResource AlgoYellowBrush}"
+                                                                    CornerRadius="4" Padding="8,3" Visibility="Collapsed">
+                                                                <TextBlock Text="SEÇİLİ" FontFamily="{StaticResource BodyFont}"
+                                                                           FontSize="10" FontWeight="Bold" Foreground="#FF1A1A1F"
+                                                                           VerticalAlignment="Center" />
+                                                            </Border>
+                                                        </Grid>
+                                                        <TextBlock Text="{Binding Description}" Style="{StaticResource MutedText}"
+                                                                   TextWrapping="Wrap" Margin="0,6,0,0" />
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="DesignCardBorder" Property="BorderBrush" Value="{StaticResource MutedBrush}" />
+                                                    </Trigger>
+                                                    <DataTrigger Value="True">
+                                                        <DataTrigger.Binding>
+                                                            <MultiBinding Converter="{StaticResource StringEquals}">
+                                                                <Binding Path="DataContext.Catalog.DesignId" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                                <Binding Path="Id" />
+                                                            </MultiBinding>
+                                                        </DataTrigger.Binding>
+                                                        <Setter TargetName="DesignCardBorder" Property="BorderBrush" Value="{StaticResource AlgoYellowBrush}" />
+                                                        <Setter TargetName="SelectedBadge" Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock Text="Sayfa Düzeni" FontFamily="{StaticResource BodyFont}"
+                               FontSize="13" FontWeight="SemiBold" />
+                </TabItem.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,16,0,32">
+                    <StackPanel Margin="0,12,0,0">
+                        <TextBlock Text="Sayfa Düzeni" Style="{StaticResource DisplayText}" FontSize="22" />
+                        <TextBlock Text="Bir sayfa başına kaç ürün gireceğini seçin. Kart yüksekliği seçime göre otomatik ayarlanır."
+                                   Style="{StaticResource MutedText}" Margin="0,4,0,20" TextWrapping="Wrap" />
+
+                        <ItemsControl ItemsSource="{Binding AvailableLayouts}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Width="220" Margin="0,0,16,16" Padding="0" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0"
+                                            Command="{Binding DataContext.SelectLayoutCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding Id}">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="LayoutCardBorder" CornerRadius="10" Padding="14"
+                                                        Background="{StaticResource SurfaceBrush}"
+                                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="2">
+                                                    <StackPanel>
+                                                        <Border CornerRadius="6" ClipToBounds="True"
+                                                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                                                HorizontalAlignment="Center" Margin="0,0,0,12">
+                                                            <ContentControl Content="{Binding}"
+                                                                            ContentTemplate="{StaticResource LayoutPreviewTemplate}" />
+                                                        </Border>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0" Text="{Binding Name}" Style="{StaticResource BodyText}"
+                                                                       FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
+                                                            <Border x:Name="SelectedBadge" Grid.Column="1"
+                                                                    Background="{StaticResource AlgoYellowBrush}"
+                                                                    CornerRadius="4" Padding="8,3" Visibility="Collapsed">
+                                                                <TextBlock Text="SEÇİLİ" FontFamily="{StaticResource BodyFont}"
+                                                                           FontSize="10" FontWeight="Bold" Foreground="#FF1A1A1F"
+                                                                           VerticalAlignment="Center" />
+                                                            </Border>
+                                                        </Grid>
+                                                        <TextBlock Text="{Binding Summary}" Style="{StaticResource BodyText}"
+                                                                   FontWeight="Medium" FontSize="11" Margin="0,4,0,0"
+                                                                   Foreground="{StaticResource PrimaryBrush}" />
+                                                        <TextBlock Text="{Binding Description}" Style="{StaticResource MutedText}"
+                                                                   TextWrapping="Wrap" Margin="0,4,0,0" />
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="LayoutCardBorder" Property="BorderBrush" Value="{StaticResource MutedBrush}" />
+                                                    </Trigger>
+                                                    <DataTrigger Value="True">
+                                                        <DataTrigger.Binding>
+                                                            <MultiBinding Converter="{StaticResource StringEquals}">
+                                                                <Binding Path="DataContext.Catalog.LayoutId" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                                <Binding Path="Id" />
+                                                            </MultiBinding>
+                                                        </DataTrigger.Binding>
+                                                        <Setter TargetName="LayoutCardBorder" Property="BorderBrush" Value="{StaticResource AlgoYellowBrush}" />
+                                                        <Setter TargetName="SelectedBadge" Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,24,0,0" Padding="0,24,0,0">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Sayfa Planlayıcı" Style="{StaticResource DisplayText}" FontSize="18" />
+                                        <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,0">
+                                            Açıldığında sayfalar tek tek elle düzenlenebilir: solda PDF sayfa önizlemesi,
+                                            sağda ürün havuzu. Ürünleri sürükle-bırak ile slotlara yerleştirirsin.
+                                            Bu seçenek kapalıyken sayfalar otomatik akar (Sayfa Düzeni yukarıdan seçilir).
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <CheckBox Grid.Column="1" Style="{StaticResource ModernCheckBox}"
+                                              Content="Sayfaları elle düzenle (manuel mod)"
+                                              IsChecked="{Binding Catalog.UseCustomPageLayouts}"
+                                              VerticalAlignment="Center" Margin="16,0,0,0" />
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                                    <Button Style="{StaticResource PrimaryButton}" Content="Sayfa Planlayıcı'yı Aç"
+                                            Command="{Binding OpenPagePlannerCommand}" />
+                                    <TextBlock Style="{StaticResource MutedText}" Margin="14,0,0,0" VerticalAlignment="Center">
+                                        <Run Text="Şu anda " />
+                                        <Run Text="{Binding Catalog.CustomPages.Count, Mode=OneWay}" />
+                                        <Run Text=" sayfa planlanmış" />
+                                    </TextBlock>
+                                </StackPanel>
+
+                                <!-- CustomPages alt-agaci (125 satir) kaldirildi 2026-05-22 Faz 30 cleanup. ViewModel command binding'leri (MoveCustomPageUp/Down/Remove/AddCustomPageCommand) ve code-behind handler'lari (OnAssignProductToPage, OnRemoveProductFromPage) orphan kaldi — derleme bozulmaz. Feature gerekirse XAML re-add edilir. -->
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock Text="Temalar" FontFamily="{StaticResource BodyFont}"
+                               FontSize="13" FontWeight="SemiBold" />
+                </TabItem.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,16,0,32">
+                    <StackPanel Margin="0,12,0,0">
+                        <TextBlock Text="PDF Temaları" Style="{StaticResource DisplayText}" FontSize="22" />
+                        <TextBlock Text="Bir tema seçin — tüm PDF'lerde renk paleti ve başlık tipografisi bu temaya göre çizilir."
+                                   Style="{StaticResource MutedText}" Margin="0,4,0,20" />
+
+                        <ItemsControl ItemsSource="{Binding AvailableThemes}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Width="280" Margin="0,0,16,16" Padding="0" Cursor="Hand"
+                                            Background="Transparent" BorderThickness="0"
+                                            Command="{Binding DataContext.SelectThemeCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding Id}">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="ThemeCardBorder" CornerRadius="10" Padding="18"
+                                                        Background="{StaticResource SurfaceBrush}"
+                                                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="2">
+                                                    <StackPanel>
+                                                        <Grid>
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Grid.Column="0" Text="{Binding Name}" Style="{StaticResource BodyText}"
+                                                                       FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
+                                                            <Border x:Name="SelectedBadge" Grid.Column="1"
+                                                                    Background="{StaticResource AlgoYellowBrush}"
+                                                                    CornerRadius="4" Padding="8,3" Visibility="Collapsed">
+                                                                <TextBlock Text="SEÇİLİ" FontFamily="{StaticResource BodyFont}"
+                                                                           FontSize="10" FontWeight="Bold" Foreground="#FF1A1A1F"
+                                                                           VerticalAlignment="Center" />
+                                                            </Border>
+                                                        </Grid>
+                                                        <TextBlock Text="{Binding Description}" Style="{StaticResource MutedText}"
+                                                                   TextWrapping="Wrap" Margin="0,6,0,12" />
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Border Width="40" Height="40" CornerRadius="4" Margin="0,0,6,0">
+                                                                <Border.Background>
+                                                                    <SolidColorBrush Color="{Binding PrimaryHex}" />
+                                                                </Border.Background>
+                                                            </Border>
+                                                            <Border Width="40" Height="40" CornerRadius="4" Margin="0,0,6,0">
+                                                                <Border.Background>
+                                                                    <SolidColorBrush Color="{Binding SecondaryHex}" />
+                                                                </Border.Background>
+                                                            </Border>
+                                                            <Border Width="40" Height="40" CornerRadius="4" Margin="0,0,6,0">
+                                                                <Border.Background>
+                                                                    <SolidColorBrush Color="{Binding AccentHex}" />
+                                                                </Border.Background>
+                                                            </Border>
+                                                            <Border Width="40" Height="40" CornerRadius="4" Margin="0,0,6,0"
+                                                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+                                                                <Border.Background>
+                                                                    <SolidColorBrush Color="{Binding SurfaceHex}" />
+                                                                </Border.Background>
+                                                            </Border>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="ThemeCardBorder" Property="BorderBrush" Value="{StaticResource MutedBrush}" />
+                                                    </Trigger>
+                                                    <DataTrigger Value="True">
+                                                        <DataTrigger.Binding>
+                                                            <MultiBinding Converter="{StaticResource StringEquals}">
+                                                                <Binding Path="DataContext.Catalog.ThemeId" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                                <Binding Path="Id" />
+                                                            </MultiBinding>
+                                                        </DataTrigger.Binding>
+                                                        <Setter TargetName="ThemeCardBorder" Property="BorderBrush" Value="{StaticResource AlgoYellowBrush}" />
+                                                        <Setter TargetName="SelectedBadge" Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0"
+                Background="{StaticResource BackgroundBrush}" Padding="24,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Style="{StaticResource MutedText}" VerticalAlignment="Center">
+                    <Run Text="{Binding Catalog.Products.Count, Mode=OneWay}" />
+                    <Run Text=" ürün · " />
+                    <Run Text="{Binding Catalog.References.Count, Mode=OneWay}" />
+                    <Run Text=" referans · " />
+                    <Run Text="{Binding CalculatedPageCount, Mode=OneWay}" />
+                    <Run Text=" sayfa" />
+                </TextBlock>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
