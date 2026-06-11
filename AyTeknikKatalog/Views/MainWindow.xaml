@@ -366,7 +366,7 @@
                             <TextBox Style="{StaticResource ModernTextBox}"
                                      Text="{Binding Catalog.Brand.Tagline, UpdateSourceTrigger=PropertyChanged}" />
 
-                            <TextBlock Text="Filigran (boşsa kapatılır — örn: TASLAK, ÖRNEKTİR, ÇERKAR 2026)" Style="{StaticResource LabelText}" Margin="0,16,0,6" />
+                            <TextBlock Text="Filigran (boşsa kapatılır — örn: TASLAK, ÖRNEKTİR, FİRMA 2026)" Style="{StaticResource LabelText}" Margin="0,16,0,6" />
                             <TextBox Style="{StaticResource ModernTextBox}"
                                      Text="{Binding Catalog.Brand.WatermarkText, UpdateSourceTrigger=PropertyChanged}" />
 

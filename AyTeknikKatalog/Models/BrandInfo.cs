@@ -12,7 +12,7 @@ public partial class BrandInfo : ObservableObject
     [ObservableProperty] private string _web = "";
     [ObservableProperty] private string _address = "";
     [ObservableProperty] private string _logoPath = "";
-    // İçerik sayfalarında çapraz watermark (örn: "DRAFT", "ÖRNEKTİR", "CERKAR 2026"). Boş ise watermark yok.
+    // İçerik sayfalarında çapraz watermark (örn: "DRAFT", "ÖRNEKTİR", "FİRMA 2026"). Boş ise watermark yok.
     [ObservableProperty] private string _watermarkText = "";
     // Logo etrafında beyaz dikdörtgen çerçeve. False (default): logo direkt görsel; true: beyaz kart içinde (önceki davranış).
     [ObservableProperty] private bool _showLogoBackground;
