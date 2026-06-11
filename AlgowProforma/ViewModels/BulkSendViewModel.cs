@@ -134,6 +134,7 @@ public partial class BulkSendViewModel : ObservableObject
         // SMTP: tek oturum aç-kapat. Gmail: paylaşılan servis (token gerekince kendi tazeler).
         MailService? smtp = useGmail ? null : new MailService(_settings.Mail, pw!);
         var gmail = useGmail ? new GmailService() : null;
+        var quoteTheme = PdfTheme.GetById(_settings.QuoteThemeId);   // döngü dışında bir kez
 
         try
         {
@@ -151,7 +152,7 @@ public partial class BulkSendViewModel : ObservableObject
 
                     displayName = tmpl.AttachmentName(r.TargetName, DateTime.Today);
                     var pdfPath = Path.Combine(AppPaths.QuotesDir, q.Id + ".pdf"); // benzersiz disk yolu (aynı firma/boş ad çakışmasın)
-                    QuotePdfService.Generate(q, _brand, pdfPath);
+                    QuotePdfService.Generate(q, _brand, pdfPath, quoteTheme);
 
                     var body = tmpl.FullBody(r.ContactName, r.Salutation);
                     var res = useGmail

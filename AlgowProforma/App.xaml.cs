@@ -87,7 +87,8 @@ public partial class App : Application
                 quote.Lines.Add(new AlgowProforma.Models.QuoteLine { Code = "CER0001", Name = "Kör Tapa 1/2\"", Unit = "adet", Quantity = 200, UnitPrice = 18.5m, VatRate = 20m });
                 quote.Lines.Add(new AlgowProforma.Models.QuoteLine { Code = "CER0054", Name = "Rakor Grubu 3/4\"", Description = "Çift taraflı · conta dahil", Unit = "takım", Quantity = 40, UnitPrice = 92m, VatRate = 20m });
                 var outPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "algow-teklif-ornek.pdf");
-                AlgowProforma.Services.QuotePdfService.Generate(quote, brand, outPath);
+                var quoteTheme = AlgowProforma.Models.PdfTheme.GetById(new AlgowProforma.Services.SettingsService().Load().QuoteThemeId);
+                AlgowProforma.Services.QuotePdfService.Generate(quote, brand, outPath, quoteTheme);
             }
             catch (Exception ex)
             {

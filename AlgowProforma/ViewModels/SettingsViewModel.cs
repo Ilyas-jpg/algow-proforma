@@ -21,6 +21,9 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _connectedGmailEmail = "";
     [ObservableProperty] private bool _hasGmailConnection;
 
+    /// <summary>"Teklif teması" dropdown kaynağı — katalogla aynı 23 palet.</summary>
+    public System.Collections.Generic.IReadOnlyList<PdfTheme> QuoteThemes => PdfTheme.All;
+
     public SettingsViewModel()
     {
         _settings = _service.Load();

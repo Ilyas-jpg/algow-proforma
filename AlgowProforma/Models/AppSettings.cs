@@ -131,4 +131,10 @@ public partial class AppSettings : ObservableObject
     /// White-label: müşteri kendi kurum kodunu Ayarlar'dan girer (varsayılan boş — markaya bağımlı değil).
     /// </summary>
     [ObservableProperty] private string _quoteNoPrefix = "";
+
+    /// <summary>
+    /// Teklif/proforma PDF renk teması (PdfTheme.Id). Ayarlar'daki "Teklif teması" seçimi —
+    /// katalog temasından bağımsız (kullanıcı kararı 2026-06-12). Bilinmeyen/boş id → klasik.
+    /// </summary>
+    [ObservableProperty] private string _quoteThemeId = "klasik";
 }

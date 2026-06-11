@@ -12,23 +12,36 @@ namespace AlgowProforma.Services;
 /// <summary>
 /// Premium fiyat teklifi PDF üretimi (QuestPDF). Tek doğru kaynak: toplamlar QuoteCalculator'dan (q.Totals).
 /// Türkçe için Segoe UI (her Windows'ta var, PDF'e gömülür). Üretim sonrası Linearize (hızlı ilk render).
+/// Palet, Ayarlar'daki "Teklif teması"ndan gelir (AppSettings.QuoteThemeId) — katalog temasından bağımsız.
 /// </summary>
-public static class QuotePdfService
+public class QuotePdfService
 {
-    // Varsayılan teklif paleti — klasik tema (lacivert + nötr). Müşteriye sabit değil;
-    // ileride seçili katalog temasına bağlanabilir (white-label).
-    private const string Primary = "#2E338F";
-    private const string Secondary = "#5368A6";
-    private const string Accent = "#7C84C7";
-    private const string Ink = "#1A1A1F";
-    private const string Muted = "#6B6B72";
-    private const string Line = "#E5E5E7";
-    private const string Tint = "#F5F5F7";
+    // Tema → palet eşlemesi (PdfService ile aynı alan adlandırması). theme=null → PdfTheme.Default
+    // ("klasik") = eski sabit lacivert görünüm. (SecondaryHex teklif şablonunda kullanılmıyor.)
+    private readonly string Primary;
+    private readonly string Accent;
+    private readonly string Ink;
+    private readonly string Muted;
+    private readonly string Line;
+    private readonly string Tint;
     private const string White = "#FFFFFF";
 
     private static readonly CultureInfo Tr = new("tr-TR");
 
-    public static void Generate(Quote q, BrandInfo brand, string outputPath)
+    private QuotePdfService(PdfTheme theme)
+    {
+        Primary = theme.PrimaryHex;
+        Accent = theme.AccentHex;
+        Ink = theme.TextHex;
+        Muted = theme.MutedHex;
+        Line = theme.BorderHex;
+        Tint = theme.SurfaceHex;
+    }
+
+    public static void Generate(Quote q, BrandInfo brand, string outputPath, PdfTheme? theme = null)
+        => new QuotePdfService(theme ?? PdfTheme.Default).Render(q, brand, outputPath);
+
+    private void Render(Quote q, BrandInfo brand, string outputPath)
     {
         var totals = q.Totals;
 
@@ -59,7 +72,7 @@ public static class QuotePdfService
     }
 
     // ---------- başlık ----------
-    private static void Header(IContainer c, Quote q, BrandInfo brand)
+    private void Header(IContainer c, Quote q, BrandInfo brand)
     {
         c.Column(col =>
         {
@@ -88,7 +101,7 @@ public static class QuotePdfService
     }
 
     // ---------- içerik ----------
-    private static void Content(IContainer c, Quote q, BrandInfo brand, QuoteTotals totals)
+    private void Content(IContainer c, Quote q, BrandInfo brand, QuoteTotals totals)
     {
         c.PaddingVertical(14).Column(col =>
         {
@@ -117,7 +130,7 @@ public static class QuotePdfService
         });
     }
 
-    private static void CustomerBox(IContainer c, Quote q)
+    private void CustomerBox(IContainer c, Quote q)
     {
         c.Background(Tint).Border(1).BorderColor(Line).Padding(12).Column(col =>
         {
@@ -140,7 +153,7 @@ public static class QuotePdfService
         });
     }
 
-    private static void MetaBox(IContainer c, Quote q)
+    private void MetaBox(IContainer c, Quote q)
     {
         c.Border(1).BorderColor(Line).Padding(12).Column(col =>
         {
@@ -151,7 +164,7 @@ public static class QuotePdfService
         });
     }
 
-    private static void MetaRow(ColumnDescriptor col, string label, string value)
+    private void MetaRow(ColumnDescriptor col, string label, string value)
     {
         col.Item().PaddingVertical(1.5f).Row(r =>
         {
@@ -160,7 +173,7 @@ public static class QuotePdfService
         });
     }
 
-    private static void LinesTable(IContainer c, Quote q)
+    private void LinesTable(IContainer c, Quote q)
     {
         c.Table(table =>
         {
@@ -216,7 +229,7 @@ public static class QuotePdfService
         });
     }
 
-    private static void HeadCell(TableCellDescriptor h, string text, TextAlign align)
+    private void HeadCell(TableCellDescriptor h, string text, TextAlign align)
     {
         var cell = h.Cell().Background(Primary).PaddingVertical(6).PaddingHorizontal(6);
         var t = align switch
@@ -228,10 +241,10 @@ public static class QuotePdfService
         t.Text(text).FontSize(8).Bold().FontColor(White).LetterSpacing(0.03f);
     }
 
-    private static IContainer BodyCell(TableDescriptor table, string bg)
+    private IContainer BodyCell(TableDescriptor table, string bg)
         => table.Cell().Background(bg).BorderBottom(1).BorderColor(Line).PaddingVertical(6).PaddingHorizontal(6);
 
-    private static void TotalsBox(IContainer c, Quote q, QuoteTotals t)
+    private void TotalsBox(IContainer c, Quote q, QuoteTotals t)
     {
         c.Column(col =>
         {
@@ -247,7 +260,7 @@ public static class QuotePdfService
         });
     }
 
-    private static void TotalRow(ColumnDescriptor col, string label, string value, bool bold)
+    private void TotalRow(ColumnDescriptor col, string label, string value, bool bold)
     {
         col.Item().PaddingVertical(3).Row(r =>
         {
@@ -256,7 +269,7 @@ public static class QuotePdfService
         });
     }
 
-    private static void Terms(IContainer c, Quote q)
+    private void Terms(IContainer c, Quote q)
     {
         c.PaddingTop(4).Column(col =>
         {
@@ -273,7 +286,7 @@ public static class QuotePdfService
         });
     }
 
-    private static void TermRow(ColumnDescriptor col, string label, string value)
+    private void TermRow(ColumnDescriptor col, string label, string value)
     {
         if (string.IsNullOrWhiteSpace(value)) return;
         col.Item().Row(r =>
@@ -284,7 +297,7 @@ public static class QuotePdfService
     }
 
     // ---------- altlık ----------
-    private static void Footer(IContainer c, BrandInfo brand)
+    private void Footer(IContainer c, BrandInfo brand)
     {
         c.Column(col =>
         {

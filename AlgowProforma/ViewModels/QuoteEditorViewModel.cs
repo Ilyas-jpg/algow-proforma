@@ -127,7 +127,7 @@ public partial class QuoteEditorViewModel : ObservableObject
             OnPropertyChanged(nameof(Quote));
             var safeNo = string.IsNullOrWhiteSpace(Quote.QuoteNo) ? Quote.Id : Quote.QuoteNo;
             var path = Path.Combine(AppPaths.QuotesDir, safeNo + ".pdf");
-            QuotePdfService.Generate(Quote, _brand, path);
+            QuotePdfService.Generate(Quote, _brand, path, PdfTheme.GetById(new SettingsService().Load().QuoteThemeId));
             Process.Start(new ProcessStartInfo("msedge.exe", $"\"{path}\"") { UseShellExecute = true });
             StatusText = $"PDF üretildi: {Path.GetFileName(path)}";
         }
@@ -151,7 +151,7 @@ public partial class QuoteEditorViewModel : ObservableObject
             var settings = new SettingsService().Load();
             var safeNo = string.IsNullOrWhiteSpace(Quote.QuoteNo) ? Quote.Id : Quote.QuoteNo;
             var pdfPath = Path.Combine(AppPaths.QuotesDir, safeNo + ".pdf");
-            QuotePdfService.Generate(Quote, _brand, pdfPath);
+            QuotePdfService.Generate(Quote, _brand, pdfPath, PdfTheme.GetById(settings.QuoteThemeId));
             var attachmentName = settings.EmailTemplate.AttachmentName(Quote.CustomerCompany, DateTime.Today);
 
             var win = new EmailPreviewWindow(Quote, pdfPath, attachmentName)
