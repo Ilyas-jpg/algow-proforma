@@ -10,7 +10,7 @@ Masaüstü **teklif / proforma + ürün kataloğu PDF üretim aracı**. Tek prog
 
 ## Özellikler
 
-- **Katalog PDF** — kapak tasarımı, ürün ızgaraları (1–16/sayfa), referans sayfası, 24 renk teması, 10 kapak tasarımı, serbest kapak tasarım stüdyosu
+- **Katalog PDF** — kapak tasarımı, ürün ızgaraları (1–16/sayfa), referans sayfası, 23 renk teması, 13 kapak tasarımı, serbest kapak tasarım stüdyosu
 - **Fiyat teklifi / proforma PDF** — kalem tablosu, KDV (oransal iskonto dağıtımı), para birimi, geçerlilik, premium şablon
 - **Müşteri yönetimi (CRM)** — arama/filtre, Excel içe/dışa aktarım
 - **Fiyat havuzu** — Excel'den beslenir, toplu yüzde zam
