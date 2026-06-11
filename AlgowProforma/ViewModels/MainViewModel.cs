@@ -792,6 +792,20 @@ public partial class MainViewModel : ObservableObject
         StatusMessage = $"{Catalog.Products.Count} ürün kütüphaneye kaydedildi (+{added} yeni · {lib.Count} toplam).";
     }
 
+    /// <summary>Tek ürünü kalıcı ürün kütüphanesine kaydet (Faz 2 follow-up; toplu kaydetle aynı tekilleştirme).</summary>
+    [RelayCommand]
+    private void SaveSingleProductToLibrary(Product? product)
+    {
+        if (product is null) return;
+        var service = new ProductLibraryService();
+        var lib = service.Load();
+        int added = ProductLibraryService.UpsertAll(lib, new[] { product });
+        service.Save(lib);
+        StatusMessage = added > 0
+            ? $"Ürün kütüphaneye eklendi: {product.Name}"
+            : $"Kütüphanedeki ürün güncellendi: {product.Name}";
+    }
+
     [RelayCommand]
     private void ImportProductsFromExcel()
     {

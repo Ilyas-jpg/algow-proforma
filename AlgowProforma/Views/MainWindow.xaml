@@ -207,6 +207,14 @@
                                   StrokeThickness="1.6" Fill="Transparent" />
                         </Button>
                         <Button Style="{StaticResource IconButton}"
+                                Command="{Binding DataContext.SaveSingleProductToLibraryCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="{Binding}" ToolTip="Bu ürünü kütüphaneye kaydet (görseliyle, yeniden kullanım için)">
+                            <Path Data="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z M12 7v6 M9 10h6"
+                                  Width="14" Height="14" Stretch="Uniform"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.6" Fill="Transparent" />
+                        </Button>
+                        <Button Style="{StaticResource IconButton}"
                                 Command="{Binding DataContext.EditProductCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                 CommandParameter="{Binding}" ToolTip="Düzenle">
                             <Path Data="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z M15 5l4 4"

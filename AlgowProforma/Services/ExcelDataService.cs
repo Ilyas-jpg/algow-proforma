@@ -82,6 +82,29 @@ public static class ExcelDataService
         wb.SaveAs(xlsxPath);
     }
 
+    /// <summary>Ürün kütüphanesini Excel'e aktarır. Görsel dosyası taşınmaz (path makineye özgü) —
+    /// görseller kütüphanenin kendi images\ havuzunda yaşamaya devam eder.</summary>
+    public static void ExportProducts(string xlsxPath, IEnumerable<Product> items)
+    {
+        using var wb = new XLWorkbook();
+        var ws = wb.AddWorksheet("Ürün Kütüphanesi");
+        string[] headers = { "Kod", "Ürün Adı", "Fiyat", "Para Birimi" };
+        for (int i = 0; i < headers.Length; i++) ws.Cell(1, i + 1).Value = headers[i];
+        ws.Row(1).Style.Font.Bold = true;
+
+        int r = 2;
+        foreach (var p in items)
+        {
+            ws.Cell(r, 1).Value = p.Code;
+            ws.Cell(r, 2).Value = p.Name;
+            ws.Cell(r, 3).Value = p.Price;
+            ws.Cell(r, 4).Value = p.Currency;
+            r++;
+        }
+        ws.Columns().AdjustToContents();
+        wb.SaveAs(xlsxPath);
+    }
+
     // ---------- MÜŞTERİLER ----------
 
     public static List<Customer> ImportCustomers(string xlsxPath)

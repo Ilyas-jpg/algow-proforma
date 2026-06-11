@@ -50,4 +50,47 @@ public partial class ProductLibraryViewModel : ObservableObject
         _service.Save(Items);
         UpdateStatus();
     }
+
+    /// <summary>Excel'i doğrudan kütüphaneye al (Faz 2 follow-up) — katalogdan geçirmeden, aynı tekilleştirme.</summary>
+    [RelayCommand]
+    private void ImportFromExcel()
+    {
+        var dialog = new Views.ExcelImportDialog
+        {
+            // Modal kütüphane penceresinin üstünde kalsın — aktif pencere owner olur
+            Owner = System.Linq.Enumerable.FirstOrDefault(
+                System.Linq.Enumerable.OfType<Window>(Application.Current.Windows), w => w.IsActive),
+        };
+        if (dialog.ShowDialog() != true || dialog.ImportedProducts.Count == 0) { return; }
+
+        var list = new System.Collections.Generic.List<Product>(Items);
+        int added = ProductLibraryService.UpsertAll(list, dialog.ImportedProducts);
+        _service.Save(list);
+
+        Items.Clear();
+        foreach (var p in list) Items.Add(p);
+        StatusText = $"Excel'den kütüphaneye alındı: +{added} yeni, {dialog.ImportedProducts.Count - added} güncellendi ({Items.Count} toplam).";
+    }
+
+    /// <summary>Kütüphaneyi Excel'e aktar (kod/ad/fiyat/para birimi — görsel path'i taşınmaz).</summary>
+    [RelayCommand]
+    private void ExportToExcel()
+    {
+        if (Items.Count == 0) { StatusText = "Aktarılacak ürün yok."; return; }
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "Excel (*.xlsx)|*.xlsx",
+            FileName = $"urun-kutuphanesi-{DateTime.Today:yyyyMMdd}.xlsx",
+        };
+        if (dlg.ShowDialog() != true) return;
+        try
+        {
+            ExcelDataService.ExportProducts(dlg.FileName, Items);
+            StatusText = $"{Items.Count} ürün Excel'e aktarıldı: {System.IO.Path.GetFileName(dlg.FileName)}";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Excel'e aktarılamadı: " + ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
 }

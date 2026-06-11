@@ -24,11 +24,25 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,16">
-            <TextBlock Text="Ürün Kütüphanesi" Style="{StaticResource DisplayText}" FontSize="22" FontWeight="Bold" />
-            <TextBlock Text="Kaydedilmiş ürünler — görselleriyle birlikte tüm kataloglarda yeniden kullanılır. Mevcut kataloğa eklemek için bir ürünün 'Kataloğa Ekle'sine tıklayın."
-                       Style="{StaticResource MutedText}" Margin="0,2,0,0" TextWrapping="Wrap" />
-        </StackPanel>
+        <Grid Grid.Row="0" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="Ürün Kütüphanesi" Style="{StaticResource DisplayText}" FontSize="22" FontWeight="Bold" />
+                <TextBlock Text="Kaydedilmiş ürünler — görselleriyle birlikte tüm kataloglarda yeniden kullanılır. Mevcut kataloğa eklemek için bir ürünün 'Kataloğa Ekle'sine tıklayın."
+                           Style="{StaticResource MutedText}" Margin="0,2,0,0" TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top" Margin="12,4,0,0">
+                <Button Style="{StaticResource SecondaryButton}" Content="Excel'den İçe Aktar"
+                        Command="{Binding ImportFromExcelCommand}"
+                        ToolTip="Excel'deki ürünleri doğrudan kütüphaneye al (kod/ad ile tekilleştirilir)" />
+                <Button Style="{StaticResource SecondaryButton}" Content="Excel'e Aktar" Margin="8,0,0,0"
+                        Command="{Binding ExportToExcelCommand}"
+                        ToolTip="Kütüphanedeki ürünleri Excel dosyasına aktar (kod · ad · fiyat · para birimi)" />
+            </StackPanel>
+        </Grid>
 
         <!-- Boş durum -->
         <Border Grid.Row="1" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="48"
