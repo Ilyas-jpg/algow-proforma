@@ -45,6 +45,14 @@ public static class QuotePdfService
                 page.Footer().Element(c => Footer(c, brand));
             });
         })
+        .WithSettings(new DocumentSettings
+        {
+            // PdfService kataloğuyla aynı disiplin (feedback_questpdf_linearize_default): stream deflate +
+            // JPEG ~90 + 200 DPI (QuestPDF default 288 overkill) → küçük dosya + hızlı viewer decode.
+            CompressDocument = true,
+            ImageCompressionQuality = ImageCompressionQuality.High,
+            ImageRasterDpi = 200,
+        })
         .GeneratePdf(outputPath);
 
         PdfPostProcessor.LinearizeIfNeeded(outputPath, hasCoverImage: true);
@@ -62,7 +70,7 @@ public static class QuotePdfService
                     if (!string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
                         e.AlignLeft().Image(brand.LogoPath).FitHeight();
                     else
-                        e.AlignLeft().Text(string.IsNullOrWhiteSpace(brand.Name) ? "ÇERKAR MAKİNA" : brand.Name)
+                        e.AlignLeft().Text(string.IsNullOrWhiteSpace(brand.Name) ? "FİRMA ADI" : brand.Name)
                          .FontSize(18).Bold().FontColor(Primary);
                 });
 

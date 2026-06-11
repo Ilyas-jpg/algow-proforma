@@ -54,10 +54,16 @@ public class QuoteService
         if (File.Exists(path)) File.Delete(path);
     }
 
-    /// <summary>Sıradaki teklif numarası: CRK-{yıl}-{0001}. Yıl bazlı sayaç counters.json'da tutulur.</summary>
     private static readonly object NoLock = new();
 
-    public string GenerateNextNo()
+    /// <summary>
+    /// Sıradaki teklif numarası. Ön ek <see cref="AppSettings.QuoteNoPrefix"/>'ten gelir
+    /// (örn. "TKF" → TKF-{yıl}-{0001}); boşsa salt {yıl}-{0001}. Yıl bazlı sayaç counters.json'da tutulur.
+    /// </summary>
+    public string GenerateNextNo() => GenerateNextNo(new SettingsService().Load().QuoteNoPrefix);
+
+    /// <summary>Test edilebilir çekirdek: ön eki açıkça alır (settings I/O olmadan).</summary>
+    internal string GenerateNextNo(string? prefix)
     {
         // Çok pencere açıkken aynı anda kayıt → aynı teklif no (fiş mükerrer) riskini engelle.
         lock (NoLock)
@@ -68,7 +74,14 @@ public class QuoteService
             int next = counters.TryGetValue(key, out var n) ? n + 1 : 1;
             counters[key] = next;
             JsonStore.SaveObject(AppPaths.CountersFile, counters);
-            return $"CRK-{year}-{next:0000}";
+            return FormatNo(prefix, year, next);
         }
+    }
+
+    /// <summary>Numara biçimi (yan etkisiz, test edilebilir): ön ek boşsa "{yıl}-{0001}", doluysa "{ÖNEK}-{yıl}-{0001}".</summary>
+    internal static string FormatNo(string? prefix, int year, int seq)
+    {
+        var p = (prefix ?? "").Trim();
+        return string.IsNullOrEmpty(p) ? $"{year}-{seq:0000}" : $"{p}-{year}-{seq:0000}";
     }
 }

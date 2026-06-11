@@ -33,12 +33,14 @@ public static class ExcelImportService
 {
     public static List<string> GetSheetNames(string xlsxPath)
     {
+        ImportLimits.EnsureExcelSize(xlsxPath);
         using var wb = new XLWorkbook(xlsxPath);
         return wb.Worksheets.Select(w => w.Name).ToList();
     }
 
     public static List<ExcelImportPreviewRow> Import(string xlsxPath, ExcelImportOptions options)
     {
+        ImportLimits.EnsureExcelSize(xlsxPath);
         var results = new List<ExcelImportPreviewRow>();
         using var wb = new XLWorkbook(xlsxPath);
 

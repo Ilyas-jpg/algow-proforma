@@ -15,9 +15,11 @@ public static class CredentialStore
 {
     private static string PasswordFile => Path.Combine(AppPaths.DataDir, "smtp.bin");
     private static string GmailTokenFile => Path.Combine(AppPaths.DataDir, "google-gmail.bin");
+    private static string ClientSecretFile => Path.Combine(AppPaths.DataDir, "google-oauth-secret.bin");
 
     public static bool HasPassword => File.Exists(PasswordFile);
     public static bool HasGmailCredential => File.Exists(GmailTokenFile);
+    public static bool HasClientSecret => File.Exists(ClientSecretFile);
 
     public static void SavePassword(string password)
     {
@@ -67,5 +69,31 @@ public static class CredentialStore
     public static void ClearGmailCredential()
     {
         if (File.Exists(GmailTokenFile)) File.Delete(GmailTokenFile);
+    }
+
+    /// <summary>OAuth client_secret'i DPAPI ile şifreli saklar. Boş/null verilirse kayıtlı secret silinir.</summary>
+    public static void SaveClientSecret(string? secret)
+    {
+        if (string.IsNullOrWhiteSpace(secret)) { ClearClientSecret(); return; }
+        var encrypted = ProtectedData.Protect(
+            Encoding.UTF8.GetBytes(secret), optionalEntropy: null, scope: DataProtectionScope.CurrentUser);
+        File.WriteAllBytes(ClientSecretFile, encrypted);
+    }
+
+    public static string? LoadClientSecret()
+    {
+        if (!File.Exists(ClientSecretFile)) return null;
+        try
+        {
+            var decrypted = ProtectedData.Unprotect(
+                File.ReadAllBytes(ClientSecretFile), optionalEntropy: null, scope: DataProtectionScope.CurrentUser);
+            return Encoding.UTF8.GetString(decrypted);
+        }
+        catch { return null; }
+    }
+
+    public static void ClearClientSecret()
+    {
+        if (File.Exists(ClientSecretFile)) File.Delete(ClientSecretFile);
     }
 }

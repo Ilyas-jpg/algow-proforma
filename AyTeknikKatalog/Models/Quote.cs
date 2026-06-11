@@ -64,7 +64,7 @@ public partial class Quote : ObservableObject
     /// <summary>Satır eklendi/silindi/değişti veya iskonto değişti → toplamları yeniden yayınla (VM'den çağrılır).</summary>
     public void NotifyTotalsChanged() => OnPropertyChanged(nameof(Totals));
 
-    /// <summary>Görünen başlık (liste/pencere): "CRK-2026-0001 · Firma" (+ rev varsa).</summary>
+    /// <summary>Görünen başlık (liste/pencere): "TKF-2026-0001 · Firma" (+ rev varsa). Ön ek AppSettings.QuoteNoPrefix'e göre değişir.</summary>
     public string DisplayTitle =>
         (string.IsNullOrWhiteSpace(QuoteNo) ? "(numarasız)" : QuoteNo)
         + (Revision > 0 ? $" rev.{Revision}" : "")

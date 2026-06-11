@@ -237,7 +237,11 @@ public partial class MainViewModel : ObservableObject
                 sample.DesignId = card.Design.Id;   // GenerateCoverPreviewBytes lock'lu → seri render, race yok
                 var bmp = BytesToFrozenBitmap(PdfService.GenerateCoverPreviewBytes(sample));
                 var c = card;
-                System.Windows.Application.Current?.Dispatcher.Invoke(() => c.Thumbnail = bmp);
+                // BeginInvoke + Background önceliği: thumbnail atamaları kullanıcı girdisini (tıklama/scroll)
+                // bloklamaz. Senkron Invoke (Normal öncelik = input'un üstünde) 13 kapakta tıklama düşürüyordu.
+                System.Windows.Application.Current?.Dispatcher.BeginInvoke(
+                    System.Windows.Threading.DispatcherPriority.Background,
+                    new System.Action(() => c.Thumbnail = bmp));
             }
         });
     }

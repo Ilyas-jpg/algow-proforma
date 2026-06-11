@@ -17,6 +17,7 @@ public static class ExcelDataService
 
     public static List<PriceItem> ImportPriceItems(string xlsxPath, string defaultCurrency = "TL")
     {
+        ImportLimits.EnsureExcelSize(xlsxPath);
         var list = new List<PriceItem>();
         using var wb = new XLWorkbook(xlsxPath);
         var ws = wb.Worksheets.First();
@@ -85,6 +86,7 @@ public static class ExcelDataService
 
     public static List<Customer> ImportCustomers(string xlsxPath)
     {
+        ImportLimits.EnsureExcelSize(xlsxPath);
         var list = new List<Customer>();
         using var wb = new XLWorkbook(xlsxPath);
         var ws = wb.Worksheets.First();

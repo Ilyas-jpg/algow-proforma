@@ -193,6 +193,5 @@ public partial class BulkSendViewModel : ObservableObject
         }
     }
 
-    private static bool IsValidEmail(string? e)
-        => !string.IsNullOrWhiteSpace(e) && e.Contains('@') && e.Contains('.') && !e.StartsWith('@') && !e.EndsWith('@');
+    private static bool IsValidEmail(string? e) => EmailValidator.IsValid(e);
 }

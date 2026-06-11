@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AyTeknikKatalog.Models;
@@ -71,7 +72,11 @@ public partial class EmailTemplate : ObservableObject
 public partial class GoogleOAuthSettings : ObservableObject
 {
     [ObservableProperty] private string _clientId = "";
-    [ObservableProperty] private string _clientSecret = "";
+    // Düz metin settings.json'a YAZILMAZ — DPAPI ile CredentialStore'da şifreli (SMTP parolasıyla aynı desen).
+    // In-memory kalır (UI binding + EffectiveClientSecret) ama JsonIgnore ile diske sızmaz.
+    [ObservableProperty]
+    [property: JsonIgnore]
+    private string _clientSecret = "";
     [ObservableProperty] private string _authRedirectUri = "http://127.0.0.1:8777/google-auth/callback/";
     [ObservableProperty] private string _gmailRedirectUri = "http://127.0.0.1:8777/gmail/callback/";
     // İzin verilen alan adı(ları), virgülle. Boş = kısıt yok. Kullanıcı kendi kurumsal domainini Ayarlar'dan girer
@@ -112,4 +117,10 @@ public partial class AppSettings : ObservableObject
     [ObservableProperty] private MailAccount _mail = new();
     [ObservableProperty] private EmailTemplate _emailTemplate = new();
     [ObservableProperty] private GoogleOAuthSettings _google = new();
+
+    /// <summary>
+    /// Teklif numarası ön eki (örn. "TKF" → TKF-2026-0001). Boş = salt yıl-sayaç (2026-0001).
+    /// White-label: müşteri kendi kurum kodunu Ayarlar'dan girer (varsayılan boş — markaya bağımlı değil).
+    /// </summary>
+    [ObservableProperty] private string _quoteNoPrefix = "";
 }
