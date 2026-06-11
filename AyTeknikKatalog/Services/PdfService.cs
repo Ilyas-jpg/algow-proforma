@@ -2338,8 +2338,17 @@ public class PdfService
                 foreach (var img in images) return img;
                 return null;
             }
-            catch
+            catch (Exception ex)
             {
+                // Önizleme render hatası app'i çökertmez (thumbnail boş kalır) ama SESSİZCE yutulmaz → loglanır.
+                try
+                {
+                    System.IO.Directory.CreateDirectory(AppPaths.AppDataDir);
+                    System.IO.File.AppendAllText(
+                        System.IO.Path.Combine(AppPaths.AppDataDir, "render-errors.log"),
+                        $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} preview[{catalog.DesignId}]: {ex.Message}{Environment.NewLine}");
+                }
+                catch { /* log best-effort */ }
                 return null;
             }
         }
@@ -2749,32 +2758,33 @@ public class PdfService
                     });
                     row.RelativeItem();
                     row.AutoItem().AlignMiddle().Text(year)
-                        .FontFamily(DisplayFont).FontSize(48).Light().FontColor(AccentHex).LetterSpacing(-0.04f);
+                        .FontFamily(DisplayFont).FontSize(40).Light().FontColor(AccentHex).LetterSpacing(-0.04f);
                 });
 
-                c.Item().PaddingTop(14).LineHorizontal(0.8f).LineColor(BorderHex);
+                c.Item().PaddingTop(12).LineHorizontal(0.8f).LineColor(BorderHex);
             });
 
-            // ORTA koyu bant (büyük başlık burada)
-            col.Item().Background(PrimaryHex).PaddingHorizontal(50).PaddingVertical(56).Column(c =>
+            // ORTA koyu bant (büyük başlık burada). PaddingVertical kompakt — 3 blok (üst+orta+alt)
+            // birlikte tek A4'e sığmalı; 56pt dikey padding + 56pt başlık taşma yaratıyordu (DocumentLayoutException).
+            col.Item().Background(PrimaryHex).PaddingHorizontal(50).PaddingVertical(38).Column(c =>
             {
                 c.Item().Text(editionText)
                     .FontFamily(DisplayFont).FontSize(10).Bold().FontColor(AccentHex).LetterSpacing(2.6f);
 
-                c.Item().PaddingTop(18).Text(bigTitle)
-                    .FontFamily(DisplayFont).FontSize(AutoFitFontSize(bigTitle, 56f, 14, 28f)).Bold().FontColor(White).LetterSpacing(-0.025f);
+                c.Item().PaddingTop(14).Text(bigTitle)
+                    .FontFamily(DisplayFont).FontSize(AutoFitFontSize(bigTitle, 46f, 14, 24f)).Bold().FontColor(White).LetterSpacing(-0.025f);
 
                 if (!string.IsNullOrWhiteSpace(subtitle))
                 {
                     c.Item().PaddingTop(6).Text(subtitle)
-                        .FontFamily(DisplayFont).FontSize(22).Light().FontColor(AccentHex);
+                        .FontFamily(DisplayFont).FontSize(20).Light().FontColor(AccentHex);
                 }
 
-                c.Item().PaddingTop(20).Width(100).LineHorizontal(1.6f).LineColor(AccentHex);
+                c.Item().PaddingTop(16).Width(100).LineHorizontal(1.6f).LineColor(AccentHex);
 
                 if (!string.IsNullOrWhiteSpace(tagline))
                 {
-                    c.Item().PaddingTop(14).Text(tagline)
+                    c.Item().PaddingTop(12).Text(tagline)
                         .FontFamily(BodyFont).FontSize(12).Italic().FontColor(AccentHex).LetterSpacing(0.3f);
                 }
             });
