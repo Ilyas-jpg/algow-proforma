@@ -592,9 +592,9 @@ public class PdfService
         if (!brand.ShowLogoOnCover || string.IsNullOrWhiteSpace(brand.LogoPath) || !File.Exists(brand.LogoPath))
             return;
         if (honorWhiteBg && brand.ShowLogoBackground)
-            c.Width(size).Height(size).Background(White).Padding(2).Image(brand.LogoPath).FitArea();
+            c.Width(size).Height(size).Background(White).Padding(2).Image(PdfImageCache.Get(brand.LogoPath)).FitArea();
         else
-            c.Width(size).Height(size).Image(brand.LogoPath).FitArea();
+            c.Width(size).Height(size).Image(PdfImageCache.Get(brand.LogoPath)).FitArea();
     }
 
     // Kapak alt-iletişim satırı: dolu alanları "  ·  " ile birleştirir, boşları atlar.
@@ -699,7 +699,7 @@ public class PdfService
 
         page.Content().Layers(layers =>
         {
-            layers.Layer().Image(imagePath).FitArea();
+            layers.Layer().Image(PdfImageCache.Get(imagePath)).FitArea();
 
             layers.PrimaryLayer().PaddingHorizontal(48).Column(col =>
             {
@@ -1473,7 +1473,7 @@ public class PdfService
                 col.Item().Height(80).AlignCenter().AlignMiddle().Element(e =>
                 {
                     if (File.Exists(reference.LogoPath))
-                        e.Padding(8).MaxHeight(64).Image(reference.LogoPath).FitArea();
+                        e.Padding(8).MaxHeight(64).Image(PdfImageCache.Get(reference.LogoPath)).FitArea();
                     else if (hasName)
                         e.Text(InitialsOf(reference.Name))
                             .FontFamily(DisplayFont).FontSize(22).Bold().FontColor(PrimaryHex);
@@ -1624,7 +1624,7 @@ public class PdfService
                         .AlignCenter().AlignMiddle().Element(e =>
                         {
                             if (hasImage)
-                                e.Image(product.ImagePath).FitArea();
+                                e.Image(PdfImageCache.Get(product.ImagePath)).FitArea();
                             else
                                 e.Text("Görsel yok")
                                     .FontFamily(BodyFont).FontSize(11).FontColor(MutedHex);
@@ -1666,7 +1666,7 @@ public class PdfService
                     .AlignCenter().AlignMiddle().Element(e =>
                     {
                         if (hasImage)
-                            e.Image(product.ImagePath).FitArea();
+                            e.Image(PdfImageCache.Get(product.ImagePath)).FitArea();
                         else
                             e.Text("Görsel yok")
                                 .FontFamily(BodyFont).FontSize(13).FontColor(MutedHex);
@@ -1754,7 +1754,7 @@ public class PdfService
                     .AlignCenter().AlignMiddle().Element(e =>
                     {
                         if (hasImage)
-                            e.Image(product.ImagePath).FitArea();
+                            e.Image(PdfImageCache.Get(product.ImagePath)).FitArea();
                         else
                             e.Text("Görsel yok")
                                 .FontFamily(BodyFont).FontSize(9).FontColor(MutedHex);
@@ -1830,7 +1830,7 @@ public class PdfService
                     row.RelativeItem(1).Background(SurfaceHex).AlignCenter().AlignMiddle().Element(e =>
                     {
                         if (File.Exists(product.ImagePath))
-                            e.Padding(14).Image(product.ImagePath).FitArea();
+                            e.Padding(14).Image(PdfImageCache.Get(product.ImagePath)).FitArea();
                         else
                             e.Text("Görsel yok")
                                 .FontFamily(BodyFont).FontSize(9).FontColor(MutedHex);
@@ -1885,7 +1885,7 @@ public class PdfService
                     col.Item().Height(CardImageHeight).Element(e =>
                     {
                         if (File.Exists(product.ImagePath))
-                            e.Padding(10).AlignCenter().AlignMiddle().Image(product.ImagePath).FitArea();
+                            e.Padding(10).AlignCenter().AlignMiddle().Image(PdfImageCache.Get(product.ImagePath)).FitArea();
                         else
                             e.Background(SurfaceHex).AlignCenter().AlignMiddle().Text("Görsel yok")
                                 .FontFamily(BodyFont).FontSize(9).FontColor(MutedHex);
@@ -1967,10 +1967,10 @@ public class PdfService
             if (showBackground)
                 container.Width(36).Height(36).Background(SurfaceHex).Padding(2)
                     .AlignCenter().AlignMiddle()
-                    .Image(logoPath).FitArea();
+                    .Image(PdfImageCache.Get(logoPath)).FitArea();
             else
                 container.Width(36).Height(36).AlignCenter().AlignMiddle()
-                    .Image(logoPath).FitArea();
+                    .Image(PdfImageCache.Get(logoPath)).FitArea();
         }
         else
         {
@@ -1986,7 +1986,7 @@ public class PdfService
         {
             container.Width(34).Height(34).Background(White).Padding(2)
                 .AlignCenter().AlignMiddle()
-                .Image(logoPath).FitArea();
+                .Image(PdfImageCache.Get(logoPath)).FitArea();
         }
         else
         {
@@ -2002,7 +2002,7 @@ public class PdfService
         {
             container.Width(18).Height(18).Background(White).Padding(1)
                 .AlignCenter().AlignMiddle()
-                .Image(logoPath).FitArea();
+                .Image(PdfImageCache.Get(logoPath)).FitArea();
         }
         else
         {
@@ -2118,7 +2118,7 @@ public class PdfService
                 // FitUnproportionally — kullanıcının spec ettiği element alanını TAM doldurur.
                 // Aspect ratio bozulabilir (kullanıcı boyut seçti, alan dolması beklenen davranış — Canva benzeri "stretch to fit").
                 // Aspect korumak isterse element boyutunu görsele uydurmalı.
-                c.Image(el.Content).FitUnproportionally();
+                c.Image(PdfImageCache.Get(el.Content)).FitUnproportionally();
                 break;
             case CoverElementType.Title:
             case CoverElementType.TextBox:
@@ -2145,7 +2145,7 @@ public class PdfService
         page.Content().Column(col =>
         {
             // ÜST: foto sabit Height(540) — FitUnproportionally ile alanı tam doldurur, alt panel için yer kalır
-            col.Item().Height(540).Image(imagePath).FitUnproportionally();
+            col.Item().Height(540).Image(PdfImageCache.Get(imagePath)).FitUnproportionally();
 
             // ALT: bronz panel dikey Column (yatay overflow yok)
             col.Item().Background(PrimaryHex).Padding(24).Column(c =>
@@ -2219,7 +2219,7 @@ public class PdfService
             });
 
             // SAĞ: foto tam yükseklik
-            row.RelativeItem().Image(imagePath).FitArea();
+            row.RelativeItem().Image(PdfImageCache.Get(imagePath)).FitArea();
         });
     }
 

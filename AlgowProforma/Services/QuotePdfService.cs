@@ -81,7 +81,7 @@ public class QuotePdfService
                 row.RelativeItem().AlignMiddle().Height(44).Element(e =>
                 {
                     if (!string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
-                        e.AlignLeft().Image(brand.LogoPath).FitHeight();
+                        e.AlignLeft().Image(PdfImageCache.Get(brand.LogoPath)).FitHeight();
                     else
                         e.AlignLeft().Text(string.IsNullOrWhiteSpace(brand.Name) ? "FİRMA ADI" : brand.Name)
                          .FontSize(18).Bold().FontColor(Primary);
