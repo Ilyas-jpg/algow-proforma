@@ -1,5 +1,7 @@
 # Algow Proforma PDF
 
+[![build](https://github.com/Ilyas-jpg/algow-proforma/actions/workflows/build.yml/badge.svg)](https://github.com/Ilyas-jpg/algow-proforma/actions/workflows/build.yml)
+
 Masaüstü **teklif / proforma + ürün kataloğu PDF üretim aracı**. Tek programda: katalog tasarımı, fiyat teklifi (proforma), müşteri yönetimi (CRM), fiyat havuzu ve toplu e-posta gönderimi.
 
 > **White-label:** Marka kimliği (logo, firma adı, imza, iletişim, renk teması) tamamen **uygulama içinden yapılandırılır** — hiçbir müşteriye sabitlenmemiştir. Algow, ürünü kendi markası altında geliştirir; her son kullanıcı kendi kimliğini girer.
@@ -50,7 +52,7 @@ dotnet publish AlgowProforma/AlgowProforma.csproj -c Release -r win-x64 --self-c
 # installer/AlgowProforma.iss → ISCC ile derlenir (kod imzalama sertifikası repoda DEĞİL)
 ```
 
-> **Docker notu:** WPF masaüstü uygulaması Windows + grafik oturumu gerektirir; container'da çalışmaz. "Sağlam pipeline" karşılığı **GitHub Actions CI**'dır (`.github/workflows/build.yml`) — her push'ta `windows-latest` üzerinde restore + build + teklif-PDF smoke testi.
+> **Docker notu:** WPF masaüstü uygulaması Windows + grafik oturumu gerektirir; container'da çalışmaz. "Sağlam pipeline" karşılığı **GitHub Actions CI**'dır (`.github/workflows/build.yml`) — her push'ta `windows-latest` üzerinde restore + build + xUnit test suite (render-smoke dahil) + teklif-PDF smoke testi.
 
 ## Veri konumları (kullanıcı makinesinde)
 
@@ -59,4 +61,4 @@ dotnet publish AlgowProforma/AlgowProforma.csproj -c Release -r win-x64 --self-c
 
 ## Lisans
 
-© 2026 AlgowAI. Tüm hakları saklıdır.
+© 2026 AlgowAI. Tüm hakları saklıdır — açık kaynak lisansı değildir, ayrıntı: [LICENSE](LICENSE).
