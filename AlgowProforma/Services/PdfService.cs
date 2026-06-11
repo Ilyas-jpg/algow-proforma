@@ -582,6 +582,32 @@ public class PdfService
     }
 
     // KLASIK — endüstriyel blueprint (mevcut tasarım)
+    // ── Kapak ortak blokları (logo-bloğu 11 kapakta, iletişim satırı 6 kapakta kopyaydı → tek yer) ──
+
+    // Kapak logo bloğu. Logo kapalı/yok ise hiçbir badge gösterilmez (fallback 2026-05-22'de kaldırıldı).
+    // honorWhiteBg=true → brand.ShowLogoBackground açıkken beyaz zemin + padding (koyu zeminli kapaklar);
+    // false → her zaman düz görsel (açık zeminli kapaklar — mevcut davranış birebir korunur).
+    private void CoverLogoBlock(IContainer c, BrandInfo brand, float size, bool honorWhiteBg)
+    {
+        if (!brand.ShowLogoOnCover || string.IsNullOrWhiteSpace(brand.LogoPath) || !File.Exists(brand.LogoPath))
+            return;
+        if (honorWhiteBg && brand.ShowLogoBackground)
+            c.Width(size).Height(size).Background(White).Padding(2).Image(brand.LogoPath).FitArea();
+        else
+            c.Width(size).Height(size).Image(brand.LogoPath).FitArea();
+    }
+
+    // Kapak alt-iletişim satırı: dolu alanları "  ·  " ile birleştirir, boşları atlar.
+    private void CoverContactLine(TextDescriptor text, BrandInfo brand, string color)
+    {
+        text.DefaultTextStyle(t => t.FontFamily(BodyFont).FontSize(9).FontColor(color));
+        var first = true;
+        void Append(string? v) { if (string.IsNullOrWhiteSpace(v)) return; if (!first) text.Span("  ·  "); text.Span(v); first = false; }
+        Append(brand.Phone);
+        Append(brand.Email);
+        Append(brand.Web);
+    }
+
     private void RenderCoverKlasik(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
@@ -590,17 +616,7 @@ public class PdfService
         {
             col.Item().PaddingTop(26).PaddingHorizontal(48).Row(row =>
             {
-                row.AutoItem().Element(c =>
-                {
-                    if (brand.ShowLogoOnCover && !string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
-                    {
-                        if (brand.ShowLogoBackground)
-                            c.Width(38).Height(38).Background(White).Padding(2).Image(brand.LogoPath).FitArea();
-                        else
-                            c.Width(38).Height(38).Image(brand.LogoPath).FitArea();
-                    }
-                    else { /* Cover badge fallback removed 2026-05-22 — ShowLogoOnCover=false durumunda hicbir badge gosterilmez */ }
-                });
+                row.AutoItem().Element(c => CoverLogoBlock(c, brand, 38, honorWhiteBg: true));
                 row.AutoItem().PaddingLeft(14).AlignMiddle()
                     .Text("KATALOG").FontFamily(DisplayFont).FontSize(13).FontColor(MutedHex).LetterSpacing(0.4f);
                 row.RelativeItem();
@@ -689,17 +705,7 @@ public class PdfService
             {
                 col.Item().PaddingTop(48).Row(row =>
                 {
-                    row.AutoItem().Element(c =>
-                    {
-                        if (brand.ShowLogoOnCover && !string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
-                        {
-                            if (brand.ShowLogoBackground)
-                                c.Width(40).Height(40).Background(White).Padding(2).Image(brand.LogoPath).FitArea();
-                            else
-                                c.Width(40).Height(40).Image(brand.LogoPath).FitArea();
-                        }
-                        else { /* Cover badge fallback removed 2026-05-22 — ShowLogoOnCover=false durumunda hicbir badge gosterilmez */ }
-                    });
+                    row.AutoItem().Element(c => CoverLogoBlock(c, brand, 40, honorWhiteBg: true));
                     row.RelativeItem();
                 });
 
@@ -800,15 +806,7 @@ public class PdfService
 
                 if (cover.ShowContactBar)
                 {
-                    col.Item().PaddingTop(120).Text(text =>
-                    {
-                        text.DefaultTextStyle(t => t.FontFamily(BodyFont).FontSize(9).FontColor(TextHex));
-                        var first = true;
-                        void Append(string? v) { if (string.IsNullOrWhiteSpace(v)) return; if (!first) text.Span("  ·  "); text.Span(v); first = false; }
-                        Append(brand.Phone);
-                        Append(brand.Email);
-                        Append(brand.Web);
-                    });
+                    col.Item().PaddingTop(120).Text(text => CoverContactLine(text, brand, TextHex));
                 }
             });
         });
@@ -863,15 +861,7 @@ public class PdfService
 
                 if (cover.ShowContactBar)
                 {
-                    col.Item().PaddingTop(28).AlignCenter().Text(text =>
-                    {
-                        text.DefaultTextStyle(t => t.FontFamily(BodyFont).FontSize(9).FontColor(TextHex));
-                        var first = true;
-                        void Append(string? v) { if (string.IsNullOrWhiteSpace(v)) return; if (!first) text.Span("  ·  "); text.Span(v); first = false; }
-                        Append(brand.Phone);
-                        Append(brand.Email);
-                        Append(brand.Web);
-                    });
+                    col.Item().PaddingTop(28).AlignCenter().Text(text => CoverContactLine(text, brand, TextHex));
                 }
             });
         });
@@ -906,17 +896,7 @@ public class PdfService
             {
                 col.Item().PaddingTop(60).Row(row =>
                 {
-                    row.AutoItem().Element(c =>
-                    {
-                        if (brand.ShowLogoOnCover && !string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
-                        {
-                            if (brand.ShowLogoBackground)
-                                c.Width(38).Height(38).Background(White).Padding(2).Image(brand.LogoPath).FitArea();
-                            else
-                                c.Width(38).Height(38).Image(brand.LogoPath).FitArea();
-                        }
-                        else { /* Cover badge fallback removed 2026-05-22 — ShowLogoOnCover=false durumunda hicbir badge gosterilmez */ }
-                    });
+                    row.AutoItem().Element(c => CoverLogoBlock(c, brand, 38, honorWhiteBg: true));
                 });
 
                 col.Item().PaddingTop(160).Width(380).Text(sectionLabel)
@@ -940,15 +920,7 @@ public class PdfService
 
                 if (cover.ShowContactBar)
                 {
-                    col.Item().PaddingTop(40).Text(text =>
-                    {
-                        text.DefaultTextStyle(t => t.FontFamily(BodyFont).FontSize(9).FontColor(TextHex));
-                        var first = true;
-                        void Append(string? v) { if (string.IsNullOrWhiteSpace(v)) return; if (!first) text.Span("  ·  "); text.Span(v); first = false; }
-                        Append(brand.Phone);
-                        Append(brand.Email);
-                        Append(brand.Web);
-                    });
+                    col.Item().PaddingTop(40).Text(text => CoverContactLine(text, brand, TextHex));
                 }
             });
         });
@@ -1051,15 +1023,7 @@ public class PdfService
 
                 if (cover.ShowContactBar)
                 {
-                    col.Item().PaddingTop(24).Width(360).Text(text =>
-                    {
-                        text.DefaultTextStyle(t => t.FontFamily(BodyFont).FontSize(9).FontColor(TextHex));
-                        var first = true;
-                        void Append(string? v) { if (string.IsNullOrWhiteSpace(v)) return; if (!first) text.Span("  ·  "); text.Span(v); first = false; }
-                        Append(brand.Phone);
-                        Append(brand.Email);
-                        Append(brand.Web);
-                    });
+                    col.Item().PaddingTop(24).Width(360).Text(text => CoverContactLine(text, brand, TextHex));
                 }
             });
         });
@@ -1100,17 +1064,7 @@ public class PdfService
             {
                 col.Item().PaddingTop(60).Row(row =>
                 {
-                    row.AutoItem().Element(c =>
-                    {
-                        if (brand.ShowLogoOnCover && !string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
-                        {
-                            if (brand.ShowLogoBackground)
-                                c.Width(38).Height(38).Background(White).Padding(2).Image(brand.LogoPath).FitArea();
-                            else
-                                c.Width(38).Height(38).Image(brand.LogoPath).FitArea();
-                        }
-                        else { /* Cover badge fallback removed 2026-05-22 — ShowLogoOnCover=false durumunda hicbir badge gosterilmez */ }
-                    });
+                    row.AutoItem().Element(c => CoverLogoBlock(c, brand, 38, honorWhiteBg: true));
                 });
 
                 col.Item().PaddingTop(180).Width(280).Text(sectionLabel)
@@ -1134,15 +1088,7 @@ public class PdfService
 
                 if (cover.ShowContactBar)
                 {
-                    col.Item().PaddingTop(28).Width(280).Text(text =>
-                    {
-                        text.DefaultTextStyle(t => t.FontFamily(BodyFont).FontSize(9).FontColor(AccentHex));
-                        var first = true;
-                        void Append(string? v) { if (string.IsNullOrWhiteSpace(v)) return; if (!first) text.Span("  ·  "); text.Span(v); first = false; }
-                        Append(brand.Phone);
-                        Append(brand.Email);
-                        Append(brand.Web);
-                    });
+                    col.Item().PaddingTop(28).Width(280).Text(text => CoverContactLine(text, brand, AccentHex));
                 }
             });
         });
@@ -1181,17 +1127,7 @@ public class PdfService
             {
                 col.Item().PaddingTop(60).Row(row =>
                 {
-                    row.AutoItem().Element(c =>
-                    {
-                        if (brand.ShowLogoOnCover && !string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
-                        {
-                            if (brand.ShowLogoBackground)
-                                c.Width(38).Height(38).Background(White).Padding(2).Image(brand.LogoPath).FitArea();
-                            else
-                                c.Width(38).Height(38).Image(brand.LogoPath).FitArea();
-                        }
-                        else { /* Cover badge fallback removed 2026-05-22 — ShowLogoOnCover=false durumunda hicbir badge gosterilmez */ }
-                    });
+                    row.AutoItem().Element(c => CoverLogoBlock(c, brand, 38, honorWhiteBg: true));
                 });
 
                 col.Item().PaddingTop(180).Width(320).Text(sectionLabel)
@@ -1215,15 +1151,7 @@ public class PdfService
 
                 if (cover.ShowContactBar)
                 {
-                    col.Item().PaddingTop(28).Width(320).Text(text =>
-                    {
-                        text.DefaultTextStyle(t => t.FontFamily(BodyFont).FontSize(9).FontColor(TextHex));
-                        var first = true;
-                        void Append(string? v) { if (string.IsNullOrWhiteSpace(v)) return; if (!first) text.Span("  ·  "); text.Span(v); first = false; }
-                        Append(brand.Phone);
-                        Append(brand.Email);
-                        Append(brand.Web);
-                    });
+                    col.Item().PaddingTop(28).Width(320).Text(text => CoverContactLine(text, brand, TextHex));
                 }
             });
         });
@@ -2249,17 +2177,7 @@ public class PdfService
             {
                 col.Item().Row(r =>
                 {
-                    r.AutoItem().Element(e =>
-                    {
-                        if (brand.ShowLogoOnCover && !string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
-                        {
-                            if (brand.ShowLogoBackground)
-                                e.Width(46).Height(46).Background(White).Padding(2).Image(brand.LogoPath).FitArea();
-                            else
-                                e.Width(46).Height(46).Image(brand.LogoPath).FitArea();
-                        }
-                        else { /* Cover badge fallback removed 2026-05-22 — ShowLogoOnCover=false durumunda hicbir badge gosterilmez */ }
-                    });
+                    r.AutoItem().Element(e => CoverLogoBlock(e, brand, 46, honorWhiteBg: true));
                 });
 
                 col.Item().PaddingTop(60).Text(sectionLabel)
@@ -2372,12 +2290,7 @@ public class PdfService
             // üst alan: küçük section label + edition
             col.Item().PaddingTop(40).PaddingHorizontal(60).Row(row =>
             {
-                row.AutoItem().Element(c =>
-                {
-                    if (brand.ShowLogoOnCover && !string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
-                        c.Width(34).Height(34).Image(brand.LogoPath).FitArea();
-                    else { /* Cover badge fallback removed 2026-05-22 — ShowLogoOnCover=false durumunda hicbir badge gosterilmez */ }
-                });
+                row.AutoItem().Element(c => CoverLogoBlock(c, brand, 34, honorWhiteBg: false));
                 row.RelativeItem();
             });
 
@@ -2473,12 +2386,7 @@ public class PdfService
                 });
 
                 // logo
-                col.Item().PaddingTop(32).AlignCenter().Element(c =>
-                {
-                    if (brand.ShowLogoOnCover && !string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
-                        c.Width(70).Height(70).Image(brand.LogoPath).FitArea();
-                    else { /* Cover badge fallback removed 2026-05-22 — ShowLogoOnCover=false durumunda hicbir badge gosterilmez */ }
-                });
+                col.Item().PaddingTop(32).AlignCenter().Element(c => CoverLogoBlock(c, brand, 70, honorWhiteBg: false));
 
                 // ortalı panel: koyu zemin + başlık
                 col.Item().PaddingTop(28).PaddingHorizontal(8).Background(PrimaryHex).Padding(26).Column(c =>
@@ -2549,12 +2457,7 @@ public class PdfService
             // üst: brand + edition kompakt
             col.Item().Row(row =>
             {
-                row.AutoItem().Element(c =>
-                {
-                    if (brand.ShowLogoOnCover && !string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
-                        c.Width(36).Height(36).Image(brand.LogoPath).FitArea();
-                    else { /* Cover badge fallback removed 2026-05-22 — ShowLogoOnCover=false durumunda hicbir badge gosterilmez */ }
-                });
+                row.AutoItem().Element(c => CoverLogoBlock(c, brand, 36, honorWhiteBg: false));
                 row.AutoItem().PaddingLeft(14).AlignMiddle().Column(c =>
                 {
                     c.Item().Text("TECHNICAL CATALOG")
@@ -2664,12 +2567,7 @@ public class PdfService
                 // üst sol: brand kompakt
                 col.Item().Row(row =>
                 {
-                    row.AutoItem().Element(c =>
-                    {
-                        if (brand.ShowLogoOnCover && !string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
-                            c.Width(40).Height(40).Image(brand.LogoPath).FitArea();
-                        else { /* Cover badge fallback removed 2026-05-22 — ShowLogoOnCover=false durumunda hicbir badge gosterilmez */ }
-                    });
+                    row.AutoItem().Element(c => CoverLogoBlock(c, brand, 40, honorWhiteBg: false));
                     row.AutoItem().PaddingLeft(14).AlignMiddle().Text(sectionLabel)
                         .FontFamily(DisplayFont).FontSize(10).Bold().FontColor(MutedHex).LetterSpacing(2.4f);
                     row.RelativeItem();
@@ -2743,12 +2641,7 @@ public class PdfService
             {
                 c.Item().Row(row =>
                 {
-                    row.AutoItem().Element(e =>
-                    {
-                        if (brand.ShowLogoOnCover && !string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
-                            e.Width(46).Height(46).Image(brand.LogoPath).FitArea();
-                        else { /* Cover badge fallback removed 2026-05-22 — ShowLogoOnCover=false durumunda hicbir badge gosterilmez */ }
-                    });
+                    row.AutoItem().Element(e => CoverLogoBlock(e, brand, 46, honorWhiteBg: false));
                     row.AutoItem().PaddingLeft(16).AlignMiddle().Column(cc =>
                     {
                         cc.Item().Text(brand.Name?.ToUpper(TrCulture) ?? "")
