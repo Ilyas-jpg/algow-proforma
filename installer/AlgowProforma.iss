@@ -2,7 +2,7 @@
 ; Builds a per-user installer for the self-contained win-x64 publish output.
 ;
 ; Build adimlari:
-;   dotnet publish AyTeknikKatalog/AyTeknikKatalog.csproj -c Release -r win-x64 --self-contained true -o publish/win-x64
+;   dotnet publish AlgowProforma/AlgowProforma.csproj -c Release -r win-x64 --self-contained true -o publish/win-x64
 ;   (vc_redist.x64.exe bu klasore indirilmeli; repoda tutulmaz)
 ;   ISCC installer/AlgowProforma.iss
 
@@ -11,7 +11,7 @@
 #define AppPublisher    "AlgowAI"
 #define AppExeName      "AlgowProforma.exe"
 #define SourceDir       "..\publish\win-x64"
-#define AppIcon         "..\AyTeknikKatalog\Resources\AppIcon.ico"
+#define AppIcon         "..\AlgowProforma\Resources\AppIcon.ico"
 #define AppURL          "https://algow.net"
 
 [Setup]

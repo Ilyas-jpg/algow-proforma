@@ -73,7 +73,7 @@ Resources/_*.png
 # Claude Code lokal config
 .claude/
 
-# Stale / Cerkar-deploy'a özel / eski-marka dev artefaktları (public generic repoya girmez, lokalde kalır)
+# Stale / eski-marka dev artefaktları (public generic repoya girmez, lokalde kalır)
 MUSTERI_ONCESI_KONTROL.md
 docs/
 tools/

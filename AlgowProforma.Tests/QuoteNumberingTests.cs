@@ -4,7 +4,7 @@ using Xunit;
 namespace AlgowProforma.Tests;
 
 /// <summary>
-/// Teklif numarası biçimi (white-label). Sabit "CRK-" ön eki configurable yapıldı (AppSettings.QuoteNoPrefix):
+/// Teklif numarası biçimi (white-label). Teklif-no ön eki configurable (AppSettings.QuoteNoPrefix):
 /// ön ek boşsa salt yıl-sayaç, doluysa "{ÖNEK}-{yıl}-{sıra}". FormatNo, sayaç I/O'su olmayan saf çekirdektir.
 /// </summary>
 public class QuoteNumberingTests
@@ -23,7 +23,7 @@ public class QuoteNumberingTests
 
     [Fact]
     public void FormatNo_TrimsPrefix()
-        => Assert.Equal("CRK-2026-0042", QuoteService.FormatNo("  CRK  ", 2026, 42));
+        => Assert.Equal("ABC-2026-0042", QuoteService.FormatNo("  ABC  ", 2026, 42));
 
     [Fact]
     public void FormatNo_PadsSequenceToFourDigits()

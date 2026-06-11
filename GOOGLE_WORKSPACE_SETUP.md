@@ -56,7 +56,7 @@ Existing SMTP settings are unchanged and still live in the app's Settings screen
 1. Run the app from Visual Studio or:
 
 ```powershell
-dotnet run --project .\AyTeknikKatalog\AyTeknikKatalog.csproj
+dotnet run --project .\AlgowProforma\AlgowProforma.csproj
 ```
 
 2. Open Ayarlar.

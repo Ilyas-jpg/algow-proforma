@@ -19,15 +19,15 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore AyTeknikKatalog.sln
+        run: dotnet restore AlgowProforma.sln
 
       - name: Build (Release)
-        run: dotnet build AyTeknikKatalog.sln -c Release --no-restore
+        run: dotnet build AlgowProforma.sln -c Release --no-restore
 
       - name: Smoke test — teklif PDF üretimi (--test-quote)
         shell: pwsh
         run: |
-          dotnet run --project AyTeknikKatalog/AyTeknikKatalog.csproj -c Release --no-build -- --test-quote
+          dotnet run --project AlgowProforma/AlgowProforma.csproj -c Release --no-build -- --test-quote
           $pdf = Join-Path ([Environment]::GetFolderPath('Desktop')) 'algow-teklif-ornek.pdf'
           if (-not (Test-Path $pdf)) { Write-Error 'Teklif PDF uretilemedi (--test-quote)'; exit 1 }
           Write-Host "OK: teklif PDF uretildi ($((Get-Item $pdf).Length) bytes)"

@@ -31,22 +31,22 @@ Masaüstü **teklif / proforma + ürün kataloğu PDF üretim aracı**. Tek prog
 
 ```powershell
 # Gereksinim: .NET 8 SDK (windows)
-dotnet restore AyTeknikKatalog.sln
-dotnet build   AyTeknikKatalog.sln -c Release      # 0 hata / 0 uyarı
-dotnet run --project AyTeknikKatalog/AyTeknikKatalog.csproj   # uygulamayı başlat
+dotnet restore AlgowProforma.sln
+dotnet build   AlgowProforma.sln -c Release      # 0 hata / 0 uyarı
+dotnet run --project AlgowProforma/AlgowProforma.csproj   # uygulamayı başlat
 ```
 
 ### Self-test komutları (headless, PDF üretimini doğrular)
 
 ```powershell
-dotnet run --project AyTeknikKatalog/AyTeknikKatalog.csproj -c Release -- --test-quote    # örnek teklif PDF'i → Masaüstü
-dotnet run --project AyTeknikKatalog/AyTeknikKatalog.csproj -c Release -- --test-covers   # katalog/kapak smoke testi
+dotnet run --project AlgowProforma/AlgowProforma.csproj -c Release -- --test-quote    # örnek teklif PDF'i → Masaüstü
+dotnet run --project AlgowProforma/AlgowProforma.csproj -c Release -- --test-covers   # katalog/kapak smoke testi
 ```
 
 ### Dağıtılabilir kurulum (Inno Setup)
 
 ```powershell
-dotnet publish AyTeknikKatalog/AyTeknikKatalog.csproj -c Release -r win-x64 --self-contained true -o publish/win-x64
+dotnet publish AlgowProforma/AlgowProforma.csproj -c Release -r win-x64 --self-contained true -o publish/win-x64
 # installer/AlgowProforma.iss → ISCC ile derlenir (kod imzalama sertifikası repoda DEĞİL)
 ```
 
