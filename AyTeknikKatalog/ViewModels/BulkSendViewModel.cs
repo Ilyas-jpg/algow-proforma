@@ -17,7 +17,8 @@ public partial class BulkSendViewModel : ObservableObject
     private readonly QuoteService _quotes = new();
     private readonly CustomerService _customers = new();
     private readonly SettingsService _settingsSvc = new();
-    private readonly BrandInfo _brand = Catalog.CreateDefault().Brand;
+    // Toplu gönderimde üretilen teklif PDF'leri kalıcı marka profilini kullanır — yoksa boş default.
+    private readonly BrandInfo _brand = BrandProfileService.Load() ?? Catalog.CreateDefault().Brand;
     private readonly AppSettings _settings;
 
     [ObservableProperty] private ObservableCollection<Quote> _savedQuotes = new();

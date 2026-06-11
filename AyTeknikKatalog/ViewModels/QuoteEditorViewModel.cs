@@ -32,7 +32,8 @@ public partial class QuoteEditorViewModel : ObservableObject
 
     public QuoteEditorViewModel(Quote? existing = null)
     {
-        _brand = Catalog.CreateDefault().Brand;
+        // Teklif PDF'i kalıcı marka profilini kullanır (logo/firma/iletişim) — yoksa boş default.
+        _brand = BrandProfileService.Load() ?? Catalog.CreateDefault().Brand;
 
         foreach (var p in _priceBook.Load().Where(p => p.IsActive)) PriceBookItems.Add(p);
         foreach (var c in _customers.Load()) Customers2.Add(c);
