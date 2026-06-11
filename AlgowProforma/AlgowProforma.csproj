@@ -14,9 +14,9 @@
     <!-- Semver disiplin: bug fix → patch (1.0.X), feature → minor (1.X.0), breaking → major (X.0.0).
          Her release'de hem buradaki Version/FileVersion/AssemblyVersion hem de installer/AlgowProforma.iss
          #define AppVersion birlikte arttirilir. Hatirlatma: vault [[feedback_setup_compile_hash_dogrula]] -->
-    <Version>1.1.1</Version>
-    <FileVersion>1.1.1.0</FileVersion>
-    <AssemblyVersion>1.1.1.0</AssemblyVersion>
+    <Version>1.2.0</Version>
+    <FileVersion>1.2.0.0</FileVersion>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
     <!-- Metadata ASCII-only (Inno Setup + Windows registry uyumluluğu için).
          UI display string'leri (WindowTitle, BrandInfo) Türkçe kalır — runtime UTF-16 sorunsuz. -->
     <Company>AlgowAI</Company>
