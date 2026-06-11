@@ -13,16 +13,16 @@ namespace AyTeknikKatalog.Services;
 
 public class PdfService
 {
-    private static string PrimaryHex = "#2E338F";
-    private static string SecondaryHex = "#5368A6";
-    private static string AccentHex = "#7C84C7";
-    private static string MutedHex = "#818285";
-    private static string SurfaceHex = "#F5F5F7";
-    private static string BorderHex = "#E5E5E7";
-    private static string TextHex = "#1A1A1F";
+    private string PrimaryHex = "#2E338F";
+    private string SecondaryHex = "#5368A6";
+    private string AccentHex = "#7C84C7";
+    private string MutedHex = "#818285";
+    private string SurfaceHex = "#F5F5F7";
+    private string BorderHex = "#E5E5E7";
+    private string TextHex = "#1A1A1F";
     private const string White = "#FFFFFF";
 
-    private static void ApplyTheme(string? themeId)
+    private void ApplyTheme(string? themeId)
     {
         var theme = PdfTheme.GetById(themeId);
         PrimaryHex = theme.PrimaryHex;
@@ -41,14 +41,14 @@ public class PdfService
     private const string DisplayFont = "Sora";
     private const string BodyFont = "Plus Jakarta Sans";
 
-    private static int ProductsPerPage = 9;
-    private static int ProductsPerRow = 3;
-    private static int MaxRowsPerPage = 3;
-    private static int CardHeight = 200;
-    private static int CardImageHeight = 112;
-    private static int CardMetaHeight = 58;
-    private static PdfDesign ActiveDesign = PdfDesign.Default;
-    private static PageLayout ActiveLayout = PageLayout.Default;
+    private int ProductsPerPage = 9;
+    private int ProductsPerRow = 3;
+    private int MaxRowsPerPage = 3;
+    private int CardHeight = 200;
+    private int CardImageHeight = 112;
+    private int CardMetaHeight = 58;
+    private PdfDesign ActiveDesign = PdfDesign.Default;
+    private PageLayout ActiveLayout = PageLayout.Default;
 
     private const int ReferencesPerRow = 5;
     private const int ReferenceRowsPerPage = 5;
@@ -192,7 +192,7 @@ public class PdfService
         PdfPostProcessor.LinearizeIfNeeded(outputPath, hasCoverImage);
     }
 
-    private static void ApplyLayout(PageLayout layout)
+    private void ApplyLayout(PageLayout layout)
     {
         ActiveLayout = layout;
         ProductsPerRow = layout.Columns;
@@ -230,7 +230,7 @@ public class PdfService
 
     private sealed record ManualPlacement(Product? Product, int Row, int Col, int RowSpan, int ColSpan);
 
-    private static List<ManualPlacement> ComputeManualPlacements(
+    private List<ManualPlacement> ComputeManualPlacements(
         CustomPageEntry entry, PageLayout layout, IReadOnlyDictionary<string, Product> byId)
     {
         int cols = Math.Max(1, layout.Columns);
@@ -278,7 +278,7 @@ public class PdfService
         return placements;
     }
 
-    private static void RenderManualGridPage(
+    private void RenderManualGridPage(
         PageDescriptor page, BrandInfo brand,
         List<ManualPlacement> placements, PageLayout layout,
         int pageNumber, int totalPages)
@@ -296,7 +296,7 @@ public class PdfService
         });
     }
 
-    private static void RenderManualGridContent(IContainer container, List<ManualPlacement> placements, PageLayout layout)
+    private void RenderManualGridContent(IContainer container, List<ManualPlacement> placements, PageLayout layout)
     {
         const float padding = 7f;
         container.Table(t =>
@@ -348,7 +348,7 @@ public class PdfService
     // full-width table blocks. Featured (2-col) products that don't fit the
     // remaining row are reordered with the next 1-col regular ahead, but the
     // reordering never crosses a table block.
-    private static List<PageElement> BuildPageElements(IList<Product> products)
+    private List<PageElement> BuildPageElements(IList<Product> products)
     {
         var queue = new LinkedList<Product>(products);
         var elements = new List<PageElement>();
@@ -427,7 +427,7 @@ public class PdfService
     private const int TableRowHeightApprox = 22;
     private const int RowGapApprox = 14;
 
-    private static int EstimateTableBlockHeight(Product product)
+    private int EstimateTableBlockHeight(Product product)
     {
         var table = product.Table;
         if (table is null) return TableBlockBaseHeightApprox;
@@ -436,7 +436,7 @@ public class PdfService
         return TableBlockBaseHeightApprox + (hasHeader ? TableRowHeightApprox : 0) + rowCount * TableRowHeightApprox;
     }
 
-    private static List<List<PageElement>> PackElementsIntoPages(IList<PageElement> elements)
+    private List<List<PageElement>> PackElementsIntoPages(IList<PageElement> elements)
     {
         var pages = new List<List<PageElement>>();
         var current = new List<PageElement>();
@@ -474,7 +474,7 @@ public class PdfService
         return pages;
     }
 
-    private static void RenderCover(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCover(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         page.Size(PageSizes.A4);
         page.Margin(0);
@@ -560,7 +560,7 @@ public class PdfService
         }
     }
 
-    private static (string bigTitle, string subtitle, string tagline, string editionText, string sectionLabel, string year)
+    private (string bigTitle, string subtitle, string tagline, string editionText, string sectionLabel, string year)
         BuildCoverStrings(BrandInfo brand, CoverPageInfo cover)
     {
         var (autoBig, autoSub) = SplitBrandTitle(brand.Name);
@@ -582,7 +582,7 @@ public class PdfService
     }
 
     // KLASIK — endüstriyel blueprint (mevcut tasarım)
-    private static void RenderCoverKlasik(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCoverKlasik(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -677,7 +677,7 @@ public class PdfService
     }
 
     // Yüklenmiş arka plan görseli olan tasarım için tek tip metin overlay'i
-    private static void RenderCoverWithImageBackground(PageDescriptor page, BrandInfo brand, CoverPageInfo cover, string imagePath)
+    private void RenderCoverWithImageBackground(PageDescriptor page, BrandInfo brand, CoverPageInfo cover, string imagePath)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -749,7 +749,7 @@ public class PdfService
     }
 
     // EĞRİ — iç içe iki ark, sağ üstte şerit deseni
-    private static void RenderCoverEgri(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCoverEgri(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -815,7 +815,7 @@ public class PdfService
     }
 
     // ÇERÇEVE — köşe üçgenleri + iç çift çizgili kesik köşeli çerçeve
-    private static void RenderCoverCerceve(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCoverCerceve(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -878,7 +878,7 @@ public class PdfService
     }
 
     // GEOMETRİ — keskin geometrik poligonlar, dik kontrast
-    private static void RenderCoverGeometri(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCoverGeometri(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -955,7 +955,7 @@ public class PdfService
     }
 
     // MADALYA — ortada beyaz panel + simetrik üçgen kanatlar
-    private static void RenderCoverMadalya(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCoverMadalya(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -1001,7 +1001,7 @@ public class PdfService
     }
 
     // KATMAN — diyagonal katmanlı düzlemler (mimari/malzeme)
-    private static void RenderCoverKatman(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCoverKatman(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -1066,7 +1066,7 @@ public class PdfService
     }
 
     // MOZAİK — sol koyu blok + sağda kesişen geometrik parçalar
-    private static void RenderCoverMozaik(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCoverMozaik(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -1149,7 +1149,7 @@ public class PdfService
     }
 
     // DİYAGONAL — sağ üstte eğik şerit + arc, sağda dikey çizgili bant, alt blok
-    private static void RenderCoverDiyagonal(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCoverDiyagonal(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -1229,10 +1229,10 @@ public class PdfService
         });
     }
 
-    private static string Fallback(string? value, string fallback) =>
+    private string Fallback(string? value, string fallback) =>
         string.IsNullOrWhiteSpace(value) ? fallback : value!.ToUpper(TrCulture);
 
-    private static void BuildFeatureItem(RowDescriptor row, string svg, string label)
+    private void BuildFeatureItem(RowDescriptor row, string svg, string label)
     {
         row.RelativeItem().Column(col =>
         {
@@ -1243,7 +1243,7 @@ public class PdfService
         });
     }
 
-    private static void BuildContactItem(RowDescriptor row, string svg, string text)
+    private void BuildContactItem(RowDescriptor row, string svg, string text)
     {
         row.RelativeItem().Column(col =>
         {
@@ -1253,7 +1253,7 @@ public class PdfService
         });
     }
 
-    private static void BuildContactDivider(RowDescriptor row)
+    private void BuildContactDivider(RowDescriptor row)
     {
         row.AutoItem().AlignMiddle().Width(1).Height(38).Background(SecondaryHex);
     }
@@ -1261,7 +1261,7 @@ public class PdfService
     // Uzun marka adlarında punto otomatik küçülür; kelime aralarındaki boşluklarda
     // metin doğal olarak alt satıra geçer (QuestPDF varsayılan). Tek-kelimelik
     // çok uzun isimde bile font yeterince küçülerek tek satırda kalır.
-    private static float AutoFitFontSize(string? text, float baseSize, int baseCharLimit, float minSize)
+    private float AutoFitFontSize(string? text, float baseSize, int baseCharLimit, float minSize)
     {
         if (string.IsNullOrWhiteSpace(text)) return baseSize;
         var len = text.Length;
@@ -1270,7 +1270,7 @@ public class PdfService
         return Math.Max(minSize, (float)(baseSize * ratio));
     }
 
-    private static (string Big, string Sub) SplitBrandTitle(string? name)
+    private (string Big, string Sub) SplitBrandTitle(string? name)
     {
         if (string.IsNullOrWhiteSpace(name)) return ("", "");
 
@@ -1284,7 +1284,7 @@ public class PdfService
         return (name, "");
     }
 
-    private static string BuildGearBlueprintSvg(double cx = 200, double cy = 200)
+    private string BuildGearBlueprintSvg(double cx = 200, double cy = 200)
     {
         var teethPath = BuildGearTeethPath(teeth: 22, outerR: 188, innerR: 168);
         var inv = CultureInfo.InvariantCulture;
@@ -1326,7 +1326,7 @@ public class PdfService
     // Builds a horizontal+vertical grid centered at (cx, cy). Each grid line is
     // sliced into short segments whose opacity falls off radially from (cx, cy),
     // producing a blueprint feel that fades toward the gear's outer edge.
-    private static string BuildFadingGrid(double cx, double cy, double halfRange, double spacing, double fadeRadius)
+    private string BuildFadingGrid(double cx, double cy, double halfRange, double spacing, double fadeRadius)
     {
         var sb = new StringBuilder();
         var inv = CultureInfo.InvariantCulture;
@@ -1388,7 +1388,7 @@ public class PdfService
         return sb.ToString();
     }
 
-    private static string BuildGearTeethPath(int teeth, double outerR, double innerR)
+    private string BuildGearTeethPath(int teeth, double outerR, double innerR)
     {
         var sb = new StringBuilder();
         var step = 360.0 / teeth;
@@ -1420,7 +1420,7 @@ public class PdfService
         return sb.ToString();
     }
 
-    private static string BuildAccentDecorationSvg() =>
+    private string BuildAccentDecorationSvg() =>
         $@"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 150 54"">
   <g fill=""{AccentHex}"">
     <circle cx=""4"" cy=""6"" r=""1.2""/><circle cx=""4"" cy=""16"" r=""1.2""/><circle cx=""4"" cy=""26"" r=""1.2""/><circle cx=""4"" cy=""36"" r=""1.2""/><circle cx=""4"" cy=""46"" r=""1.2""/>
@@ -1432,10 +1432,10 @@ public class PdfService
   <polygon points=""60,28 140,28 132,40 52,40"" fill=""{SecondaryHex}"" opacity=""0.35""/>
 </svg>";
 
-    private static string BuildSmallDiamondSvg() =>
+    private string BuildSmallDiamondSvg() =>
         $@"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""-5 -5 10 10""><polygon points=""0,-4 4,0 0,4 -4,0"" fill=""{AccentHex}""/></svg>";
 
-    private static string BuildFactoryIconSvg() =>
+    private string BuildFactoryIconSvg() =>
         $@"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 64 64"" fill=""none"" stroke=""{PrimaryHex}"" stroke-width=""2.4"" stroke-linecap=""round"" stroke-linejoin=""round"">
   <path d=""M8 52 V32 L22 38 V32 L36 38 V32 L50 38 V52 Z""/>
   <path d=""M14 50 V44 H18 V50""/>
@@ -1445,7 +1445,7 @@ public class PdfService
   <line x1=""6"" y1=""52"" x2=""58"" y2=""52""/>
 </svg>";
 
-    private static string BuildGearIconSvg() =>
+    private string BuildGearIconSvg() =>
         $@"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 64 64"" fill=""none"" stroke=""{PrimaryHex}"" stroke-width=""2.4"" stroke-linecap=""round"" stroke-linejoin=""round"">
   <circle cx=""32"" cy=""32"" r=""9""/>
   <path d=""M32 8 v6 M32 50 v6 M8 32 h6 M50 32 h6""/>
@@ -1453,7 +1453,7 @@ public class PdfService
   <circle cx=""32"" cy=""32"" r=""2.6"" fill=""{PrimaryHex}""/>
 </svg>";
 
-    private static string BuildTruckIconSvg() =>
+    private string BuildTruckIconSvg() =>
         $@"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 64 64"" fill=""none"" stroke=""{PrimaryHex}"" stroke-width=""2.4"" stroke-linecap=""round"" stroke-linejoin=""round"">
   <rect x=""6"" y=""20"" width=""30"" height=""22""/>
   <path d=""M36 26 H48 L56 33 V42 H36 Z""/>
@@ -1462,26 +1462,26 @@ public class PdfService
   <line x1=""38"" y1=""34"" x2=""52"" y2=""34""/>
 </svg>";
 
-    private static string BuildShieldIconSvg() =>
+    private string BuildShieldIconSvg() =>
         $@"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 64 64"" fill=""none"" stroke=""{PrimaryHex}"" stroke-width=""2.4"" stroke-linecap=""round"" stroke-linejoin=""round"">
   <path d=""M32 6 L52 13 V32 C52 44 32 56 32 56 C32 56 12 44 12 32 V13 Z""/>
   <path d=""M22 32 L29 39 L42 25""/>
 </svg>";
 
-    private static string BuildPhoneIconSvg() =>
+    private string BuildPhoneIconSvg() =>
         @"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 36 36"" fill=""none"" stroke=""#FFFFFF"" stroke-width=""1.4"" stroke-linecap=""round"" stroke-linejoin=""round"">
   <circle cx=""18"" cy=""18"" r=""16.5"" stroke-width=""1.2""/>
   <path d=""M12.5 11 H15 L17 15.5 L15 17.5 C16 20.2 17.8 22 20.5 23 L22.5 21 L27 23 V25.5 C27 26.3 26.3 27 25.5 27 C18.5 27 11 19.5 11 12.5 C11 11.7 11.7 11 12.5 11 Z""/>
 </svg>";
 
-    private static string BuildEmailIconSvg() =>
+    private string BuildEmailIconSvg() =>
         @"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 36 36"" fill=""none"" stroke=""#FFFFFF"" stroke-width=""1.4"" stroke-linecap=""round"" stroke-linejoin=""round"">
   <circle cx=""18"" cy=""18"" r=""16.5"" stroke-width=""1.2""/>
   <rect x=""10"" y=""13"" width=""16"" height=""11"" rx=""1.2""/>
   <path d=""M10.5 14 L18 19.2 L25.5 14""/>
 </svg>";
 
-    private static string BuildWebIconSvg() =>
+    private string BuildWebIconSvg() =>
         @"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 36 36"" fill=""none"" stroke=""#FFFFFF"" stroke-width=""1.3"" stroke-linecap=""round"" stroke-linejoin=""round"">
   <circle cx=""18"" cy=""18"" r=""16.5"" stroke-width=""1.2""/>
   <circle cx=""18"" cy=""18"" r=""8.5""/>
@@ -1489,14 +1489,14 @@ public class PdfService
   <line x1=""9.5"" y1=""18"" x2=""26.5"" y2=""18""/>
 </svg>";
 
-    private static string BuildPinIconSvg() =>
+    private string BuildPinIconSvg() =>
         @"<svg xmlns=""http://www.w3.org/2000/svg"" viewBox=""0 0 36 36"" fill=""none"" stroke=""#FFFFFF"" stroke-width=""1.4"" stroke-linecap=""round"" stroke-linejoin=""round"">
   <circle cx=""18"" cy=""18"" r=""16.5"" stroke-width=""1.2""/>
   <path d=""M18 9 C15 9 12 11 12 14.5 C12 19.5 18 27 18 27 C18 27 24 19.5 24 14.5 C24 11 21 9 18 9 Z""/>
   <circle cx=""18"" cy=""14.5"" r=""2.2""/>
 </svg>";
 
-    private static void RenderReferences(PageDescriptor page, Catalog catalog,
+    private void RenderReferences(PageDescriptor page, Catalog catalog,
         IReadOnlyList<Reference> chunk, int pageNumber, int totalPages)
     {
         ApplyInnerPageDefaults(page);
@@ -1535,7 +1535,7 @@ public class PdfService
         page.Footer().Element(e => RenderInnerFooter(e, $"{pageNumber} / {totalPages}", catalog.Brand));
     }
 
-    private static void RenderReferenceCard(IContainer container, Reference reference)
+    private void RenderReferenceCard(IContainer container, Reference reference)
     {
         var hasName = !string.IsNullOrWhiteSpace(reference.Name);
         container
@@ -1558,7 +1558,7 @@ public class PdfService
             });
     }
 
-    private static void RenderMixedProductPage(PageDescriptor page, BrandInfo brand,
+    private void RenderMixedProductPage(PageDescriptor page, BrandInfo brand,
         List<PageElement> elements, int pageNumber, int totalPages, bool showIntro)
     {
         ApplyInnerPageDefaults(page);
@@ -1622,7 +1622,7 @@ public class PdfService
         page.Footer().Element(e => RenderInnerFooter(e, $"{pageNumber} / {totalPages}", brand));
     }
 
-    private static void RenderProductRowGrid(IContainer container, List<Product> products, int startIndex)
+    private void RenderProductRowGrid(IContainer container, List<Product> products, int startIndex)
     {
         const float padding = 7f;
         container.Table(table =>
@@ -1645,7 +1645,7 @@ public class PdfService
         });
     }
 
-    private static void RenderSingleProductPage(PageDescriptor page, BrandInfo brand, Product product)
+    private void RenderSingleProductPage(PageDescriptor page, BrandInfo brand, Product product)
     {
         ApplyInnerPageDefaults(page);
         ApplyWatermark(page, brand);
@@ -1659,7 +1659,7 @@ public class PdfService
         page.Footer().Element(e => RenderInnerFooter(e, product.Code ?? string.Empty, brand));
     }
 
-    private static void RenderSingleProductBlock(IContainer container, Product product)
+    private void RenderSingleProductBlock(IContainer container, Product product)
     {
         var table = product.Table ?? new ProductTable();
         var title = !string.IsNullOrWhiteSpace(table.Title) ? table.Title :
@@ -1796,7 +1796,7 @@ public class PdfService
         });
     }
 
-    private static void RenderProductTableBlock(IContainer container, Product product)
+    private void RenderProductTableBlock(IContainer container, Product product)
     {
         var table = product.Table ?? new ProductTable();
         var title = string.IsNullOrWhiteSpace(table.Title) ? product.Name : table.Title;
@@ -1887,7 +1887,7 @@ public class PdfService
         });
     }
 
-    private static void RenderFeaturedProductCard(IContainer container, Product product)
+    private void RenderFeaturedProductCard(IContainer container, Product product)
     {
         container
             .ShowEntire()
@@ -1934,13 +1934,13 @@ public class PdfService
             });
     }
 
-    private static void RenderProductCard(IContainer container, Product product, int index = 0)
+    private void RenderProductCard(IContainer container, Product product, int index = 0)
     {
         RenderProductCardStandard(container, product);
     }
 
     // KLASIK: beyaz kart + lacivert fiyat şeridi (mevcut endüstriyel görünüm)
-    private static void RenderProductCardStandard(IContainer container, Product product)
+    private void RenderProductCardStandard(IContainer container, Product product)
     {
         // Layers ile fiyat + çizgi her zaman kartın ALTINA hizalanır — yanına
         // featured ürün geldiğinde alt sınırlar (featured paneli ile) aynı seviyede
@@ -1986,7 +1986,7 @@ public class PdfService
             });
     }
 
-    private static void ApplyInnerPageDefaults(PageDescriptor page)
+    private void ApplyInnerPageDefaults(PageDescriptor page)
     {
         page.Size(PageSizes.A4);
         page.Margin(0);
@@ -1994,7 +1994,7 @@ public class PdfService
         page.DefaultTextStyle(t => t.FontFamily(BodyFont).FontSize(10).FontColor(TextHex));
     }
 
-    private static void RenderInnerHeader(IContainer container, BrandInfo brand, string sectionLabel)
+    private void RenderInnerHeader(IContainer container, BrandInfo brand, string sectionLabel)
     {
         // Tek tip slim header: beyaz arka plan, sol marka (logo + isim), sağ section, altta ince çizgi.
         container.Column(col =>
@@ -2013,7 +2013,7 @@ public class PdfService
         });
     }
 
-    private static void RenderInnerFooter(IContainer container, string trailing, BrandInfo? brand = null)
+    private void RenderInnerFooter(IContainer container, string trailing, BrandInfo? brand = null)
     {
         // Tek tip slim footer: üstte ince çizgi, ortada marka adı, sağda sayfa numarası.
         container.Column(col =>
@@ -2032,7 +2032,7 @@ public class PdfService
         });
     }
 
-    private static void MonogramBadgeLight(IContainer container, string? logoPath, string? brandName = null, bool showBackground = false)
+    private void MonogramBadgeLight(IContainer container, string? logoPath, string? brandName = null, bool showBackground = false)
     {
         if (!string.IsNullOrWhiteSpace(logoPath) && File.Exists(logoPath))
         {
@@ -2052,7 +2052,7 @@ public class PdfService
         }
     }
 
-    private static void MonogramBadgeOnDark(IContainer container, string? logoPath, string? brandName = null)
+    private void MonogramBadgeOnDark(IContainer container, string? logoPath, string? brandName = null)
     {
         if (!string.IsNullOrWhiteSpace(logoPath) && File.Exists(logoPath))
         {
@@ -2068,7 +2068,7 @@ public class PdfService
         }
     }
 
-    private static void SmallMonogramOnDark(IContainer container, string? logoPath, string? brandName = null)
+    private void SmallMonogramOnDark(IContainer container, string? logoPath, string? brandName = null)
     {
         if (!string.IsNullOrWhiteSpace(logoPath) && File.Exists(logoPath))
         {
@@ -2084,7 +2084,7 @@ public class PdfService
         }
     }
 
-    private static string TruncateForLines(string text, int charsPerLine, int maxLines)
+    private string TruncateForLines(string text, int charsPerLine, int maxLines)
     {
         if (string.IsNullOrEmpty(text)) return text ?? string.Empty;
         var max = charsPerLine * maxLines;
@@ -2095,7 +2095,7 @@ public class PdfService
         return sub + "…";
     }
 
-    private static int CardCharsPerLine => ProductsPerRow switch
+    private int CardCharsPerLine => ProductsPerRow switch
     {
         2 => 56,
         3 => 42,
@@ -2103,7 +2103,7 @@ public class PdfService
         _ => 42,
     };
 
-    private static int CardCodeCharsPerLine => ProductsPerRow switch
+    private int CardCodeCharsPerLine => ProductsPerRow switch
     {
         2 => 30,
         3 => 22,
@@ -2111,7 +2111,7 @@ public class PdfService
         _ => 22,
     };
 
-    private static int FeaturedCharsPerLine => ProductsPerRow switch
+    private int FeaturedCharsPerLine => ProductsPerRow switch
     {
         2 => 36,
         3 => 26,
@@ -2119,7 +2119,7 @@ public class PdfService
         _ => 26,
     };
 
-    private static string InitialsOf(string name)
+    private string InitialsOf(string name)
     {
         if (string.IsNullOrWhiteSpace(name)) return "";
         var parts = name.Split(new[] { ' ', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
@@ -2128,7 +2128,7 @@ public class PdfService
         return $"{parts[0][..1]}{parts[1][..1]}".ToUpperInvariant();
     }
 
-    private static string FormatPrice(Product product)
+    private string FormatPrice(Product product)
     {
         if (product.Price <= 0) return "Fiyat sorunuz";
         return $"{product.Price.ToString("N2", TrCulture)} {product.Currency}";
@@ -2138,7 +2138,7 @@ public class PdfService
     /// Sayfa arka planına çapraz watermark (şeffaf "DRAFT" gibi) ekler. brand.WatermarkText boş ise hiçbir şey yapmaz.
     /// SVG kullanılır çünkü QuestPDF native Rotate API açı parametresi desteklemez.
     /// </summary>
-    private static void ApplyWatermark(PageDescriptor page, BrandInfo brand)
+    private void ApplyWatermark(PageDescriptor page, BrandInfo brand)
     {
         if (string.IsNullOrWhiteSpace(brand.WatermarkText)) return;
         var safeText = System.Net.WebUtility.HtmlEncode(brand.WatermarkText);
@@ -2155,13 +2155,13 @@ public class PdfService
         page.Background().Svg(svg);
     }
 
-    private static float MmToPt(double mm) => (float)(mm * 595.0 / 210.0);
+    private float MmToPt(double mm) => (float)(mm * 595.0 / 210.0);
 
     /// <summary>
     /// Kullanıcının Kapak Tasarım Stüdyosu'nda yerleştirdiği elementleri render eder.
     /// Her element z-index sırasıyla bir Layer olarak, mm cinsinden pozisyon/boyut → pt'a çevrilir.
     /// </summary>
-    private static void RenderFreeFormCover(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderFreeFormCover(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         page.Content().Layers(layers =>
         {
@@ -2178,7 +2178,7 @@ public class PdfService
         });
     }
 
-    private static void RenderCoverElementContent(IContainer c, CoverElement el)
+    private void RenderCoverElementContent(IContainer c, CoverElement el)
     {
         // Background (Rectangle, Line vs için zorunlu; diğerleri için optional)
         if (!string.IsNullOrEmpty(el.BackgroundHex))
@@ -2210,7 +2210,7 @@ public class PdfService
     /// <summary>
     /// Mod: Üst yarı foto + alt yarı tasarım render. Foto sayfanın üst %55'i, alt %45'inde marka bilgileri + iletişim bandı.
     /// </summary>
-    private static void RenderCoverImageTopHalf(PageDescriptor page, BrandInfo brand, CoverPageInfo cover, string imagePath)
+    private void RenderCoverImageTopHalf(PageDescriptor page, BrandInfo brand, CoverPageInfo cover, string imagePath)
     {
         var (bigTitle, subtitle, tagline, _, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -2238,7 +2238,7 @@ public class PdfService
     /// <summary>
     /// Mod: Sağ yarı foto + sol yarı tipografi. Foto sayfanın sağ yarısı, sol yarısında büyük başlık + slogan + year + contact.
     /// </summary>
-    private static void RenderCoverImageRightHalf(PageDescriptor page, BrandInfo brand, CoverPageInfo cover, string imagePath)
+    private void RenderCoverImageRightHalf(PageDescriptor page, BrandInfo brand, CoverPageInfo cover, string imagePath)
     {
         var (bigTitle, subtitle, tagline, _, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -2310,11 +2310,12 @@ public class PdfService
     /// Düşük DPI (96) hız için. Hata durumunda null döner (UI çökmemeli).
     /// </summary>
     // Önizleme render'larını serileştirir. ApplyTheme/ActiveDesign PAYLAŞILAN STATIK olduğundan,
-    // tasarım thumbnail'leri toplu render'ı + canlı kapak önizlemesi aynı anda dönerse renkler
-    // birbirine karışır (race). Lock ile tek-seferde bir render → güvenli. (Tam çözüm: RenderContext.)
+    // Renk/layout state artık INSTANCE (her PdfService kendi alanlarına sahip) → state-race giderildi:
+    // eski static state'te thumbnail toplu render'ı + canlı önizleme aynı anda dönünce renkler karışıyordu.
+    // Lock yalnızca QuestPDF eşzamanlı render çağrılarını serileştiren defansif guard olarak kalır.
     private static readonly object _previewRenderLock = new();
 
-    public static byte[]? GenerateCoverPreviewBytes(Catalog catalog)
+    public byte[]? GenerateCoverPreviewBytes(Catalog catalog)
     {
         lock (_previewRenderLock)
         {
@@ -2350,7 +2351,7 @@ public class PdfService
     // ============================================================
 
     // MINIMALIST — sade premium, whitespace dominant, ince hat aksanı
-    private static void RenderCoverMinimalist(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCoverMinimalist(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -2424,7 +2425,7 @@ public class PdfService
         });
     }
 
-    private static void BuildMinimalContactItem(RowDescriptor row, string? text)
+    private void BuildMinimalContactItem(RowDescriptor row, string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return;
         row.RelativeItem().AlignCenter().Text(text)
@@ -2432,7 +2433,7 @@ public class PdfService
     }
 
     // SERTIFIKA — çift çizgi çerçeve + köşe motifleri, ortalı klasik panel
-    private static void RenderCoverSertifika(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCoverSertifika(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -2530,7 +2531,7 @@ public class PdfService
     }
 
     // BLUEPRINT — mühendislik grid + teknik vana sembolü
-    private static void RenderCoverBlueprint(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCoverBlueprint(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -2640,7 +2641,7 @@ public class PdfService
     }
 
     // AKIS — sayfayı kat eden bronz akış eğrisi, dinamik kompozisyon
-    private static void RenderCoverAkis(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCoverAkis(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -2722,7 +2723,7 @@ public class PdfService
     }
 
     // YATAY BANT — orta yarısı kaplayan koyu bant, editöryel sinematik
-    private static void RenderCoverYatayBant(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
+    private void RenderCoverYatayBant(PageDescriptor page, BrandInfo brand, CoverPageInfo cover)
     {
         var (bigTitle, subtitle, tagline, editionText, sectionLabel, year) = BuildCoverStrings(brand, cover);
 
@@ -2814,7 +2815,7 @@ public class PdfService
 
     // ---- Yeni SVG helper'ları ----
 
-    private static string BuildBlueprintGridSvg()
+    private string BuildBlueprintGridSvg()
     {
         // A4 595x842pt boyutunda subtle grid pattern
         var sb = new StringBuilder();
@@ -2835,7 +2836,7 @@ public class PdfService
         return sb.ToString();
     }
 
-    private static string BuildBlueprintRulerSvg()
+    private string BuildBlueprintRulerSvg()
     {
         var sb = new StringBuilder();
         sb.Append("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 842'>");
@@ -2849,7 +2850,7 @@ public class PdfService
         return sb.ToString();
     }
 
-    private static string BuildValveTechSvg()
+    private string BuildValveTechSvg()
     {
         // basit teknik vana sembolü: gövde + iki flanş + el çarkı
         var sb = new StringBuilder();
@@ -2877,7 +2878,7 @@ public class PdfService
         return sb.ToString();
     }
 
-    private static string BuildFlowCurvesSvg()
+    private string BuildFlowCurvesSvg()
     {
         // sayfayı kat eden bronz akış eğrileri (alt sol → üst sağ)
         var sb = new StringBuilder();

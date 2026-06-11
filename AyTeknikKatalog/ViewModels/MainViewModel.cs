@@ -208,7 +208,7 @@ public partial class MainViewModel : ObservableObject
         var catalogSnapshot = Catalog; // closure capture
         System.Threading.Tasks.Task.Run(() =>
         {
-            var bmp = BytesToFrozenBitmap(PdfService.GenerateCoverPreviewBytes(catalogSnapshot));
+            var bmp = BytesToFrozenBitmap(new PdfService().GenerateCoverPreviewBytes(catalogSnapshot));
             System.Windows.Application.Current?.Dispatcher.Invoke(() =>
             {
                 CoverPreviewImage = bmp;
@@ -235,7 +235,7 @@ public partial class MainViewModel : ObservableObject
             foreach (var card in DesignCards)
             {
                 sample.DesignId = card.Design.Id;   // GenerateCoverPreviewBytes lock'lu → seri render, race yok
-                var bmp = BytesToFrozenBitmap(PdfService.GenerateCoverPreviewBytes(sample));
+                var bmp = BytesToFrozenBitmap(new PdfService().GenerateCoverPreviewBytes(sample));
                 var c = card;
                 // BeginInvoke + Background önceliği: thumbnail atamaları kullanıcı girdisini (tıklama/scroll)
                 // bloklamaz. Senkron Invoke (Normal öncelik = input'un üstünde) 13 kapakta tıklama düşürüyordu.
