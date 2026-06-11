@@ -98,7 +98,7 @@ public partial class EmailPreviewWindow : Window
 
     private async Task SendAsync(string provider, Func<Task<MailSendResult>> send)
     {
-        if (string.IsNullOrWhiteSpace(ToEmailBox.Text) || !ToEmailBox.Text.Contains('@'))
+        if (!Services.EmailValidator.IsValid(ToEmailBox.Text))   // uygulama genelindeki tek doğrulayıcı
         {
             StatusText.Text = "Gecerli bir alici e-postasi girin.";
             return;

@@ -111,14 +111,9 @@ public static class ExcelImportService
         catch { return cell.Value.ToString() ?? ""; }
     }
 
-    private static decimal? ParseDecimal(string s)
-    {
-        if (string.IsNullOrWhiteSpace(s)) return null;
-        s = s.Replace("₺", "").Replace("TL", "").Replace("$", "").Replace("€", "").Trim();
-        if (decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var v)) return v;
-        if (decimal.TryParse(s, NumberStyles.Any, new CultureInfo("tr-TR"), out v)) return v;
-        return null;
-    }
+    // H1 fix: invariant-first deneme Türkçe "12.500"ü (=12500) 12,5 yapıp fiyatı 1000 kat bozuyordu.
+    // Ayraç-analizli tek doğru kaynak ExcelDataService.ParseDecimal'e delege edilir.
+    private static decimal? ParseDecimal(string s) => ExcelDataService.ParseDecimal(s);
 
     private static Dictionary<int, byte[]> ExtractImagesByRow(IXLWorksheet ws)
     {

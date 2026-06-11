@@ -487,6 +487,10 @@ public partial class MainViewModel : ObservableObject
 
     private void OnGraphChanged(object? sender, PropertyChangedEventArgs e)
     {
+        // CatalogService.Save her kayıtta LastModified damgalar; bunu dirty saymak autosave'in
+        // kendini tetiklemesine (2 sn'de bir sonsuz tam-JSON yazımı) ve gerçek kayıttan hemen
+        // sonra IsDirty'nin geri true olmasına yol açıyordu (H2).
+        if (e.PropertyName == nameof(Catalog.LastModified)) return;
         IsDirty = true;
         ScheduleAutoSave();
         OnPropertyChanged(nameof(CalculatedPageCount));

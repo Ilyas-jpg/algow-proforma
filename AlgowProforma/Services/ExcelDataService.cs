@@ -223,8 +223,9 @@ public static class ExcelDataService
     /// Kültür yarıştırmak yerine AYRAÇ DÜZENİNİ analiz eder — yoksa Türkçe "12.500" (=12500)
     /// Invariant'ta 12,5 olarak parse olup fiyatı 1000 kat bozar (sessiz hata).
     /// Kural: hem . hem , varsa SON görülen ondalıktır; sadece , → Türkçe; sadece . → tek nokta+1-2 hane ise ondalık, değilse binlik.
+    /// TEK doğru kaynak: ExcelImportService (ürün/kütüphane importu) de bunu kullanır (H1 fix).
     /// </summary>
-    private static decimal? ParseDecimal(string s)
+    internal static decimal? ParseDecimal(string s)
     {
         if (string.IsNullOrWhiteSpace(s)) return null;
         s = s.Replace("₺", "").Replace("TL", "").Replace("$", "").Replace("€", "").Replace("%", "").Trim();

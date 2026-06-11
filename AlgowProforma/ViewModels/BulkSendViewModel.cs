@@ -26,7 +26,21 @@ public partial class BulkSendViewModel : ObservableObject
     [ObservableProperty] private ObservableCollection<BulkRecipient> _recipients = new();
     [ObservableProperty] private string _manualEmails = "";
     [ObservableProperty] private string _statusText = "";
+
+    [NotifyPropertyChangedFor(nameof(IsNotBusy))]
     [ObservableProperty] private bool _busy;
+    /// <summary>Gönder butonu binding'i (gönderim sürerken ikinci gönderim başlatılamaz).</summary>
+    public bool IsNotBusy => !Busy;
+
+    // H3: gönderim iptal edilebilir — yanlış teklif seçildiyse 100 mail durdurulamıyordu.
+    private System.Threading.CancellationTokenSource? _cts;
+
+    [RelayCommand]
+    private void CancelSend()
+    {
+        _cts?.Cancel();
+        StatusText = "İptal ediliyor… (sıradaki alıcıda durur)";
+    }
 
     public BulkSendViewModel()
     {
@@ -136,14 +150,19 @@ public partial class BulkSendViewModel : ObservableObject
         var gmail = useGmail ? new GmailService() : null;
         var quoteTheme = PdfTheme.GetById(_settings.QuoteThemeId);   // döngü dışında bir kez
 
+        _cts = new System.Threading.CancellationTokenSource();
+        var ct = _cts.Token;
+
         try
         {
-            if (smtp is not null) await smtp.OpenAsync();
+            if (smtp is not null) await smtp.OpenAsync(ct);
 
             foreach (var r in targets)
             {
+                ct.ThrowIfCancellationRequested();
                 r.Status = "Hazırlanıyor...";
                 string quoteId = "", quoteNo = "", displayName = "";
+                string? pdfPath = null;
                 try
                 {
                     var q = SelectedQuote.Clone(newId: true);
@@ -151,13 +170,16 @@ public partial class BulkSendViewModel : ObservableObject
                     quoteId = q.Id; quoteNo = q.QuoteNo;
 
                     displayName = tmpl.AttachmentName(r.TargetName, DateTime.Today);
-                    var pdfPath = Path.Combine(AppPaths.QuotesDir, q.Id + ".pdf"); // benzersiz disk yolu (aynı firma/boş ad çakışmasın)
-                    QuotePdfService.Generate(q, _brand, pdfPath, quoteTheme);
+                    // Geçici klasöre üret (M: kalıcı Teklifler klasörünü alıcı başına orphan PDF'le doldurmasın)
+                    // ve render'ı UI thread'inden indir (H3: pencere alıcı başına 1-2 sn donuyordu).
+                    pdfPath = Path.Combine(Path.GetTempPath(), "alg-bulk-" + q.Id + ".pdf");
+                    var path = pdfPath;
+                    await Task.Run(() => QuotePdfService.Generate(q, _brand, path, quoteTheme), ct);
 
                     var body = tmpl.FullBody(r.ContactName, r.Salutation);
                     var res = useGmail
-                        ? await gmail!.SendAsync(_settings.Google, gmailCred!, _settings.Mail.FromName, r.Email, r.TargetName, tmpl.Subject, body, pdfPath, displayName)
-                        : await smtp!.SendAsync(r.Email, r.TargetName, tmpl.Subject, body, pdfPath, attachmentDisplayName: displayName);
+                        ? await gmail!.SendAsync(_settings.Google, gmailCred!, _settings.Mail.FromName, r.Email, r.TargetName, tmpl.Subject, body, pdfPath, displayName, ct)
+                        : await smtp!.SendAsync(r.Email, r.TargetName, tmpl.Subject, body, pdfPath, ct, attachmentDisplayName: displayName);
 
                     if (res.Success) { r.Status = "✓ Gönderildi"; sent++; }
                     else { r.Status = "✗ " + res.Error; fail++; }
@@ -177,12 +199,22 @@ public partial class BulkSendViewModel : ObservableObject
                         Error = res.Error ?? "",
                     });
                 }
+                catch (OperationCanceledException) { r.Status = "İptal edildi"; throw; }
                 catch (Exception ex) { r.Status = "✗ " + ex.Message; fail++; }
+                finally
+                {
+                    // Geçici PDF gönderim bitince silinir (başarı/hata fark etmez)
+                    try { if (pdfPath is not null && File.Exists(pdfPath)) File.Delete(pdfPath); } catch { }
+                }
 
                 StatusText = $"Gönderiliyor… {sent + fail}/{targets.Count}  (✓{sent} ✗{fail})";
-                if (delayMs > 0) await Task.Delay(delayMs);
+                if (delayMs > 0) await Task.Delay(delayMs, ct);
             }
             StatusText = $"Tamamlandı — ✓ {sent} gönderildi · ✗ {fail} başarısız.";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText = $"İptal edildi — ✓ {sent} gönderildi, kalan {targets.Count - sent - fail} alıcıya gönderilmedi.";
         }
         catch (Exception ex)
         {
@@ -191,6 +223,8 @@ public partial class BulkSendViewModel : ObservableObject
         finally
         {
             if (smtp is not null) await smtp.CloseAsync();
+            _cts.Dispose();
+            _cts = null;
             Busy = false;
         }
     }

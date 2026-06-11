@@ -55,27 +55,58 @@ public partial class QuoteEditorViewModel : ObservableObject
         HookQuote(newValue);
     }
 
+    // ---- kaydedilmemiş değişiklik takibi (H5: X ile sessiz veri kaybını önler) ----
+    /// <summary>Son kayıttan beri kalem/alan değişti mi. Pencere Closing'i buna bakar.</summary>
+    public bool HasUnsavedChanges { get; private set; }
+
+    /// <summary>Pencere kapanırken "kaydet" seçilirse çağrılır. Kalemsiz teklif zaten kaydedilmediği
+    /// için kayıpsız sayılır ve kapanışa izin verilir; kayıt hatasında pencere açık kalır.</summary>
+    public bool TrySaveForClose()
+    {
+        if (Quote.Lines.Count == 0) return true;
+        try
+        {
+            _quotes.Save(Quote);
+            HasUnsavedChanges = false;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Kaydedilemedi: " + ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+    }
+
     // ---- canlı toplam reaktivitesi ----
     private void HookQuote(Quote q)
     {
+        q.PropertyChanged += OnQuoteFieldChanged;
         q.Lines.CollectionChanged += OnLinesChanged;
         foreach (var l in q.Lines) l.PropertyChanged += OnLineChanged;
     }
 
     private void UnhookQuote(Quote q)
     {
+        q.PropertyChanged -= OnQuoteFieldChanged;
         q.Lines.CollectionChanged -= OnLinesChanged;
         foreach (var l in q.Lines) l.PropertyChanged -= OnLineChanged;
     }
+
+    private void OnQuoteFieldChanged(object? sender, PropertyChangedEventArgs e) => HasUnsavedChanges = true;
 
     private void OnLinesChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.OldItems is not null) foreach (QuoteLine l in e.OldItems) l.PropertyChanged -= OnLineChanged;
         if (e.NewItems is not null) foreach (QuoteLine l in e.NewItems) l.PropertyChanged += OnLineChanged;
+        HasUnsavedChanges = true;
         Quote.NotifyTotalsChanged();
     }
 
-    private void OnLineChanged(object? sender, PropertyChangedEventArgs e) => Quote.NotifyTotalsChanged();
+    private void OnLineChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        HasUnsavedChanges = true;
+        Quote.NotifyTotalsChanged();
+    }
 
     // ---- komutlar ----
     [RelayCommand]
@@ -113,6 +144,7 @@ public partial class QuoteEditorViewModel : ObservableObject
     {
         if (Quote.Lines.Count == 0) { StatusText = "En az bir kalem ekleyin."; return; }
         _quotes.Save(Quote);
+        HasUnsavedChanges = false;   // Save'in kendi QuoteNo/UpdatedAt mutasyonlarından SONRA
         OnPropertyChanged(nameof(Quote));
         StatusText = $"Kaydedildi: {Quote.QuoteNo}";
     }
@@ -124,11 +156,13 @@ public partial class QuoteEditorViewModel : ObservableObject
         try
         {
             _quotes.Save(Quote); // numara + arşiv
+            HasUnsavedChanges = false;
             OnPropertyChanged(nameof(Quote));
             var safeNo = string.IsNullOrWhiteSpace(Quote.QuoteNo) ? Quote.Id : Quote.QuoteNo;
             var path = Path.Combine(AppPaths.QuotesDir, safeNo + ".pdf");
             QuotePdfService.Generate(Quote, _brand, path, PdfTheme.GetById(new SettingsService().Load().QuoteThemeId));
-            Process.Start(new ProcessStartInfo("msedge.exe", $"\"{path}\"") { UseShellExecute = true });
+            // Varsayılan PDF görüntüleyiciyle aç — msedge.exe hardcode'u Edge'siz makinede patlıyordu.
+            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
             StatusText = $"PDF üretildi: {Path.GetFileName(path)}";
         }
         catch (Exception ex)
@@ -146,6 +180,7 @@ public partial class QuoteEditorViewModel : ObservableObject
         try
         {
             _quotes.Save(Quote);
+            HasUnsavedChanges = false;
             OnPropertyChanged(nameof(Quote));
 
             var settings = new SettingsService().Load();
@@ -184,6 +219,7 @@ public partial class QuoteEditorViewModel : ObservableObject
     {
         var rev = Quote.CreateRevision();
         Quote = rev;
+        HasUnsavedChanges = true;   // revizyon henüz kaydedilmedi (alan mutasyonları hook'tan önce olur)
         StatusText = $"Yeni revizyon: rev.{rev.Revision}";
     }
 }

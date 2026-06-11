@@ -38,6 +38,17 @@ public partial class QuoteLine : ObservableObject
     [NotifyPropertyChangedFor(nameof(LineGross))]
     [ObservableProperty] private decimal _vatRate = 20m;
 
+    // Negatif/taşkın girdi imzalı para belgesinde eksi tutar üretmesin: sınırlar girişte uygulanır.
+    // Setter içinden tekrar atama re-entrancy yapmaz — ikinci çağrıda değer artık geçerlidir.
+    partial void OnQuantityChanged(decimal value) { if (value < 0m) Quantity = 0m; }
+    partial void OnUnitPriceChanged(decimal value) { if (value < 0m) UnitPrice = 0m; }
+    partial void OnDiscountPctChanged(decimal value)
+    {
+        if (value < 0m) DiscountPct = 0m;
+        else if (value > 100m) DiscountPct = 100m;
+    }
+    partial void OnVatRateChanged(decimal value) { if (value < 0m) VatRate = 0m; }
+
     /// <summary>İskontolu net satır tutarı (KDV hariç).</summary>
     public decimal LineNet =>
         Math.Round(Quantity * UnitPrice * (1m - DiscountPct / 100m), 2, MidpointRounding.AwayFromZero);

@@ -71,7 +71,10 @@
         <DockPanel Grid.Row="4" Margin="0,14,0,0">
             <TextBlock DockPanel.Dock="Left" Text="{Binding StatusText}" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
             <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="Önizle &amp; Gönder" Command="{Binding SendCommand}"
-                    HorizontalAlignment="Right" />
+                    IsEnabled="{Binding IsNotBusy}" HorizontalAlignment="Right" />
+            <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Content="İptal" Command="{Binding CancelSendCommand}"
+                    IsEnabled="{Binding Busy}" Margin="0,0,8,0"
+                    ToolTip="Süren gönderimi durdurur — sıradaki alıcıdan itibaren gönderilmez" />
         </DockPanel>
     </Grid>
 </Window>

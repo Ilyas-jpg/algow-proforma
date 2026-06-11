@@ -16,6 +16,30 @@ namespace AlgowProforma;
 
 public partial class App : Application
 {
+    // H4: tek-instance kilidi — GC almasın diye süreç ömrünce field'da tutulur.
+    private static Mutex? _singleInstanceMutex;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+    private const int SW_RESTORE = 9;
+
+    /// <summary>İkinci kopya açılmak istendiğinde mevcut pencereyi öne getirir (best-effort).</summary>
+    private static void ActivateExistingInstance()
+    {
+        try
+        {
+            var current = System.Diagnostics.Process.GetCurrentProcess();
+            var other = System.Diagnostics.Process.GetProcessesByName(current.ProcessName)
+                .FirstOrDefault(p => p.Id != current.Id && p.MainWindowHandle != IntPtr.Zero);
+            if (other is null) return;
+            ShowWindowAsync(other.MainWindowHandle, SW_RESTORE);
+            SetForegroundWindow(other.MainWindowHandle);
+        }
+        catch { /* öne getirme süs; asıl koruma ikinci instance'ın hiç başlamaması */ }
+    }
+
     // Lazy path — Türkçe karakterli username'de static field initializer'da crash etmemesi için method olarak
     private static string GetCrashLogPath()
     {
@@ -96,6 +120,18 @@ public partial class App : Application
                     System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "algow-teklif-HATA.txt"),
                     ex.ToString());
             }
+            Shutdown(0);
+            return;
+        }
+
+        // H4: TEK-INSTANCE kilidi (yalnızca normal GUI başlangıcı — CLI self-test modları yukarıda
+        // muaf). İki kopya aynı counters.json'u yarıştırıp iki müşteriye AYNI teklif numarasını
+        // kesebilir; ayrıca görsel temizliği/kayıtlar last-writer-wins olur. Mutex süreç ömrünce
+        // field'da tutulur, çıkışta OS bırakır.
+        _singleInstanceMutex = new Mutex(initiallyOwned: true, @"Local\AlgowProforma.SingleInstance", out bool createdNew);
+        if (!createdNew)
+        {
+            ActivateExistingInstance();
             Shutdown(0);
             return;
         }
