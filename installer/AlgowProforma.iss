@@ -7,7 +7,7 @@
 ;   ISCC installer/AlgowProforma.iss
 
 #define AppName         "Algow Proforma PDF"
-#define AppVersion      "1.3.0"
+#define AppVersion      "1.3.1"
 #define AppPublisher    "AlgowAI"
 #define AppExeName      "AlgowProforma.exe"
 #define SourceDir       "..\publish\win-x64"
@@ -53,7 +53,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.17763
 
-VersionInfoVersion=1.3.0.0
+VersionInfoVersion=1.3.1.0
 VersionInfoCompany={#AppPublisher}
 VersionInfoDescription={#AppName} Kurulum Sihirbazi
 VersionInfoProductName={#AppName}
