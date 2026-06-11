@@ -120,7 +120,11 @@ public class GoogleOAuthService
         GoogleOAuthSettings settings, string redirectUri, string scopes, bool includeOfflineAccess, CancellationToken ct)
     {
         var state = CreateState();
-        var authUrl = BuildAuthUrl(settings.EffectiveClientId, redirectUri, scopes, state, includeOfflineAccess);
+        // PKCE (RFC 7636, S256): yetkilendirme kodu loopback'te ele geçirilse bile verifier olmadan
+        // token'a çevrilemez. Masaüstü (public client) için standart koruma; Google destekler.
+        var codeVerifier = CreateCodeVerifier();
+        var authUrl = BuildAuthUrl(settings.EffectiveClientId, redirectUri, scopes, state, includeOfflineAccess,
+            CreateCodeChallenge(codeVerifier));
         using var listener = StartListener(redirectUri);
 
         Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
@@ -136,11 +140,12 @@ public class GoogleOAuthService
             ["code"] = callback,
             ["grant_type"] = "authorization_code",
             ["redirect_uri"] = redirectUri,
+            ["code_verifier"] = codeVerifier,
         };
         return await PostTokenAsync(form, ct);
     }
 
-    private static string BuildAuthUrl(string clientId, string redirectUri, string scopes, string state, bool includeOfflineAccess)
+    private static string BuildAuthUrl(string clientId, string redirectUri, string scopes, string state, bool includeOfflineAccess, string codeChallenge)
     {
         var query = new Dictionary<string, string?>
         {
@@ -151,6 +156,8 @@ public class GoogleOAuthService
             ["state"] = state,
             ["include_granted_scopes"] = "true",
             ["prompt"] = includeOfflineAccess ? "consent" : "select_account",
+            ["code_challenge"] = codeChallenge,
+            ["code_challenge_method"] = "S256",
         };
         if (includeOfflineAccess) query["access_type"] = "offline";
 
@@ -257,11 +264,17 @@ public class GoogleOAuthService
         if (!ok) throw new GoogleOAuthException($"Bu Google domainine izin yok: {domain}");
     }
 
-    private static string CreateState()
-    {
-        var bytes = RandomNumberGenerator.GetBytes(32);
-        return Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-    }
+    private static string CreateState() => Base64Url(RandomNumberGenerator.GetBytes(32));
+
+    /// <summary>PKCE code_verifier: 64 rastgele bayt → 86 karakterlik URL-safe dize (RFC 7636: 43–128).</summary>
+    internal static string CreateCodeVerifier() => Base64Url(RandomNumberGenerator.GetBytes(64));
+
+    /// <summary>PKCE S256 challenge: BASE64URL(SHA256(ASCII(verifier))).</summary>
+    internal static string CreateCodeChallenge(string verifier) =>
+        Base64Url(SHA256.HashData(Encoding.ASCII.GetBytes(verifier)));
+
+    private static string Base64Url(byte[] bytes) =>
+        Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     private static string ReadString(JsonElement root, string name) =>
         root.TryGetProperty(name, out var p) && p.ValueKind == JsonValueKind.String ? p.GetString() ?? "" : "";
