@@ -8,6 +8,8 @@ Masaüstü **teklif / proforma + ürün kataloğu PDF üretim aracı**. Tek prog
 
 **Üretici:** AlgowAI · **Platform:** Windows 10/11 (x64) · **Tür:** .NET 8 WPF masaüstü uygulaması
 
+> 📖 **Son kullanıcı mısınız?** Kapsamlı kullanım kılavuzu: **[KULLANIM.md](KULLANIM.md)** — kurulum, hızlı başlangıç, tüm ekranlar, sorun giderme. Gmail/Workspace bağlantısı: [GOOGLE_WORKSPACE_SETUP.md](GOOGLE_WORKSPACE_SETUP.md).
+
 ---
 
 ## Özellikler
