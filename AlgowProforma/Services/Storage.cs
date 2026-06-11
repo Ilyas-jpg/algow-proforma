@@ -10,8 +10,12 @@ namespace AlgowProforma.Services;
 /// <summary>Uygulama veri yolları — tek merkez. Hepsi MyDocuments\Algow Proforma Kataloglar altında.</summary>
 public static class AppPaths
 {
-    public static string LibraryRoot { get; } = Path.Combine(
+    public static string LibraryRoot { get; private set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Algow Proforma Kataloglar");
+
+    /// <summary>TEST-ONLY: veri kökünü geçici dizine yönlendirir — integration testleri kullanıcının
+    /// gerçek Belgeler verisine (teklif/sayaç/ayar/DPAPI bin) dokunmasın. Üretim kodu çağırmaz.</summary>
+    internal static void OverrideLibraryRootForTests(string root) => LibraryRoot = root;
 
     public static string DataDir => EnsureDir(Path.Combine(LibraryRoot, "data"));
     public static string QuotesDir => EnsureDir(Path.Combine(LibraryRoot, "Teklifler"));

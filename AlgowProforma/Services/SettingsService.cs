@@ -28,7 +28,9 @@ public class SettingsService
 
     /// <summary>
     /// Eski sürümlerde settings.json'a DÜZ METİN yazılmış client_secret'i (varsa) bir kez DPAPI'ye taşır
-    /// ve dosyadan temizler. Best-effort: bozuk/eksik dosyada sessizce normal Load akışına döner.
+    /// ve dosyadan temizler. İki kaynak taranır: legacy "ClientSecret" alanı + JsonIgnore eklenmeden önce
+    /// hesaplanan "EffectiveClientSecret" üzerinden sızan kopya (2026-06-12 bulgusu).
+    /// Best-effort: bozuk/eksik dosyada sessizce normal Load akışına döner.
     /// </summary>
     private static void MigrateLegacyClientSecret()
     {
@@ -37,12 +39,16 @@ public class SettingsService
         try
         {
             var root = JsonNode.Parse(File.ReadAllText(path));
-            var legacy = root?["Google"]?["ClientSecret"]?.GetValue<string>();   // PascalCase (default policy)
-            if (string.IsNullOrWhiteSpace(legacy)) return;
+            var google = root?["Google"];
+            var legacy = google?["ClientSecret"]?.GetValue<string>();            // PascalCase (default policy)
+            var leaked = google?["EffectiveClientSecret"]?.GetValue<string>();   // eski sürümün sızdırdığı kopya
+            var secret = !string.IsNullOrWhiteSpace(legacy) ? legacy : leaked;
+            if (string.IsNullOrWhiteSpace(secret) && leaked is null) return;     // taşınacak/temizlenecek bir şey yok
 
-            if (!CredentialStore.HasClientSecret)
-                CredentialStore.SaveClientSecret(legacy);   // DPAPI master — zaten varsa üzerine yazma
+            if (!string.IsNullOrWhiteSpace(secret) && !CredentialStore.HasClientSecret)
+                CredentialStore.SaveClientSecret(secret);   // DPAPI master — zaten varsa üzerine yazma
             root!["Google"]!["ClientSecret"] = "";          // düz metni dosyadan kaldır
+            (google as JsonObject)?.Remove("EffectiveClientSecret");
             AtomicFile.WriteAllText(path, root.ToJsonString(JsonStore.Options));
         }
         catch { /* migration best-effort */ }

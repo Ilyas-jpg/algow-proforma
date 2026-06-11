@@ -84,18 +84,26 @@ public partial class GoogleOAuthSettings : ObservableObject
     [ObservableProperty] private string _allowedDomains = "";
     [ObservableProperty] private GoogleIdentitySettings _identity = new();
 
+    // Effective* = env-aware HESAPLANAN görünümler — kalıcılığa girmez. JsonIgnore şart:
+    // System.Text.Json get-only public property'leri de YAZAR; EffectiveClientSecret üzerinden
+    // düz-metin secret settings.json'a sızıyordu (SettingsServiceTests yakaladı, 2026-06-12).
+    [JsonIgnore]
     public string EffectiveClientId =>
         Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? ClientId;
 
+    [JsonIgnore]
     public string EffectiveClientSecret =>
         Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? ClientSecret;
 
+    [JsonIgnore]
     public string EffectiveAuthRedirectUri =>
         Environment.GetEnvironmentVariable("GOOGLE_AUTH_REDIRECT_URI") ?? AuthRedirectUri;
 
+    [JsonIgnore]
     public string EffectiveGmailRedirectUri =>
         Environment.GetEnvironmentVariable("GOOGLE_GMAIL_REDIRECT_URI") ?? GmailRedirectUri;
 
+    [JsonIgnore]
     public string EffectiveAllowedDomains =>
         Environment.GetEnvironmentVariable("GOOGLE_OAUTH_ALLOWED_DOMAINS") ?? AllowedDomains;
 }
