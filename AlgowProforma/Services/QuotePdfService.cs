@@ -13,6 +13,10 @@ namespace AlgowProforma.Services;
 /// Premium fiyat teklifi PDF üretimi (QuestPDF). Tek doğru kaynak: toplamlar QuoteCalculator'dan (q.Totals).
 /// Türkçe için Segoe UI (her Windows'ta var, PDF'e gömülür). Üretim sonrası Linearize (hızlı ilk render).
 /// Palet, Ayarlar'daki "Teklif teması"ndan gelir (AppSettings.QuoteThemeId) — katalog temasından bağımsız.
+///
+/// Şablonlar (Quote.TemplateId): "modern" (varsayılan, eski birebir görünüm) · "kompakt" (dar kenar,
+/// küçük punto — uzun kalem listesi tek sayfaya) · "sade" (tek renk, dolgusuz — mürekkep dostu).
+/// Dil (Quote.Language): "tr" (varsayılan) · "en" (PROFORMA INVOICE — ihracat; sayı biçimi en-US).
 /// </summary>
 public class QuotePdfService
 {
@@ -26,7 +30,15 @@ public class QuotePdfService
     private readonly string Tint;
     private const string White = "#FFFFFF";
 
-    private static readonly CultureInfo Tr = new("tr-TR");
+    // ---- şablon/dil durumu — Compose başında quote'tan set edilir (instance per render) ----
+    private L10n L = Tr10n;
+    private CultureInfo Cul = new("tr-TR");
+    private bool Compact;
+    private bool Plain;
+
+    /// <summary>Sade şablonda renkli vurgular tek renge (mürekkep) iner.</summary>
+    private string Pr => Plain ? Ink : Primary;
+    private string Ac => Plain ? Ink : Accent;
 
     private QuotePdfService(PdfTheme theme)
     {
@@ -39,36 +51,86 @@ public class QuotePdfService
     }
 
     public static void Generate(Quote q, BrandInfo brand, string outputPath, PdfTheme? theme = null)
-        => new QuotePdfService(theme ?? PdfTheme.Default).Render(q, brand, outputPath);
+        => new QuotePdfService(theme ?? PdfTheme.Default).RenderToFile(q, brand, outputPath);
 
-    private void Render(Quote q, BrandInfo brand, string outputPath)
+    private static readonly object PreviewLock = new();
+
+    /// <summary>
+    /// İlk sayfanın PNG'si (96 DPI) — teklif editöründeki canlı önizleme paneli için.
+    /// Hata editörü çökertmez: null döner, ayrıntı render-errors.log'a düşer.
+    /// </summary>
+    public static byte[]? GeneratePreviewPngBytes(Quote q, BrandInfo brand, PdfTheme? theme = null)
     {
+        lock (PreviewLock)
+        {
+            try
+            {
+                QuestPDF.Settings.License = LicenseType.Community;
+                var images = new QuotePdfService(theme ?? PdfTheme.Default)
+                    .Compose(q, brand)
+                    .GenerateImages(new ImageGenerationSettings
+                    {
+                        ImageFormat = QuestPDF.Infrastructure.ImageFormat.Png,
+                        RasterDpi = 96,
+                    });
+                foreach (var img in images) return img;   // ilk sayfa yeter
+                return null;
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    Directory.CreateDirectory(AppPaths.AppDataDir);
+                    File.AppendAllText(Path.Combine(AppPaths.AppDataDir, "render-errors.log"),
+                        $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] Quote preview: {ex}{Environment.NewLine}");
+                }
+                catch { }
+                return null;
+            }
+        }
+    }
+
+    private void RenderToFile(Quote q, BrandInfo brand, string outputPath)
+    {
+        Compose(q, brand)
+            .WithSettings(new DocumentSettings
+            {
+                // PdfService kataloğuyla aynı disiplin (feedback_questpdf_linearize_default): stream deflate +
+                // JPEG ~90 + 200 DPI (QuestPDF default 288 overkill) → küçük dosya + hızlı viewer decode.
+                CompressDocument = true,
+                ImageCompressionQuality = ImageCompressionQuality.High,
+                ImageRasterDpi = 200,
+            })
+            .GeneratePdf(outputPath);
+
+        PdfPostProcessor.LinearizeIfNeeded(outputPath, hasCoverImage: true);
+    }
+
+    /// <summary>Belge kompozisyonu — dosya üretimi ve önizleme aynı kaynaktan beslenir (drift yok).</summary>
+    private Document Compose(Quote q, BrandInfo brand)
+    {
+        var en = string.Equals(q.Language, "en", StringComparison.OrdinalIgnoreCase);
+        L = en ? En10n : Tr10n;
+        Cul = new CultureInfo(en ? "en-US" : "tr-TR");
+        Compact = string.Equals(q.TemplateId, "kompakt", StringComparison.OrdinalIgnoreCase);
+        Plain = string.Equals(q.TemplateId, "sade", StringComparison.OrdinalIgnoreCase);
+
         var totals = q.Totals;
 
-        Document.Create(doc =>
+        return Document.Create(doc =>
         {
             doc.Page(page =>
             {
                 page.Size(PageSizes.A4);
-                page.Margin(34);
-                page.DefaultTextStyle(t => t.FontFamily("Segoe UI").FontSize(9.5f).FontColor(Ink).LineHeight(1.25f));
+                page.Margin(Compact ? 26 : 34);
+                page.DefaultTextStyle(t => t.FontFamily("Segoe UI")
+                    .FontSize(Compact ? 8.7f : 9.5f).FontColor(Ink).LineHeight(1.25f));
 
                 page.Header().Element(c => Header(c, q, brand));
                 page.Content().Element(c => Content(c, q, brand, totals));
                 page.Footer().Element(c => Footer(c, brand));
             });
-        })
-        .WithSettings(new DocumentSettings
-        {
-            // PdfService kataloğuyla aynı disiplin (feedback_questpdf_linearize_default): stream deflate +
-            // JPEG ~90 + 200 DPI (QuestPDF default 288 overkill) → küçük dosya + hızlı viewer decode.
-            CompressDocument = true,
-            ImageCompressionQuality = ImageCompressionQuality.High,
-            ImageRasterDpi = 200,
-        })
-        .GeneratePdf(outputPath);
-
-        PdfPostProcessor.LinearizeIfNeeded(outputPath, hasCoverImage: true);
+        });
     }
 
     // ---------- başlık ----------
@@ -78,34 +140,35 @@ public class QuotePdfService
         {
             col.Item().Row(row =>
             {
-                row.RelativeItem().AlignMiddle().Height(44).Element(e =>
+                row.RelativeItem().AlignMiddle().Height(Compact ? 36 : 44).Element(e =>
                 {
                     if (!string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
                         e.AlignLeft().Image(PdfImageCache.Get(brand.LogoPath)).FitHeight();
                     else
-                        e.AlignLeft().Text(string.IsNullOrWhiteSpace(brand.Name) ? "FİRMA ADI" : brand.Name)
-                         .FontSize(18).Bold().FontColor(Primary);
+                        e.AlignLeft().Text(string.IsNullOrWhiteSpace(brand.Name) ? L.CompanyFallback : brand.Name)
+                         .FontSize(Compact ? 15 : 18).Bold().FontColor(Pr);
                 });
 
                 row.RelativeItem().AlignRight().Column(t =>
                 {
-                    t.Item().AlignRight().Text("FİYAT TEKLİFİ").FontSize(21).Bold().FontColor(Primary).LetterSpacing(0.04f);
+                    t.Item().AlignRight().Text(L.Title)
+                        .FontSize(Compact ? 17 : 21).Bold().FontColor(Pr).LetterSpacing(0.04f);
                     var no = string.IsNullOrWhiteSpace(q.QuoteNo) ? "" : q.QuoteNo + (q.Revision > 0 ? $"  ·  rev.{q.Revision}" : "");
                     if (!string.IsNullOrEmpty(no))
                         t.Item().AlignRight().PaddingTop(2).Text(no).FontSize(10).FontColor(Muted);
                 });
             });
 
-            col.Item().PaddingTop(10).LineHorizontal(2).LineColor(Primary);
+            col.Item().PaddingTop(Compact ? 7 : 10).LineHorizontal(Plain ? 1.2f : 2).LineColor(Pr);
         });
     }
 
     // ---------- içerik ----------
     private void Content(IContainer c, Quote q, BrandInfo brand, QuoteTotals totals)
     {
-        c.PaddingVertical(14).Column(col =>
+        c.PaddingVertical(Compact ? 10 : 14).Column(col =>
         {
-            col.Spacing(14);
+            col.Spacing(Compact ? 10 : 14);
 
             // müşteri + teklif bilgileri
             col.Item().Row(row =>
@@ -132,9 +195,9 @@ public class QuotePdfService
 
     private void CustomerBox(IContainer c, Quote q)
     {
-        c.Background(Tint).Border(1).BorderColor(Line).Padding(12).Column(col =>
+        c.Background(Plain ? White : Tint).Border(1).BorderColor(Line).Padding(Compact ? 9 : 12).Column(col =>
         {
-            col.Item().Text("SAYIN").FontSize(8).Bold().FontColor(Accent).LetterSpacing(0.08f);
+            col.Item().Text(L.Dear).FontSize(8).Bold().FontColor(Ac).LetterSpacing(0.08f);
             col.Item().PaddingTop(2).Text(string.IsNullOrWhiteSpace(q.CustomerCompany) ? "—" : q.CustomerCompany)
                .FontSize(12).Bold().FontColor(Ink);
 
@@ -145,8 +208,8 @@ public class QuotePdfService
 
             var tax = string.Join("  ·  ", new[]
             {
-                string.IsNullOrWhiteSpace(q.CustomerTaxOffice) ? null : $"VD: {q.CustomerTaxOffice}",
-                string.IsNullOrWhiteSpace(q.CustomerTaxNumber) ? null : $"VKN: {q.CustomerTaxNumber}",
+                string.IsNullOrWhiteSpace(q.CustomerTaxOffice) ? null : $"{L.TaxOffice}: {q.CustomerTaxOffice}",
+                string.IsNullOrWhiteSpace(q.CustomerTaxNumber) ? null : $"{L.TaxNo}: {q.CustomerTaxNumber}",
             }.Where(s => s != null));
             if (!string.IsNullOrEmpty(tax))
                 col.Item().PaddingTop(2).Text(tax).FontSize(8.5f).FontColor(Muted);
@@ -155,12 +218,12 @@ public class QuotePdfService
 
     private void MetaBox(IContainer c, Quote q)
     {
-        c.Border(1).BorderColor(Line).Padding(12).Column(col =>
+        c.Border(1).BorderColor(Line).Padding(Compact ? 9 : 12).Column(col =>
         {
-            MetaRow(col, "Teklif No", string.IsNullOrWhiteSpace(q.QuoteNo) ? "—" : q.QuoteNo);
-            MetaRow(col, "Tarih", q.Date.ToString("dd.MM.yyyy", Tr));
-            MetaRow(col, "Geçerlilik", $"{q.ValidityDays} gün  ({q.ValidUntil.ToString("dd.MM.yyyy", Tr)})");
-            MetaRow(col, "Para Birimi", q.Currency);
+            MetaRow(col, L.QuoteNo, string.IsNullOrWhiteSpace(q.QuoteNo) ? "—" : q.QuoteNo);
+            MetaRow(col, L.Date, q.Date.ToString("dd.MM.yyyy", Cul));
+            MetaRow(col, L.Validity, $"{q.ValidityDays} {L.DaysSuffix}  ({q.ValidUntil.ToString("dd.MM.yyyy", Cul)})");
+            MetaRow(col, L.Currency, q.Currency);
         });
     }
 
@@ -191,24 +254,25 @@ public class QuotePdfService
             table.Header(h =>
             {
                 HeadCell(h, "#", TextAlign.Center);
-                HeadCell(h, "AÇIKLAMA", TextAlign.Left);
-                HeadCell(h, "MİKTAR", TextAlign.Right);
-                HeadCell(h, "BİRİM", TextAlign.Center);
-                HeadCell(h, "BİRİM FİYAT", TextAlign.Right);
-                HeadCell(h, "İSK %", TextAlign.Right);
-                HeadCell(h, "TUTAR", TextAlign.Right);
+                HeadCell(h, L.ColDesc, TextAlign.Left);
+                HeadCell(h, L.ColQty, TextAlign.Right);
+                HeadCell(h, L.ColUnit, TextAlign.Center);
+                HeadCell(h, L.ColUnitPrice, TextAlign.Right);
+                HeadCell(h, L.ColDisc, TextAlign.Right);
+                HeadCell(h, L.ColAmount, TextAlign.Right);
             });
 
             int i = 1;
             foreach (var l in q.Lines)
             {
-                string bg = (i % 2 == 0) ? Tint : White;
+                string bg = (!Plain && i % 2 == 0) ? Tint : White;   // sade: zebra yok
 
                 BodyCell(table, bg).AlignCenter().Text(i.ToString()).FontColor(Muted);
 
                 BodyCell(table, bg).Column(cc =>
                 {
-                    cc.Item().Text(string.IsNullOrWhiteSpace(l.Name) ? "—" : l.Name).FontSize(9.5f).Bold().FontColor(Ink);
+                    cc.Item().Text(string.IsNullOrWhiteSpace(l.Name) ? "—" : l.Name)
+                        .FontSize(Compact ? 8.8f : 9.5f).Bold().FontColor(Ink);
                     var sub = string.Join("  ·  ", new[]
                     {
                         string.IsNullOrWhiteSpace(l.Code) ? null : l.Code,
@@ -231,36 +295,48 @@ public class QuotePdfService
 
     private void HeadCell(TableCellDescriptor h, string text, TextAlign align)
     {
-        var cell = h.Cell().Background(Primary).PaddingVertical(6).PaddingHorizontal(6);
+        // Sade: dolgu yok — beyaz zemin + kalın alt çizgi + mürekkep metin (yazıcı dostu).
+        var cell = Plain
+            ? h.Cell().Background(White).BorderBottom(1.4f).BorderColor(Ink)
+                .PaddingVertical(Compact ? 4 : 6).PaddingHorizontal(Compact ? 4 : 6)
+            : h.Cell().Background(Primary)
+                .PaddingVertical(Compact ? 4 : 6).PaddingHorizontal(Compact ? 4 : 6);
         var t = align switch
         {
             TextAlign.Right => cell.AlignRight(),
             TextAlign.Center => cell.AlignCenter(),
             _ => cell.AlignLeft(),
         };
-        t.Text(text).FontSize(8).Bold().FontColor(White).LetterSpacing(0.03f);
+        t.Text(text).FontSize(8).Bold().FontColor(Plain ? Ink : White).LetterSpacing(0.03f);
     }
 
     private IContainer BodyCell(TableDescriptor table, string bg)
-        => table.Cell().Background(bg).BorderBottom(1).BorderColor(Line).PaddingVertical(6).PaddingHorizontal(6);
+        => table.Cell().Background(bg).BorderBottom(1).BorderColor(Line)
+            .PaddingVertical(Compact ? 4 : 6).PaddingHorizontal(Compact ? 4 : 6);
 
     private void TotalsBox(IContainer c, Quote q, QuoteTotals t)
     {
         c.Column(col =>
         {
-            TotalRow(col, "Ara Toplam", Money(t.LinesNet, q.Currency), false);
+            TotalRow(col, L.Subtotal, Money(t.LinesNet, q.Currency));
             if (t.GeneralDiscount > 0)
-                TotalRow(col, "İskonto", "− " + Money(t.GeneralDiscount, q.Currency), false);
-            TotalRow(col, "KDV", Money(t.VatTotal, q.Currency), false);
-            col.Item().PaddingTop(4).Background(Primary).Padding(8).Row(r =>
+                TotalRow(col, L.Discount, "− " + Money(t.GeneralDiscount, q.Currency));
+            TotalRow(col, L.Vat, Money(t.VatTotal, q.Currency));
+
+            // Sade: dolgu yerine çerçeve — genel toplam yine en güçlü öğe kalır.
+            var band = Plain
+                ? col.Item().PaddingTop(4).Border(1.4f).BorderColor(Ink).Padding(8)
+                : col.Item().PaddingTop(4).Background(Primary).Padding(8);
+            band.Row(r =>
             {
-                r.RelativeItem().Text("GENEL TOPLAM").FontSize(10).Bold().FontColor(White);
-                r.RelativeItem().AlignRight().Text(Money(t.GrandTotal, q.Currency)).FontSize(12).Bold().FontColor(White);
+                r.RelativeItem().Text(L.GrandTotal).FontSize(10).Bold().FontColor(Plain ? Ink : White);
+                r.RelativeItem().AlignRight().Text(Money(t.GrandTotal, q.Currency))
+                    .FontSize(12).Bold().FontColor(Plain ? Ink : White);
             });
         });
     }
 
-    private void TotalRow(ColumnDescriptor col, string label, string value, bool bold)
+    private void TotalRow(ColumnDescriptor col, string label, string value)
     {
         col.Item().PaddingVertical(3).Row(r =>
         {
@@ -274,13 +350,13 @@ public class QuotePdfService
         c.PaddingTop(4).Column(col =>
         {
             col.Spacing(3);
-            TermRow(col, "Ödeme", q.PaymentTerms);
-            TermRow(col, "Teslim Süresi", q.DeliveryTime);
-            TermRow(col, "Teslim Yeri", q.DeliveryPlace);
-            TermRow(col, "Kur Notu", q.ExchangeRateNote);
+            TermRow(col, L.Payment, q.PaymentTerms);
+            TermRow(col, L.DeliveryTime, q.DeliveryTime);
+            TermRow(col, L.DeliveryPlace, q.DeliveryPlace);
+            TermRow(col, L.FxNote, q.ExchangeRateNote);
             if (!string.IsNullOrWhiteSpace(q.Notes))
             {
-                col.Item().PaddingTop(6).Text("Notlar").FontSize(8.5f).Bold().FontColor(Accent);
+                col.Item().PaddingTop(6).Text(L.Notes).FontSize(8.5f).Bold().FontColor(Ac);
                 col.Item().Text(q.Notes).FontSize(9).FontColor(Muted);
             }
         });
@@ -315,7 +391,7 @@ public class QuotePdfService
                 row.RelativeItem().Text(contact).FontSize(7.5f).FontColor(Muted);
                 row.ConstantItem(70).AlignRight().Text(t =>
                 {
-                    t.Span("Sayfa ").FontSize(7.5f).FontColor(Muted);
+                    t.Span(L.Page + " ").FontSize(7.5f).FontColor(Muted);
                     t.CurrentPageNumber().FontSize(7.5f).FontColor(Muted);
                     t.Span(" / ").FontSize(7.5f).FontColor(Muted);
                     t.TotalPages().FontSize(7.5f).FontColor(Muted);
@@ -327,17 +403,18 @@ public class QuotePdfService
     // ---------- yardımcılar ----------
     private enum TextAlign { Left, Center, Right }
 
-    private static string Honorific(Salutation s) => s switch
+    /// <summary>TR: ad SONRASI "Bey/Hanım". EN'de Türkçe hitap basılmaz (önek/sonek uyuşmazlığı).</summary>
+    private string Honorific(Salutation s) => ReferenceEquals(L, En10n) ? "" : s switch
     {
         Salutation.Bey => " Bey",
         Salutation.Hanim => " Hanım",
         _ => "",
     };
 
-    private static string Num(decimal v) =>
-        (v == Math.Truncate(v)) ? ((long)v).ToString(Tr) : v.ToString("#,##0.##", Tr);
+    private string Num(decimal v) =>
+        (v == Math.Truncate(v)) ? ((long)v).ToString(Cul) : v.ToString("#,##0.##", Cul);
 
-    private static string Money(decimal v, string currency)
+    private string Money(decimal v, string currency)
     {
         string sym = (currency ?? "TL").Trim().ToUpperInvariant() switch
         {
@@ -346,6 +423,28 @@ public class QuotePdfService
             "EUR" or "€" => "€",
             _ => currency ?? "",
         };
-        return v.ToString("#,##0.00", Tr) + " " + sym;
+        return v.ToString("#,##0.00", Cul) + " " + sym;
     }
+
+    // ---------- etiket sözlükleri ----------
+    private sealed record L10n(
+        string Title, string Dear, string QuoteNo, string Date, string Validity, string DaysSuffix,
+        string Currency, string ColDesc, string ColQty, string ColUnit, string ColUnitPrice,
+        string ColDisc, string ColAmount, string Subtotal, string Discount, string Vat, string GrandTotal,
+        string Payment, string DeliveryTime, string DeliveryPlace, string FxNote, string Notes,
+        string Page, string TaxOffice, string TaxNo, string CompanyFallback);
+
+    private static readonly L10n Tr10n = new(
+        "FİYAT TEKLİFİ", "SAYIN", "Teklif No", "Tarih", "Geçerlilik", "gün",
+        "Para Birimi", "AÇIKLAMA", "MİKTAR", "BİRİM", "BİRİM FİYAT",
+        "İSK %", "TUTAR", "Ara Toplam", "İskonto", "KDV", "GENEL TOPLAM",
+        "Ödeme", "Teslim Süresi", "Teslim Yeri", "Kur Notu", "Notlar",
+        "Sayfa", "VD", "VKN", "FİRMA ADI");
+
+    private static readonly L10n En10n = new(
+        "PROFORMA INVOICE", "TO", "Quote No", "Date", "Validity", "days",
+        "Currency", "DESCRIPTION", "QTY", "UNIT", "UNIT PRICE",
+        "DISC %", "AMOUNT", "Subtotal", "Discount", "VAT", "GRAND TOTAL",
+        "Payment", "Delivery Time", "Delivery Place", "FX Note", "Notes",
+        "Page", "Tax Office", "Tax No", "COMPANY NAME");
 }

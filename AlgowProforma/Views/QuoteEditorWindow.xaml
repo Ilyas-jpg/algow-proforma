@@ -4,7 +4,7 @@
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:m="clr-namespace:AlgowProforma.Models"
         Title="Fiyat Teklifi — Algow Proforma PDF"
-        Width="1240" Height="820"
+        Width="1600" Height="860"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource BodyFont}"
@@ -15,6 +15,7 @@
                 <x:Type TypeName="m:DiscountMode" />
             </ObjectDataProvider.MethodParameters>
         </ObjectDataProvider>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </Window.Resources>
 
     <Grid Margin="24">
@@ -26,6 +27,29 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
+        <!-- Sol: mevcut editör (column 0 default) · Sağ: canlı PDF önizleme paneli -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="16" />
+            <ColumnDefinition Width="330" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Column="2" Grid.Row="0" Grid.RowSpan="6"
+                Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="1" Padding="10">
+            <Grid>
+                <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+                <DockPanel Grid.Row="0" Margin="0,0,0,8">
+                    <TextBlock Text="CANLI ÖNİZLEME" Style="{StaticResource MutedText}" FontWeight="SemiBold" FontSize="11" />
+                    <TextBlock Text="  ·  yenileniyor…" Style="{StaticResource MutedText}" FontSize="11"
+                               Visibility="{Binding IsPreviewLoading, Converter={StaticResource BoolToVis}}" />
+                </DockPanel>
+                <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+                    <Image Source="{Binding PreviewImage}" Stretch="Uniform" Margin="2"
+                           RenderOptions.BitmapScalingMode="HighQuality" />
+                </Border>
+            </Grid>
+        </Border>
 
         <!-- Başlık -->
         <TextBlock Grid.Row="0" Text="Fiyat Teklifi" Style="{StaticResource DisplayText}" FontSize="22" FontWeight="Bold" />
@@ -79,6 +103,22 @@
                             <ComboBoxItem Content="EUR" />
                         </ComboBox>
                     </Grid>
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Dil" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92"
+                                   ToolTip="EN: PROFORMA INVOICE — tüm PDF etiketleri İngilizce, sayı biçimi 1,234.56" />
+                        <ComboBox Grid.Column="1" Height="34" ItemsSource="{Binding LanguageOptions}"
+                                  DisplayMemberPath="Label" SelectedValuePath="Id"
+                                  SelectedValue="{Binding Quote.Language}" />
+                    </Grid>
+                    <Grid Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Şablon" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92"
+                                   ToolTip="PDF görünümü: Modern (renkli) · Kompakt (dar) · Sade (tek renk, yazıcı dostu)" />
+                        <ComboBox Grid.Column="1" Height="34" ItemsSource="{Binding TemplateOptions}"
+                                  DisplayMemberPath="Label" SelectedValuePath="Id"
+                                  SelectedValue="{Binding Quote.TemplateId}" />
+                    </Grid>
                 </StackPanel>
             </Border>
         </Grid>
@@ -131,6 +171,17 @@
                         <TextBlock Text="Teslim Yeri" Style="{StaticResource MutedText}" />
                         <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0" Text="{Binding Quote.DeliveryPlace, UpdateSourceTrigger=PropertyChanged}" />
                     </StackPanel>
+                </Grid>
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Kur Notu" Style="{StaticResource MutedText}" />
+                        <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
+                                 Text="{Binding Quote.ExchangeRateNote, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+                    <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="TCMB Kurunu Çek"
+                            Margin="8,16,0,0" VerticalAlignment="Bottom" Command="{Binding FetchTcmbRatesCommand}"
+                            ToolTip="Günün TCMB döviz satış kurlarını (USD/EUR) kur notuna yazar" />
                 </Grid>
                 <TextBlock Text="Notlar" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
                 <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0" Height="48" AcceptsReturn="True" TextWrapping="Wrap"

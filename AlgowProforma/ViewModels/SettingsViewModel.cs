@@ -153,6 +153,45 @@ public partial class SettingsViewModel : ObservableObject
         finally { Busy = false; }
     }
 
+    // ---- tek-tık veri yedeği (ZIP) ----
+    public async Task CreateBackupAsync(string zipPath)
+    {
+        if (Busy) return;
+        Busy = true;
+        StatusText = "Yedek alınıyor…";
+        try
+        {
+            var (added, skipped) = await Task.Run(() => BackupService.CreateBackup(zipPath));
+            StatusText = skipped == 0
+                ? $"Yedek alındı: {added} dosya → {System.IO.Path.GetFileName(zipPath)}"
+                : $"Yedek alındı: {added} dosya ({skipped} kilitli dosya atlandı) → {System.IO.Path.GetFileName(zipPath)}";
+        }
+        catch (Exception ex)
+        {
+            StatusText = "Yedek alınamadı: " + ex.Message;
+        }
+        finally { Busy = false; }
+    }
+
+    public async Task RestoreBackupAsync(string zipPath)
+    {
+        if (Busy) return;
+        Busy = true;
+        StatusText = "Yedek geri yükleniyor…";
+        try
+        {
+            var safety = await Task.Run(() => BackupService.RestoreBackup(zipPath));
+            StatusText = string.IsNullOrEmpty(safety)
+                ? "Yedek geri yüklendi — uygulamayı YENİDEN BAŞLATIN."
+                : $"Yedek geri yüklendi (önceki veri: {System.IO.Path.GetFileName(safety)}) — uygulamayı YENİDEN BAŞLATIN.";
+        }
+        catch (Exception ex)
+        {
+            StatusText = "Geri yükleme başarısız: " + ex.Message;
+        }
+        finally { Busy = false; }
+    }
+
     private void RefreshGoogleStatus()
     {
         GoogleLoginStatus = Settings.Google.Identity.IsSignedIn

@@ -54,6 +54,14 @@ public class QuoteService
         if (File.Exists(path)) File.Delete(path);
     }
 
+    /// <summary>Teklif PDF dosya adı — revizyonlar "-rev{n}" eki alır (önceki revizyonun PDF'inin
+    /// üstüne yazmayı önler). Editör ve Teklifler panosu aynı adı buradan türetir.</summary>
+    public static string PdfFileName(Quote q)
+    {
+        var safeNo = string.IsNullOrWhiteSpace(q.QuoteNo) ? q.Id : q.QuoteNo;
+        return safeNo + (q.Revision > 0 ? $"-rev{q.Revision}" : "") + ".pdf";
+    }
+
     private static readonly object NoLock = new();
 
     /// <summary>

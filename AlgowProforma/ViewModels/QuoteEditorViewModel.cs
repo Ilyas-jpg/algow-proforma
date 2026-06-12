@@ -30,6 +30,10 @@ public partial class QuoteEditorViewModel : ObservableObject
     [ObservableProperty] private QuoteLine? _selectedLine;
     [ObservableProperty] private string _statusText = "";
 
+    /// <summary>Dil / şablon dropdown kaynakları (Quote.Language / Quote.TemplateId).</summary>
+    public System.Collections.Generic.IReadOnlyList<QuoteLanguageOption> LanguageOptions => QuoteLanguageOption.All;
+    public System.Collections.Generic.IReadOnlyList<QuoteTemplateOption> TemplateOptions => QuoteTemplateOption.All;
+
     public QuoteEditorViewModel(Quote? existing = null)
     {
         // Teklif PDF'i kalıcı marka profilini kullanır (logo/firma/iletişim) — yoksa boş default.
@@ -47,12 +51,94 @@ public partial class QuoteEditorViewModel : ObservableObject
         };
         HookQuote(_quote);
         StatusText = existing is null ? "Yeni teklif." : $"Teklif yüklendi: {_quote.QuoteNo}";
+
+        StartPreviewTimer();
+        SchedulePreview();   // açılışta ilk önizleme
+    }
+
+    // ---- canlı PDF önizleme (sağ panel) ----
+    [ObservableProperty] private System.Windows.Media.Imaging.BitmapSource? _previewImage;
+    [ObservableProperty] private bool _isPreviewLoading;
+
+    private System.Windows.Threading.DispatcherTimer? _previewTimer;
+    private int _previewSeq;   // bayat render sonucu bind edilmez (yenisi yoldayken)
+
+    private void StartPreviewTimer()
+    {
+        // Debounce: her tuş vuruşunda değil, 700 ms sessizlikten sonra render (QuestPDF maliyetli).
+        _previewTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(700)
+        };
+        _previewTimer.Tick += (_, _) => { _previewTimer!.Stop(); RenderPreview(); };
+    }
+
+    private void SchedulePreview()
+    {
+        if (_previewTimer is null) return;
+        _previewTimer.Stop();
+        _previewTimer.Start();
+    }
+
+    private void RenderPreview()
+    {
+        IsPreviewLoading = true;
+        var seq = ++_previewSeq;
+        var snapshot = Quote.Clone();           // canlı Quote arka thread'e verilmez (race)
+        var brand = _brand;
+        System.Threading.Tasks.Task.Run(() =>
+        {
+            var theme = PdfTheme.GetById(new SettingsService().Load().QuoteThemeId);
+            var bytes = QuotePdfService.GeneratePreviewPngBytes(snapshot, brand, theme);
+            var bmp = BytesToFrozenBitmap(bytes);
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (seq != _previewSeq) return;   // daha yeni bir render kuyruğa girdi
+                if (bmp is not null) PreviewImage = bmp;
+                IsPreviewLoading = false;
+            }));
+        });
+    }
+
+    private static System.Windows.Media.Imaging.BitmapSource? BytesToFrozenBitmap(byte[]? bytes)
+    {
+        if (bytes is not { Length: > 0 }) return null;
+        try
+        {
+            using var ms = new System.IO.MemoryStream(bytes);
+            var bi = new System.Windows.Media.Imaging.BitmapImage();
+            bi.BeginInit();
+            bi.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            bi.StreamSource = ms;
+            bi.EndInit();
+            bi.Freeze();   // UI thread'e güvenli geçiş
+            return bi;
+        }
+        catch { return null; }
+    }
+
+    // ---- TCMB kur notu ----
+    [RelayCommand]
+    private async System.Threading.Tasks.Task FetchTcmbRates()
+    {
+        try
+        {
+            StatusText = "TCMB kurları çekiliyor…";
+            var rates = await TcmbRateService.FetchTodayAsync();
+            Quote.ExchangeRateNote = TcmbRateService.BuildNote(rates);
+            StatusText = "Kur notu TCMB satış kuruyla dolduruldu.";
+        }
+        catch (Exception ex)
+        {
+            StatusText = "TCMB kuru alınamadı: " + ex.Message;
+        }
     }
 
     partial void OnQuoteChanged(Quote? oldValue, Quote newValue)
     {
         if (oldValue is not null) UnhookQuote(oldValue);
         HookQuote(newValue);
+        SchedulePreview();
     }
 
     // ---- kaydedilmemiş değişiklik takibi (H5: X ile sessiz veri kaybını önler) ----
@@ -92,7 +178,14 @@ public partial class QuoteEditorViewModel : ObservableObject
         foreach (var l in q.Lines) l.PropertyChanged -= OnLineChanged;
     }
 
-    private void OnQuoteFieldChanged(object? sender, PropertyChangedEventArgs e) => HasUnsavedChanges = true;
+    private void OnQuoteFieldChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // Status değişimi (gönderim/pano otomatiği) anında diske yazılır — editörü "kaydedilmemiş
+        // değişiklik" moduna sokmamalı; PDF'e de basılmadığından önizleme yenilemesi gerektirmez.
+        if (e.PropertyName == nameof(Quote.Status)) return;
+        HasUnsavedChanges = true;
+        SchedulePreview();
+    }
 
     private void OnLinesChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -100,12 +193,14 @@ public partial class QuoteEditorViewModel : ObservableObject
         if (e.NewItems is not null) foreach (QuoteLine l in e.NewItems) l.PropertyChanged += OnLineChanged;
         HasUnsavedChanges = true;
         Quote.NotifyTotalsChanged();
+        SchedulePreview();
     }
 
     private void OnLineChanged(object? sender, PropertyChangedEventArgs e)
     {
         HasUnsavedChanges = true;
         Quote.NotifyTotalsChanged();
+        SchedulePreview();
     }
 
     // ---- komutlar ----
@@ -149,13 +244,8 @@ public partial class QuoteEditorViewModel : ObservableObject
         StatusText = $"Kaydedildi: {Quote.QuoteNo}";
     }
 
-    /// <summary>Teklif PDF dosya adı. Revizyonlar "-rev{n}" eki alır — rev.1'in PDF'i orijinal
-    /// teklifin (aynı QuoteNo) PDF'inin üstüne yazmasın; iki dosya da arşivde yan yana dursun.</summary>
-    private string QuotePdfFileName()
-    {
-        var safeNo = string.IsNullOrWhiteSpace(Quote.QuoteNo) ? Quote.Id : Quote.QuoteNo;
-        return safeNo + (Quote.Revision > 0 ? $"-rev{Quote.Revision}" : "") + ".pdf";
-    }
+    /// <summary>Teklif PDF dosya adı — tek kaynak QuoteService.PdfFileName (pano ile aynı ad).</summary>
+    private string QuotePdfFileName() => QuoteService.PdfFileName(Quote);
 
     [RelayCommand]
     private void GeneratePdf()

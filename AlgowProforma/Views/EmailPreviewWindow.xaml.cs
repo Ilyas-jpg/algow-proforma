@@ -121,6 +121,12 @@ public partial class EmailPreviewWindow : Window
 
         var result = await send();
         AppendLog(provider, result);
+        if (result.Success && _quote.Status == QuoteStatus.Taslak)
+        {
+            // Teklif artık müşteride — pano Taslak yerine Gönderildi göstersin (anında kalıcı).
+            _quote.Status = QuoteStatus.Gonderildi;
+            try { new QuoteService().Save(_quote); } catch { /* durum güncellemesi gönderimi geri almaz */ }
+        }
         StatusText.Text = result.Success
             ? $"Gonderildi: {result.Recipient}"
             : $"Gonderilemedi: {result.Error}";

@@ -29,4 +29,35 @@ public partial class SettingsWindow : Window
     private async void OnConnectGmail(object sender, RoutedEventArgs e) => await _vm.ConnectGmailAsync();
 
     private async void OnDisconnectGmail(object sender, RoutedEventArgs e) => await _vm.DisconnectGmailAsync();
+
+    private async void OnCreateBackup(object sender, RoutedEventArgs e)
+    {
+        var dlg = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "ZIP yedek (*.zip)|*.zip",
+            FileName = $"algow-proforma-yedek-{System.DateTime.Now:yyyyMMdd-HHmm}.zip",
+            Title = "Yedek dosyasını kaydet",
+        };
+        if (dlg.ShowDialog(this) != true) return;
+        await _vm.CreateBackupAsync(dlg.FileName);
+    }
+
+    private async void OnRestoreBackup(object sender, RoutedEventArgs e)
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = "ZIP yedek (*.zip)|*.zip",
+            Title = "Geri yüklenecek yedeği seç",
+        };
+        if (dlg.ShowDialog(this) != true) return;
+
+        var confirm = MessageBox.Show(this,
+            "Seçilen yedek geri yüklenecek.\n\n" +
+            "Mevcut veriniz SİLİNMEZ — \"pre-restore\" güvenlik kopyasına taşınır.\n" +
+            "İşlem sonrası uygulamayı yeniden başlatmanız gerekir.\n\nDevam edilsin mi?",
+            "Yedekten Geri Yükle", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        if (confirm != MessageBoxResult.Yes) return;
+
+        await _vm.RestoreBackupAsync(dlg.FileName);
+    }
 }

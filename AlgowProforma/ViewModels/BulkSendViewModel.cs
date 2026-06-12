@@ -25,6 +25,8 @@ public partial class BulkSendViewModel : ObservableObject
     [ObservableProperty] private Quote? _selectedQuote;
     [ObservableProperty] private ObservableCollection<BulkRecipient> _recipients = new();
     [ObservableProperty] private string _manualEmails = "";
+    /// <summary>CRM'den yüklerken etiket süzgeci (Customer.Tags virgüllü listesinde arar). Boş = hepsi.</summary>
+    [ObservableProperty] private string _tagFilter = "";
     [ObservableProperty] private string _statusText = "";
 
     [NotifyPropertyChangedFor(nameof(IsNotBusy))]
@@ -55,16 +57,25 @@ public partial class BulkSendViewModel : ObservableObject
     [RelayCommand]
     private void LoadFromCrm()
     {
-        int added = 0;
+        var filter = (TagFilter ?? "").Trim();
+        int added = 0, filteredOut = 0;
         foreach (var c in _customers.Load())
         {
+            if (filter.Length > 0 && !HasTag(c.Tags, filter)) { filteredOut++; continue; }
             if (!IsValidEmail(c.Email)) continue;
             if (Recipients.Any(r => r.Email.Equals(c.Email, StringComparison.OrdinalIgnoreCase))) continue;
             Recipients.Add(new BulkRecipient { Company = c.CompanyName, ContactName = c.ContactName, Salutation = c.Salutation, Email = c.Email });
             added++;
         }
-        StatusText = $"{added} müşteri eklendi · toplam {Recipients.Count} alıcı.";
+        StatusText = filter.Length > 0
+            ? $"\"{filter}\" etiketiyle {added} müşteri eklendi ({filteredOut} elendi) · toplam {Recipients.Count} alıcı."
+            : $"{added} müşteri eklendi · toplam {Recipients.Count} alıcı.";
     }
+
+    /// <summary>Virgüllü etiket listesinde (örn "bayi, kırıkkale") süzgeç araması — büyük/küçük harf duyarsız.</summary>
+    private static bool HasTag(string? tags, string filter) =>
+        (tags ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(t => t.Contains(filter, StringComparison.OrdinalIgnoreCase));
 
     [RelayCommand]
     private void AddManual()
@@ -211,6 +222,13 @@ public partial class BulkSendViewModel : ObservableObject
                 if (delayMs > 0) await Task.Delay(delayMs, ct);
             }
             StatusText = $"Tamamlandı — ✓ {sent} gönderildi · ✗ {fail} başarısız.";
+
+            // En az bir alıcıya çıktıysa kaynak teklif artık taslak değil — panoda Gönderildi görünür.
+            if (sent > 0 && SelectedQuote.Status == QuoteStatus.Taslak)
+            {
+                SelectedQuote.Status = QuoteStatus.Gonderildi;
+                try { _quotes.Save(SelectedQuote); } catch { /* durum güncellemesi gönderimi geri almaz */ }
+            }
         }
         catch (OperationCanceledException)
         {

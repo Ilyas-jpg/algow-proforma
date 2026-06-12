@@ -310,6 +310,8 @@
                     <Border Width="1" Background="{DynamicResource BorderBrush}" Margin="0,6,12,6" />
                     <Button Style="{StaticResource SecondaryButton}" Content="Teklif" Margin="0,0,8,0"
                             Click="OnNewQuoteClick" ToolTip="Yeni fiyat teklifi oluştur" />
+                    <Button Style="{StaticResource SecondaryButton}" Content="Teklifler" Margin="0,0,8,0"
+                            Click="OnQuotesClick" ToolTip="Kayıtlı teklifler panosu — durum takibi (taslak / gönderildi / onaylandı)" />
                     <Button Style="{StaticResource SecondaryButton}" Content="Toplu Gönderim" Margin="0,0,8,0"
                             Click="OnBulkSendClick" ToolTip="Excel/CRM/elle alıcılara toplu teklif e-postası" />
                     <Button Style="{StaticResource SecondaryButton}" Content="Fiyat Listesi" Margin="0,0,8,0"

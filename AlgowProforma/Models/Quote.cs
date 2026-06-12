@@ -7,6 +7,50 @@ namespace AlgowProforma.Models;
 /// <summary>Genel (teklif geneli) iskonto modu.</summary>
 public enum DiscountMode { Yok, Yuzde, Tutar }
 
+/// <summary>Teklif yaşam döngüsü durumu — pano + takip. JSON'a sayı yazılır; eski kayıtlar Taslak okunur.</summary>
+public enum QuoteStatus { Taslak = 0, Gonderildi = 1, Onaylandi = 2, Reddedildi = 3 }
+
+/// <summary>Durum → Türkçe etiket (ComboBox kaynağı). Enum adında Türkçe karakter kullanılamadığından ayrı.</summary>
+public sealed record QuoteStatusOption(QuoteStatus Value, string Label)
+{
+    public static readonly System.Collections.Generic.IReadOnlyList<QuoteStatusOption> All = new[]
+    {
+        new QuoteStatusOption(QuoteStatus.Taslak, "Taslak"),
+        new QuoteStatusOption(QuoteStatus.Gonderildi, "Gönderildi"),
+        new QuoteStatusOption(QuoteStatus.Onaylandi, "Onaylandı"),
+        new QuoteStatusOption(QuoteStatus.Reddedildi, "Reddedildi"),
+    };
+
+    public static string LabelOf(QuoteStatus s) => s switch
+    {
+        QuoteStatus.Gonderildi => "Gönderildi",
+        QuoteStatus.Onaylandi => "Onaylandı",
+        QuoteStatus.Reddedildi => "Reddedildi",
+        _ => "Taslak",
+    };
+}
+
+/// <summary>Teklif PDF şablonu seçenekleri (Quote.TemplateId). Bilinmeyen id → modern.</summary>
+public sealed record QuoteTemplateOption(string Id, string Label)
+{
+    public static readonly System.Collections.Generic.IReadOnlyList<QuoteTemplateOption> All = new[]
+    {
+        new QuoteTemplateOption("modern", "Modern (varsayılan)"),
+        new QuoteTemplateOption("kompakt", "Kompakt — dar kenar, küçük punto"),
+        new QuoteTemplateOption("sade", "Sade — tek renk, dolgusuz"),
+    };
+}
+
+/// <summary>Teklif PDF dili seçenekleri (Quote.Language).</summary>
+public sealed record QuoteLanguageOption(string Id, string Label)
+{
+    public static readonly System.Collections.Generic.IReadOnlyList<QuoteLanguageOption> All = new[]
+    {
+        new QuoteLanguageOption("tr", "Türkçe"),
+        new QuoteLanguageOption("en", "English (proforma invoice)"),
+    };
+}
+
 /// <summary>
 /// Fiyat teklifi (proforma). Müşteri bilgileri SNAPSHOT'lanır (teklif anındaki hâl sabit kalır,
 /// sonradan müşteri/havuz değişse teklif bozulmaz). Toplamlar <see cref="Totals"/> üzerinden
@@ -53,6 +97,13 @@ public partial class Quote : ObservableObject
     [ObservableProperty] private string _exchangeRateNote = "";
 
     [ObservableProperty] private string _templateId = "modern";
+
+    /// <summary>PDF dili: "tr" (varsayılan) | "en" (ihracat proforması). Eski kayıtlar tr okunur.</summary>
+    [ObservableProperty] private string _language = "tr";
+
+    /// <summary>Yaşam döngüsü durumu — başarılı gönderimde Taslak→Gönderildi otomatik geçer.</summary>
+    [ObservableProperty] private QuoteStatus _status = QuoteStatus.Taslak;
+
     [ObservableProperty] private DateTime _createdAt = DateTime.Now;
     [ObservableProperty] private DateTime _updatedAt = DateTime.Now;
 
@@ -98,6 +149,8 @@ public partial class Quote : ObservableObject
             Notes = Notes,
             ExchangeRateNote = ExchangeRateNote,
             TemplateId = TemplateId,
+            Language = Language,
+            Status = Status,
             CreatedAt = CreatedAt,
             UpdatedAt = UpdatedAt,
         };
@@ -105,12 +158,14 @@ public partial class Quote : ObservableObject
         return c;
     }
 
-    /// <summary>Yeni revizyon üretir (yeni Id, Revision+1, aynı QuoteNo, satırlar kopyalanır).</summary>
+    /// <summary>Yeni revizyon üretir (yeni Id, Revision+1, aynı QuoteNo, satırlar kopyalanır).
+    /// Durum Taslak'a döner — revizyon yeni bir müzakere turudur, henüz gönderilmemiştir.</summary>
     public Quote CreateRevision()
     {
         var r = Clone(newId: true);
         r.Revision = Revision + 1;
         r.Date = DateTime.Today;
+        r.Status = QuoteStatus.Taslak;
         r.CreatedAt = DateTime.Now;
         r.UpdatedAt = DateTime.Now;
         return r;

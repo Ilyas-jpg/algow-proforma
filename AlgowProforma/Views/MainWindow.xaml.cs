@@ -46,6 +46,9 @@ public partial class MainWindow : Window
     private void OnNewQuoteClick(object sender, RoutedEventArgs e)
         => new QuoteEditorWindow { Owner = this }.ShowDialog();
 
+    private void OnQuotesClick(object sender, RoutedEventArgs e)
+        => new QuotesWindow { Owner = this }.ShowDialog();
+
     private void OnBulkSendClick(object sender, RoutedEventArgs e)
         => new BulkSendWindow { Owner = this }.ShowDialog();
 

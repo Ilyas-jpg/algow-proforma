@@ -42,7 +42,11 @@
         <Grid Grid.Row="2" Margin="0,14,0,10">
             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0" Orientation="Horizontal">
-                <Button Style="{StaticResource SecondaryButton}" Content="CRM'den Yükle" Margin="0,0,8,0" Command="{Binding LoadFromCrmCommand}" />
+                <TextBox Style="{StaticResource ModernTextBox}" Width="130" VerticalAlignment="Center" Margin="0,0,6,0"
+                         Text="{Binding TagFilter, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Etiket süzgeci (örn: bayi) — CRM'den yüklerken yalnız bu etiketli müşteriler gelir; boş = hepsi" />
+                <Button Style="{StaticResource SecondaryButton}" Content="CRM'den Yükle" Margin="0,0,8,0" Command="{Binding LoadFromCrmCommand}"
+                        ToolTip="Müşteri listesinden alıcıları ekler; soldaki etiket süzgeci uygulanır" />
                 <Button Style="{StaticResource SecondaryButton}" Content="Excel'den Al" Margin="0,0,8,0" Command="{Binding ImportExcelCommand}" />
                 <Button Style="{StaticResource SecondaryButton}" Content="Listeyi Temizle" Margin="0,0,16,0" Command="{Binding ClearRecipientsCommand}" />
             </StackPanel>
