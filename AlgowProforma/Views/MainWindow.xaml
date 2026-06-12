@@ -886,7 +886,27 @@
                                     <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,0">
                                         Açıkken ürünler kategorilerine göre bölümlenir; her kategori PDF'te kendi başlık
                                         sayfasıyla açılır (kategori, ürün kartındaki Kategori alanından gelir).
-                                        Kategorisiz ürünler en önde, başlıksız basılır. Manuel sayfa modunda yok sayılır.
+                                        Kategorisiz ürünler en önde, başlıksız basılır. Farklı kategorilere dağılmış
+                                        ürünler PDF'te kendi bölümünde toplanır (liste sırası kategori içinde korunur).
+                                    </TextBlock>
+                                    <!-- İki mod birlikte açıksa kategori sayfalarının BASILMAYACAĞI görünür uyarı —
+                                         eskiden yalnız açıklama metninde gömülüydü, kullanıcı fark etmiyordu. -->
+                                    <TextBlock TextWrapping="Wrap" Margin="0,8,0,0" FontWeight="SemiBold" Foreground="#C2410C"
+                                               Text="⚠ Manuel sayfa modu açık: kategori başlık sayfaları manuel modda devre dışıdır — sayfaları Sayfa Planlayıcı belirler.">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding Catalog.UseCategoryPages}" Value="True" />
+                                                            <Condition Binding="{Binding Catalog.UseCustomPageLayouts}" Value="True" />
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </MultiDataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
                                     </TextBlock>
                                 </StackPanel>
                                 <CheckBox Grid.Column="1" Style="{StaticResource ModernCheckBox}"

@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Teklifler — Algow Proforma PDF"
-        Width="1060" Height="640"
+        Width="1160" Height="680"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource BodyFont}"
@@ -11,16 +11,36 @@
     <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" Margin="0,0,0,12">
             <TextBlock Text="Teklifler" Style="{StaticResource DisplayText}" FontSize="22" FontWeight="Bold" />
             <TextBlock Text="{Binding SummaryText}" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+            <TextBlock Text="{Binding ApprovedText}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" Margin="0,4,0,0" />
         </StackPanel>
 
-        <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" IsReadOnly="False"
-                  AutoGenerateColumns="False" CanUserAddRows="False" SelectionMode="Single">
+        <!-- Arama + durum süzgeci + gönderim geçmişi -->
+        <DockPanel Grid.Row="1" Margin="0,0,0,12">
+            <Button DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" Content="Gönderim Geçmişi"
+                    Click="OnOpenSendHistory"
+                    ToolTip="Tekli ve toplu e-posta gönderimlerinin kaydı (başarılı/başarısız)" />
+            <StackPanel Orientation="Horizontal">
+                <TextBox Style="{StaticResource ModernTextBox}" Width="280" VerticalAlignment="Center"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="Teklif no, firma, yetkili veya e-postaya göre ara" />
+                <TextBlock Text="Durum" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="14,0,6,0" />
+                <ComboBox Width="140" Height="32" ItemsSource="{Binding FilterOptions}"
+                          DisplayMemberPath="Label" SelectedItem="{Binding StatusFilter}" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- CanUserDeleteRows kapalı: Delete tuşu satırı yalnız EKRANDAN düşürüyordu (hayalet silme);
+             gerçek silme sağdaki Sil butonuyla, geri-dönülebilir .trash'e. -->
+        <DataGrid Grid.Row="2" ItemsSource="{Binding ItemsView}" IsReadOnly="False"
+                  AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                  SelectionMode="Single">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Teklif No" Binding="{Binding DisplayTitle, Mode=OneWay}" Width="*" IsReadOnly="True" />
                 <DataGridTextColumn Header="Tarih" Binding="{Binding Date, StringFormat=dd.MM.yyyy, Mode=OneWay}" Width="92" IsReadOnly="True" />
@@ -37,7 +57,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="" Width="170">
+                <DataGridTemplateColumn Header="" Width="216">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
@@ -45,6 +65,10 @@
                                         Tag="{Binding}" Click="OnOpenQuote" ToolTip="Teklif editöründe aç" />
                                 <Button Style="{StaticResource SecondaryButton}" Content="PDF" Margin="2"
                                         Tag="{Binding}" Click="OnOpenPdf" ToolTip="Üretilmiş PDF'i aç (yoksa editörden üretin)" />
+                                <Button Style="{StaticResource SecondaryButton}" Content="Sil" Margin="2"
+                                        Command="{Binding DataContext.DeleteQuoteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}"
+                                        ToolTip="Geri-dönülebilir sil — 30 gün Teklifler\.trash'te durur" />
                             </StackPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>

@@ -102,7 +102,12 @@ public partial class Quote : ObservableObject
     [ObservableProperty] private string _language = "tr";
 
     /// <summary>Yaşam döngüsü durumu — başarılı gönderimde Taslak→Gönderildi otomatik geçer.</summary>
+    [NotifyPropertyChangedFor(nameof(StatusLabel))]
     [ObservableProperty] private QuoteStatus _status = QuoteStatus.Taslak;
+
+    /// <summary>Türkçe durum etiketi (editör rozeti / listeler) — JSON'a yazılmaz.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string StatusLabel => QuoteStatusOption.LabelOf(Status);
 
     [ObservableProperty] private DateTime _createdAt = DateTime.Now;
     [ObservableProperty] private DateTime _updatedAt = DateTime.Now;

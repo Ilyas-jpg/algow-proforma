@@ -51,8 +51,15 @@
             </Grid>
         </Border>
 
-        <!-- Başlık -->
-        <TextBlock Grid.Row="0" Text="Fiyat Teklifi" Style="{StaticResource DisplayText}" FontSize="22" FontWeight="Bold" />
+        <!-- Başlık + durum rozeti (durum panoda yönetilir; editör artık körü körüne değil) -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
+            <TextBlock Text="Fiyat Teklifi" Style="{StaticResource DisplayText}" FontSize="22" FontWeight="Bold" />
+            <Border Background="{StaticResource PrimaryBrush}" CornerRadius="4" Padding="10,4"
+                    Margin="14,2,0,0" VerticalAlignment="Center"
+                    ToolTip="Teklif durumu — gönderimde otomatik 'Gönderildi' olur; Teklifler panosundan elle değiştirilebilir">
+                <TextBlock Text="{Binding Quote.StatusLabel}" Foreground="White" FontSize="11" FontWeight="Bold" />
+            </Border>
+        </StackPanel>
 
         <!-- Müşteri + teklif bilgileri -->
         <Grid Grid.Row="1" Margin="0,14,0,0">
@@ -69,16 +76,52 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <ComboBox Grid.Column="0" ItemsSource="{Binding Customers2}" DisplayMemberPath="DisplayName"
                                   SelectedItem="{Binding SelectedCustomer}" Height="34" />
                         <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Uygula" Margin="8,0,0,0"
                                 Command="{Binding ApplySelectedCustomerCommand}" />
+                        <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="+ Yeni" Margin="8,0,0,0"
+                                Click="OnQuickAddCustomer"
+                                ToolTip="CRM'de olmayan müşteriyi editörden ayrılmadan ekle (kaydedilir ve uygulanır)" />
                     </Grid>
-                    <TextBlock Margin="0,10,0,0" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"
-                               Text="{Binding Quote.CustomerCompany}" />
-                    <TextBlock FontSize="12" Foreground="{DynamicResource MutedBrush}" Text="{Binding Quote.CustomerContact}" />
-                    <TextBlock FontSize="11" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap" Text="{Binding Quote.CustomerAddress}" />
+                    <!-- Snapshot alanları DÜZENLENEBİLİR: e-postası eksik müşteriye gönderim akışı
+                         eskiden tıkanıyordu (alanlar salt-okunur, Müşteriler ayrı modal). -->
+                    <Grid Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="10" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Grid.Column="0">
+                            <TextBlock Text="Firma" Style="{StaticResource MutedText}" FontSize="11" />
+                            <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,8"
+                                     Text="{Binding Quote.CustomerCompany, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="2">
+                            <TextBlock Text="Yetkili" Style="{StaticResource MutedText}" FontSize="11" />
+                            <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,8"
+                                     Text="{Binding Quote.CustomerContact, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="0">
+                            <TextBlock Text="E-posta" Style="{StaticResource MutedText}" FontSize="11" />
+                            <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
+                                     Text="{Binding Quote.CustomerEmail, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="E-posta gönderimi bu adrese yapılır — yalnız bu teklifin kopyasını değiştirir, CRM kartına dokunmaz" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="2">
+                            <TextBlock Text="Telefon" Style="{StaticResource MutedText}" FontSize="11" />
+                            <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
+                                     Text="{Binding Quote.CustomerPhone, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Margin="0,6,0,0" FontSize="11" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
+                               Text="{Binding Quote.CustomerAddress}" />
                 </StackPanel>
             </Border>
 

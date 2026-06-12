@@ -84,6 +84,32 @@ public class StressRenderTests
         finally { if (File.Exists(path)) File.Delete(path); }
     }
 
+    [Fact]
+    public void ExcelImport_CategoryColumn_FlowsIntoProduct()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"alg-cat-{Guid.NewGuid():N}.xlsx");
+        try
+        {
+            using (var wb = new XLWorkbook())
+            {
+                var ws = wb.AddWorksheet("Sayfa1");
+                ws.Cell(1, 1).Value = "Kod"; ws.Cell(1, 2).Value = "Ad"; ws.Cell(1, 3).Value = "Kategori";
+                ws.Cell(2, 1).Value = "V-1"; ws.Cell(2, 2).Value = "Vana"; ws.Cell(2, 3).Value = "Küresel Vanalar";
+                wb.SaveAs(path);
+            }
+
+            var rows = ExcelImportService.Import(path, new ExcelImportOptions
+            {
+                HasHeaderRow = true, CodeColumn = 1, NameColumn = 2, CategoryColumn = 3,
+            });
+
+            Assert.Single(rows);
+            Assert.Equal("Küresel Vanalar", rows[0].Category);
+            Assert.Equal("Küresel Vanalar", ExcelImportService.ToProduct(rows[0]).Category);
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
     // ---------- H② — geniş logo ----------
 
     [Fact]

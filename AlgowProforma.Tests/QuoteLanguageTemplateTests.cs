@@ -99,4 +99,13 @@ public class QuoteLanguageTemplateTests
         var rev = q.CreateRevision();
         Assert.Equal("TST-2026-0007-rev1.pdf", QuoteService.PdfFileName(rev));
     }
+
+    [Fact]
+    public void PdfFileName_SanitizesInvalidChars()
+    {
+        // Kullanıcı ön eki "/" taşıyabilir ("TKF/2026-0001") — eskiden PDF hiç üretilemiyordu.
+        var q = SampleQuote();
+        q.QuoteNo = "TKF/2026-0001";
+        Assert.Equal("TKF_2026-0001.pdf", QuoteService.PdfFileName(q));
+    }
 }

@@ -303,6 +303,46 @@ public partial class QuoteEditorViewModel : ObservableObject
         StatusText = $"Müşteri: {SelectedCustomer.DisplayName}";
     }
 
+    /// <summary>Hızlı eklenen müşteriyi CRM'e kaydeder, combo'ya ekler ve teklife uygular —
+    /// editörden ayrılmadan "CRM'de olmayan müşteriye teklif" akışı (pencere code-behind çağırır).
+    /// Aynı e-posta CRM'de zaten varsa MEVCUT kart uygulanır (UpsertByEmail'in boş adres/vergiyle
+    /// dolu kartı ezmesi bilinçli atlanır).</summary>
+    public void AddCustomerToCrmAndApply(Customer c)
+    {
+        System.Collections.Generic.List<Customer> list;
+        try { list = _customers.Load(); }
+        catch (Exception ex) { StatusText = "Müşteri listesi okunamadı: " + ex.Message; return; }
+
+        var email = (c.Email ?? "").Trim().ToLowerInvariant();
+        var existing = email.Length == 0
+            ? null
+            : list.FirstOrDefault(x => (x.Email ?? "").Trim().ToLowerInvariant() == email);
+        if (existing is not null)
+        {
+            var inCombo = Customers2.FirstOrDefault(x => x.Id == existing.Id);
+            if (inCombo is null) { Customers2.Add(existing); inCombo = existing; }
+            SelectedCustomer = inCombo;
+            Quote.ApplyCustomer(inCombo);
+            StatusText = $"Bu e-posta zaten kayıtlı — mevcut müşteri uygulandı: {inCombo.DisplayName}";
+            return;
+        }
+
+        try
+        {
+            list.Add(c);
+            _customers.Save(list);
+        }
+        catch (Exception ex)
+        {
+            StatusText = "Müşteri CRM'e kaydedilemedi: " + ex.Message;
+            return;   // CRM'e girmeyen müşteri teklife de uygulanmaz (yarım durum bırakma)
+        }
+        Customers2.Add(c);
+        SelectedCustomer = c;
+        Quote.ApplyCustomer(c);
+        StatusText = $"Müşteri eklendi ve uygulandı: {c.DisplayName}";
+    }
+
     [RelayCommand]
     private void Save()
     {

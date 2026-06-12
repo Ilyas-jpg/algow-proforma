@@ -79,4 +79,43 @@ public class EmailLogTests
         File.WriteAllText(AppPaths.EmailLogsFile, "");
         Assert.Empty(new EmailLogService().Load());
     }
+
+    [Fact]
+    public void Append_RotatesPreviousYearFile_LoadMergesArchives()
+    {
+        using var tmp = new TempLibraryRoot();
+        var svc = new EmailLogService();
+        svc.Append(L("eski@x.com", 60));
+
+        // Dosya geçen yıldan kalmış gibi: rotasyon tetiklenir, arşive devrilir.
+        int lastYear = DateTime.Now.Year - 1;
+        File.SetLastWriteTime(AppPaths.EmailLogsFile, new DateTime(lastYear, 12, 30, 12, 0, 0));
+
+        svc.Append(L("yeni@x.com", 1));
+
+        var dir = Path.GetDirectoryName(AppPaths.EmailLogsFile)!;
+        var stem = Path.GetFileNameWithoutExtension(AppPaths.EmailLogsFile);
+        var ext = Path.GetExtension(AppPaths.EmailLogsFile);
+        Assert.True(File.Exists(Path.Combine(dir, $"{stem}-{lastYear}{ext}")));   // arşiv doğdu
+
+        // Aktif dosyada yalnız yeni kayıt; Load arşivle birleştirip ikisini de döndürür.
+        Assert.Single(EmailLogService.Parse(File.ReadAllText(AppPaths.EmailLogsFile)));
+        var all = svc.Load();
+        Assert.Equal(2, all.Count);
+        Assert.Equal("yeni@x.com", all[0].ToEmail);
+        Assert.Equal("eski@x.com", all[1].ToEmail);
+    }
+
+    [Fact]
+    public void MigrateLegacyArray_LeavesPreJsonlBackup()
+    {
+        using var tmp = new TempLibraryRoot();
+        JsonStore.SaveList(AppPaths.EmailLogsFile, new[] { L("a@x.com", 30) });
+
+        new EmailLogService().Append(L("b@x.com", 1));
+
+        // Karışık-dosya migrasyonunda array içeriği satır-moduna düşüp KAYBOLABİLİYORDU —
+        // rewrite öncesi orijinalin yedeği alınır.
+        Assert.True(File.Exists(AppPaths.EmailLogsFile + ".pre-jsonl.bak"));
+    }
 }

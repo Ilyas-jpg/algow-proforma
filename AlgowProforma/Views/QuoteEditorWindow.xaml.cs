@@ -19,6 +19,14 @@ public partial class QuoteEditorWindow : Window
         Closed += (_, _) => _vm.Shutdown();
     }
 
+    /// <summary>"+ Yeni" — CRM'de olmayan müşteriyi editörden ayrılmadan ekle-uygula.</summary>
+    private void OnQuickAddCustomer(object sender, System.Windows.RoutedEventArgs e)
+    {
+        var dlg = new QuickCustomerDialog { Owner = this };
+        if (dlg.ShowDialog() == true && dlg.Result is not null)
+            _vm.AddCustomerToCrmAndApply(dlg.Result);
+    }
+
     // H5: kalemli/değişmiş teklif pencere X'iyle sessizce kaybolmasın.
     private void OnClosing(object? sender, CancelEventArgs e)
     {

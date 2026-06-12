@@ -145,21 +145,58 @@ public partial class BulkSendViewModel : ObservableObject
         if (targets.Count == 0) { StatusText = "Seçili geçerli alıcı yok."; return; }
 
         var providerLabel = useGmail ? $"Gmail ({gmailCred!.GoogleEmail})" : $"SMTP ({_settings.Mail.FromEmail})";
-        var confirm = MessageBox.Show(
-            $"{targets.Count} alıcıya \"{SelectedQuote.DisplayTitle}\" teklifi {providerLabel} ile gönderilecek.\n\nHer alıcıya kendi adına PDF üretilip ekli gönderilir. Devam edilsin mi?",
-            "Toplu Gönderim Onayı", MessageBoxButton.YesNo, MessageBoxImage.Question);
-        if (confirm != MessageBoxResult.Yes) { StatusText = "İptal edildi."; return; }
+        var tmpl = _settings.EmailTemplate;
+        var quoteTheme = PdfTheme.GetById(_settings.QuoteThemeId);   // döngü dışında bir kez
+
+        // GERÇEK örnek önizleme: ilk seçili alıcının adına PDF üretilir, kişiselleştirilmiş
+        // gövde/konu/ek adıyla birlikte gösterilir — eski metinli MessageBox onayı kör uçuştu
+        // (KULLANIM "Önizleme zorunludur" vaat ediyordu, kodda yoktu).
+        var sample = targets[0];
+        var samplePdf = Path.Combine(Path.GetTempPath(), "alg-bulk-sample-" + Guid.NewGuid().ToString("N") + ".pdf");
+        try
+        {
+            StatusText = "Örnek önizleme hazırlanıyor…";
+            var sq = SelectedQuote.Clone(newId: true);
+            sq.ApplyCustomer(new Customer { CompanyName = sample.Company, ContactName = sample.ContactName, Salutation = sample.Salutation, Email = sample.Email });
+            await Task.Run(() => QuotePdfService.Generate(sq, _brand, samplePdf, quoteTheme));
+        }
+        catch (Exception ex)
+        {
+            StatusText = "Örnek PDF üretilemedi: " + ex.Message;
+            return;
+        }
+
+        bool proceed;
+        try
+        {
+            var dlg = new Views.BulkPreviewDialog(
+                quoteTitle: SelectedQuote.DisplayTitle,
+                providerLabel: providerLabel,
+                recipientCount: targets.Count,
+                sampleRecipient: sample.Email + (string.IsNullOrWhiteSpace(sample.Company) ? "" : $"  ({sample.Company})"),
+                subject: tmpl.Subject,
+                body: tmpl.FullBody(sample.ContactName, sample.Salutation),
+                attachmentName: tmpl.AttachmentName(sample.TargetName, DateTime.Today),
+                samplePdfPath: samplePdf)
+            {
+                Owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+            };
+            proceed = dlg.ShowDialog() == true;
+        }
+        finally
+        {
+            try { if (File.Exists(samplePdf)) File.Delete(samplePdf); } catch { /* viewer'da açık olabilir — temp'te kalır */ }
+        }
+        if (!proceed) { StatusText = "İptal edildi — hiçbir e-posta gönderilmedi."; return; }
 
         Busy = true;
         int sent = 0, fail = 0;
-        var tmpl = _settings.EmailTemplate;
         int delayMs = _settings.Mail.MaxPerMinute > 0 ? (int)(60000.0 / _settings.Mail.MaxPerMinute) : 0;
         var logSvc = new EmailLogService();
 
         // SMTP: tek oturum aç-kapat. Gmail: paylaşılan servis (token gerekince kendi tazeler).
         MailService? smtp = useGmail ? null : new MailService(_settings.Mail, pw!);
         var gmail = useGmail ? new GmailService() : null;
-        var quoteTheme = PdfTheme.GetById(_settings.QuoteThemeId);   // döngü dışında bir kez
 
         _cts = new System.Threading.CancellationTokenSource();
         var ct = _cts.Token;

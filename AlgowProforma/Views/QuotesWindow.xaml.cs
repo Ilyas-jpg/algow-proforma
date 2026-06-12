@@ -27,6 +27,9 @@ public partial class QuotesWindow : Window
         _vm.Reload();   // editör kaydetmeden kapatılmış olabilir — diskteki gerçek hâle dön
     }
 
+    private void OnOpenSendHistory(object sender, RoutedEventArgs e)
+        => new SendHistoryWindow { Owner = this }.ShowDialog();
+
     private void OnOpenPdf(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: Quote quote }) return;
