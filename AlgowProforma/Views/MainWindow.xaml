@@ -326,7 +326,8 @@
             </Grid>
         </Border>
 
-        <TabControl Grid.Row="1" Style="{StaticResource ModernTabControl}" Padding="0" Margin="24,0">
+        <TabControl Grid.Row="1" Style="{StaticResource ModernTabControl}" Padding="0" Margin="24,0"
+                    SelectionChanged="OnMainTabChanged">
             <TabControl.ItemContainerStyle>
                 <Style TargetType="TabItem" BasedOn="{StaticResource ModernTabItem}" />
             </TabControl.ItemContainerStyle>
@@ -694,7 +695,7 @@
                 </Grid>
             </TabItem>
 
-            <TabItem>
+            <TabItem x:Name="DesignsTab">
                 <TabItem.Header>
                     <TextBlock Text="Tasarımlar" FontFamily="{StaticResource BodyFont}"
                                FontSize="13" FontWeight="SemiBold" />
@@ -873,6 +874,27 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+
+                        <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,24,0,0" Padding="0,24,0,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Kategori Başlık Sayfaları" Style="{StaticResource DisplayText}" FontSize="18" />
+                                    <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,0">
+                                        Açıkken ürünler kategorilerine göre bölümlenir; her kategori PDF'te kendi başlık
+                                        sayfasıyla açılır (kategori, ürün kartındaki Kategori alanından gelir).
+                                        Kategorisiz ürünler en önde, başlıksız basılır. Manuel sayfa modunda yok sayılır.
+                                    </TextBlock>
+                                </StackPanel>
+                                <CheckBox Grid.Column="1" Style="{StaticResource ModernCheckBox}"
+                                          Content="Kategori başlık sayfaları ekle"
+                                          IsChecked="{Binding Catalog.UseCategoryPages}"
+                                          VerticalAlignment="Center" Margin="16,0,0,0" />
+                            </Grid>
+                        </Border>
 
                         <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,24,0,0" Padding="0,24,0,0">
                             <StackPanel>

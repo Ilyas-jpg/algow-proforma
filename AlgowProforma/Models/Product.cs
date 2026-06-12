@@ -11,6 +11,9 @@ public partial class Product : ObservableObject
     [ObservableProperty] private decimal _price;
     [ObservableProperty] private string _currency = "TL";
     [ObservableProperty] private string _imagePath = "";
+    /// <summary>Katalog bölümü (örn. "Küresel Vanalar"). Boş = kategorisiz. Catalog.UseCategoryPages
+    /// açıkken PDF'te her kategori kendi başlık sayfasıyla açılır.</summary>
+    [ObservableProperty] private string _category = "";
     [ObservableProperty] private bool _isFeatured;
     [ObservableProperty] private bool _hasTable;
     [ObservableProperty] private ProductTable? _table;
@@ -23,6 +26,7 @@ public partial class Product : ObservableObject
         Price = Price,
         Currency = Currency,
         ImagePath = ImagePath,
+        Category = Category,
         IsFeatured = IsFeatured,
         HasTable = HasTable,
         Table = Table?.Clone(),

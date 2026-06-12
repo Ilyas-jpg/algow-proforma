@@ -46,6 +46,7 @@ public class ProductLibraryService
                 existing.Price = src.Price;
                 existing.Currency = src.Currency;
                 existing.ImagePath = src.ImagePath;
+                existing.Category = src.Category;
                 existing.IsFeatured = src.IsFeatured;
                 existing.HasTable = src.HasTable;
                 existing.Table = src.Table?.Clone();

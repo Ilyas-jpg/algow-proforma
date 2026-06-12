@@ -90,6 +90,10 @@ Marka bilgisi **katalogla birlikte** saklanır; ayrıca son kullandığınız ki
 
 > PDF'ler *Fast Web View* (linearized) üretilir — büyük kataloglar görüntüleyicide ilk sayfayı beklemeden açılır.
 
+### Kategori başlık sayfaları
+
+Ürün kartındaki **Kategori** alanını doldurur (örn. *Küresel Vanalar*) ve **Sayfa Düzeni → Kategori başlık sayfaları ekle** seçeneğini açarsanız, PDF'te ürünler kategorilerine göre bölümlenir ve her kategori kendi başlık sayfasıyla açılır. Kategorisiz ürünler en önde, başlıksız basılır. Manuel sayfa modunda bu seçenek yok sayılır.
+
 ## 5. Ürün kütüphanesi
 
 Kütüphane, **katalogdan bağımsız, kalıcı** ürün havuzudur: bir kez girdiğiniz ürünü (görseliyle) her yeni katalogda yeniden kullanırsınız.

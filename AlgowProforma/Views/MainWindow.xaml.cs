@@ -16,8 +16,18 @@ public partial class MainWindow : Window
             var vm = DataContext as MainViewModel;
             vm?.CheckCrashRecovery();
             vm?.RefreshCoverPreview();
-            vm?.EnsureDesignThumbnails();   // tasarım kartlarının gerçek kapak önizlemelerini arka-thread render et
+            // NOT: EnsureDesignThumbnails artık burada ÇAĞRILMAZ — açılışta 13 kapak render'ı
+            // ilk ~20 sn tıklamaları yutabiliyordu (canlı testte yakalandı). Tasarımlar sekmesi
+            // ilk seçildiğinde başlar (OnMainTabChanged); sekme açılana kadar maliyet sıfır.
         };
+    }
+
+    private void OnMainTabChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!ReferenceEquals(e.Source, sender)) return;   // sekme içindeki combobox bubbling'i değil
+        if (sender is TabControl tc && ReferenceEquals(tc.SelectedItem, DesignsTab)
+            && DataContext is MainViewModel vm)
+            vm.EnsureDesignThumbnails();   // idempotent — guard VM'de
     }
 
     private void OnWindowClosing(object? sender, CancelEventArgs e)

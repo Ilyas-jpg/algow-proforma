@@ -18,6 +18,9 @@ public partial class Catalog : ObservableObject
     [ObservableProperty] private string _layoutId = PageLayout.Default.Id;
     [ObservableProperty] private bool _skipReferencesPage;
     [ObservableProperty] private bool _useCustomPageLayouts;
+    /// <summary>Açıkken ürünler kategoriye göre gruplanır ve her kategori PDF'te kendi başlık
+    /// sayfasıyla açılır (kategorisizler önde, başlıksız). Manuel sayfa modunda yok sayılır.</summary>
+    [ObservableProperty] private bool _useCategoryPages;
     [ObservableProperty] private ObservableCollection<CustomPageEntry> _customPages = new();
 
     // White-label: yeni katalog boş/nötr başlar. Marka kimliği (ad, logo, iletişim, slogan)

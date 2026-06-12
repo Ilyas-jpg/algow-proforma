@@ -340,11 +340,28 @@ public partial class MainViewModel : ObservableObject
             {
                 var layout = PageLayout.GetById(Catalog.LayoutId);
                 var perPage = Math.Max(1, layout.Total);
-                var regularCount = Catalog.Products.Count(p => !p.HasTable);
-                var tableCount = Catalog.Products.Count(p => p.HasTable);
                 var tableSlotWeight = Math.Max(2, perPage / 2);
-                var effective = regularCount + tableCount * tableSlotWeight;
-                productPages = effective == 0 ? 0 : (int)Math.Ceiling(effective / (double)perPage);
+
+                if (Catalog.UseCategoryPages && Catalog.Products.Any(p => !string.IsNullOrWhiteSpace(p.Category)))
+                {
+                    // Kategorili akış: her grup kendi içinde sayfalanır + kategori başına 1 başlık sayfası.
+                    productPages = 0;
+                    foreach (var (category, items) in PdfService.BuildCategoryGroups(Catalog.Products))
+                    {
+                        var reg = items.Count(p => !p.HasTable);
+                        var tab = items.Count(p => p.HasTable);
+                        var eff = reg + tab * tableSlotWeight;
+                        productPages += (eff == 0 ? 0 : (int)Math.Ceiling(eff / (double)perPage))
+                                      + (category.Length > 0 ? 1 : 0);
+                    }
+                }
+                else
+                {
+                    var regularCount = Catalog.Products.Count(p => !p.HasTable);
+                    var tableCount = Catalog.Products.Count(p => p.HasTable);
+                    var effective = regularCount + tableCount * tableSlotWeight;
+                    productPages = effective == 0 ? 0 : (int)Math.Ceiling(effective / (double)perPage);
+                }
             }
             var refPages = (Catalog.SkipReferencesPage || Catalog.References.Count == 0)
                 ? 0

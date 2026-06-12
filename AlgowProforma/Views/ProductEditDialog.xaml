@@ -101,6 +101,11 @@
                             <TextBox Style="{StaticResource ModernTextBox}"
                                      Text="{Binding Code, UpdateSourceTrigger=PropertyChanged}" />
 
+                            <TextBlock Text="Kategori (katalog bölümü — örn. Küresel Vanalar)" Style="{StaticResource LabelText}" Margin="0,16,0,6" />
+                            <TextBox Style="{StaticResource ModernTextBox}"
+                                     Text="{Binding Category, UpdateSourceTrigger=PropertyChanged}"
+                                     ToolTip="Sayfa Düzeni'nde 'Kategori başlık sayfaları' açıksa aynı kategorideki ürünler PDF'te kendi bölümünde toplanır" />
+
                             <Grid Margin="0,16,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />

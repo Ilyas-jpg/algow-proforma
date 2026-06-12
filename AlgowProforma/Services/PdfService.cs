@@ -147,6 +147,39 @@ public class PdfService
                     }
                 }
             }
+            else if (catalog.UseCategoryPages &&
+                     catalog.Products.Any(p => !string.IsNullOrWhiteSpace(p.Category)))
+            {
+                // Kategorili akış: kategorisizler ÖNDE ve başlıksız (eski davranışla birebir),
+                // her kategori grubu kendi bölüm başlık sayfasıyla açılır ve kendi içinde sayfalanır.
+                // Mevcut sayfalama çekirdeğine (BuildPageElements/PackElementsIntoPages) DOKUNULMAZ —
+                // sadece grup başına çağrılır.
+                ApplyLayout(PageLayout.GetById(catalog.LayoutId));
+                var groups = BuildCategoryGroups(catalog.Products);
+                var packed = groups
+                    .Select(g => (g.Category, Pages: PackElementsIntoPages(BuildPageElements(g.Products))))
+                    .ToList();
+                int totalPages = packed.Sum(x => x.Pages.Count + (x.Category.Length > 0 ? 1 : 0));
+
+                int pageNumber = 0;
+                foreach (var (category, groupPages) in packed)
+                {
+                    if (category.Length > 0)
+                    {
+                        pageNumber++;
+                        int cur = pageNumber, tot = totalPages;
+                        var cat = category;
+                        doc.Page(p => RenderCategoryDivider(p, catalog.Brand, cat, cur, tot));
+                    }
+                    foreach (var slice in groupPages)
+                    {
+                        pageNumber++;
+                        int cur = pageNumber, tot = totalPages;
+                        var s = slice;
+                        doc.Page(p => RenderMixedProductPage(p, catalog.Brand, s, cur, tot, showIntro: false));
+                    }
+                }
+            }
             else
             {
                 ApplyLayout(PageLayout.GetById(catalog.LayoutId));
@@ -1484,6 +1517,59 @@ public class PdfService
                         .FontFamily(BodyFont).FontSize(9).Medium().FontColor(MutedHex);
                 }
             });
+    }
+
+    /// <summary>Ürünleri kategoriye göre gruplar: kategorisizler önde TEK grup (boş ad → divider
+    /// basılmaz), kategoriler İLK GÖRÜLME sırasıyla; ad eşleşmesi büyük/küçük harf duyarsız,
+    /// görünen ad ilk görülen yazımdır. (internal: gruplama testleri)</summary>
+    internal static List<(string Category, List<Product> Products)> BuildCategoryGroups(IEnumerable<Product> products)
+    {
+        var orderedCats = new List<(string Name, List<Product> Items)>();
+        var index = new Dictionary<string, List<Product>>(StringComparer.OrdinalIgnoreCase);
+        var uncategorized = new List<Product>();
+
+        foreach (var p in products)
+        {
+            if (p is null) continue;
+            var cat = (p.Category ?? "").Trim();
+            if (cat.Length == 0) { uncategorized.Add(p); continue; }
+            if (!index.TryGetValue(cat, out var list))
+            {
+                list = new List<Product>();
+                index[cat] = list;
+                orderedCats.Add((cat, list));
+            }
+            list.Add(p);
+        }
+
+        var result = new List<(string, List<Product>)>();
+        if (uncategorized.Count > 0) result.Add(("", uncategorized));
+        foreach (var (name, items) in orderedCats) result.Add((name, items));
+        return result;
+    }
+
+    /// <summary>Kategori bölüm başlık sayfası — tema paletiyle sade/iddiasız tasarım
+    /// (23 temanın hepsinde güvenli): aksan etiketi + büyük kategori adı + ince çizgi.</summary>
+    private void RenderCategoryDivider(PageDescriptor page, BrandInfo brand, string category,
+        int pageNumber, int totalPages)
+    {
+        ApplyInnerPageDefaults(page);
+        ApplyWatermark(page, brand);
+        page.Header().Element(e => RenderInnerHeader(e, brand, "ÜRÜN KATALOĞU"));
+
+        page.Content().PaddingHorizontal(48).AlignMiddle().Column(col =>
+        {
+            col.Item().Text("BÖLÜM").FontFamily(BodyFont).FontSize(10).Bold()
+                .FontColor(AccentHex).LetterSpacing(0.22f);
+            col.Item().PaddingTop(10).Text(category)
+                .FontFamily(DisplayFont).FontSize(34).Bold().FontColor(TextHex);
+            col.Item().PaddingTop(18).Width(64).LineHorizontal(3).LineColor(PrimaryHex);
+            if (!string.IsNullOrWhiteSpace(brand.Name))
+                col.Item().PaddingTop(14).Text(brand.Name)
+                    .FontFamily(BodyFont).FontSize(10).FontColor(MutedHex);
+        });
+
+        page.Footer().Element(e => RenderInnerFooter(e, $"{pageNumber} / {totalPages}", brand));
     }
 
     private void RenderMixedProductPage(PageDescriptor page, BrandInfo brand,
