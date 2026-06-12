@@ -32,6 +32,10 @@ public partial class MainWindow : Window
 
     private void OnWindowClosing(object? sender, CancelEventArgs e)
     {
+        // Restore-restart yolunda autosave YAZILMAZ: bellekteki eski oturum, az önce yedekten
+        // geri yüklenen veriyi autosave üzerinden geri taşırdı ("önceki oturum?" sorusu kirlenir).
+        if (App.IsRestartingForRestore) return;
+
         if (DataContext is MainViewModel vm)
         {
             vm.SaveSessionNow(); // kapanışta bekleyen değişikliği session'a yaz → "kaldığın yerden devam"

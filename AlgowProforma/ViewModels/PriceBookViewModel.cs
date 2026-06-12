@@ -38,11 +38,14 @@ public partial class PriceBookViewModel : ObservableObject
     {
         items.CollectionChanged += (_, e) =>
         {
-            if (e.NewItems is not null) foreach (PriceItem it in e.NewItems) it.PropertyChanged += OnItemEdited;
+            // Önce -= sonra += : Clear+yeniden-Add akışında (import) aynı nesne ikinci kez
+            // hook'lanıp handler sızdırıyordu (Reset olayı OldItems taşımaz, eski abonelik kalır).
+            if (e.NewItems is not null)
+                foreach (PriceItem it in e.NewItems) { it.PropertyChanged -= OnItemEdited; it.PropertyChanged += OnItemEdited; }
             if (e.OldItems is not null) foreach (PriceItem it in e.OldItems) it.PropertyChanged -= OnItemEdited;
             HasUnsavedChanges = true;
         };
-        foreach (var it in items) it.PropertyChanged += OnItemEdited;
+        foreach (var it in items) { it.PropertyChanged -= OnItemEdited; it.PropertyChanged += OnItemEdited; }
     }
 
     private void OnItemEdited(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -133,5 +136,17 @@ public partial class PriceBookViewModel : ObservableObject
         if (BulkPercent == 0m) { StatusText = "Yüzde gir (örn 10 veya -5)."; return; }
         PriceBookService.ApplyPercentChange(Items, BulkPercent);
         StatusText = $"Tüm listeye %{BulkPercent} uygulandı — kaydetmeyi unutmayın.";
+    }
+
+    /// <summary>Yalnız seçili satırlara zam/indirim — grid çoklu seçim (Ctrl/Shift) destekler.
+    /// Parametre DataGrid.SelectedItems (IList) olarak XAML'den gelir.</summary>
+    [RelayCommand]
+    private void ApplyBulkSelected(System.Collections.IList? selected)
+    {
+        if (BulkPercent == 0m) { StatusText = "Yüzde gir (örn 10 veya -5)."; return; }
+        var targets = selected?.OfType<PriceItem>().ToList() ?? new();
+        if (targets.Count == 0) { StatusText = "Önce listeden satır seçin (Ctrl/Shift ile çoklu)."; return; }
+        PriceBookService.ApplyPercentChange(targets, BulkPercent);
+        StatusText = $"{targets.Count} seçili kaleme %{BulkPercent} uygulandı — kaydetmeyi unutmayın.";
     }
 }

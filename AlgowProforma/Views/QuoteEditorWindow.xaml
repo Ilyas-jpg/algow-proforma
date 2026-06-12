@@ -135,8 +135,9 @@
             <Button Style="{StaticResource SecondaryButton}" Content="Satır Sil" Margin="8,0,0,0" Command="{Binding RemoveLineCommand}" />
         </StackPanel>
 
-        <!-- Kalemler -->
-        <DataGrid Grid.Row="3" ItemsSource="{Binding Quote.Lines}" SelectedItem="{Binding SelectedLine}">
+        <!-- Kalemler — satır ekleme yalnız butonlardan (boş hayalet satır + ondan doğan ghost kalem yok) -->
+        <DataGrid Grid.Row="3" ItemsSource="{Binding Quote.Lines}" SelectedItem="{Binding SelectedLine}"
+                  CanUserAddRows="False">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Kod" Binding="{Binding Code}" Width="100" />
                 <DataGridTextColumn Header="Ad" Binding="{Binding Name}" Width="*" />

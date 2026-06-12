@@ -25,6 +25,37 @@ public partial class App : Application
     private static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
     private const int SW_RESTORE = 9;
 
+    /// <summary>Yedekten geri yükleme sonrası restart sürüyor mu — kapanış autosave'i bunu görünce
+    /// ATLANIR (eski oturumun bellekteki hâli, az önce geri yüklenen veriyi kirletmesin).</summary>
+    public static bool IsRestartingForRestore { get; private set; }
+
+    /// <summary>
+    /// Veri geri yüklemesinden sonra uygulamayı taze veriyle yeniden başlatır: tek-instance kilidi
+    /// ÖNCE bırakılır (yeni kopya "zaten açık" sanılmasın), yeni süreç başlatılır, bu kopya kapanır.
+    /// </summary>
+    public static void RestartForDataReload()
+    {
+        IsRestartingForRestore = true;
+        try { _singleInstanceMutex?.ReleaseMutex(); } catch { }
+        try { _singleInstanceMutex?.Dispose(); } catch { }
+        _singleInstanceMutex = null;
+        try
+        {
+            // Bellekteki eski oturum yeni veriyi ezmesin: autosave dosyası da temizlenir.
+            var autosave = Services.AppPaths.AutoSaveFile;
+            if (File.Exists(autosave)) File.Delete(autosave);
+        }
+        catch { }
+        try
+        {
+            var exe = Environment.ProcessPath;
+            if (!string.IsNullOrEmpty(exe))
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = true });
+        }
+        catch { /* yeni kopya açılamadıysa kullanıcı elle açar — eski kopya yine de kapanmalı */ }
+        Current?.Shutdown();
+    }
+
     /// <summary>İkinci kopya açılmak istendiğinde mevcut pencereyi öne getirir (best-effort).</summary>
     private static void ActivateExistingInstance()
     {

@@ -22,8 +22,12 @@ public static class BackupService
         if (string.IsNullOrWhiteSpace(zipPath))
             throw new ArgumentException("Yedek dosya yolu boş.", nameof(zipPath));
 
+        // Ayraçlı karşılaştırma: çıplak StartsWith kardeş klasörü de ("...Kataloglar-Yedek\x.zip")
+        // kök içi sanıp reddediyordu. Kök + '\' öneki yalnız GERÇEK alt yolları yakalar.
         var fullZip = Path.GetFullPath(zipPath);
-        if (fullZip.StartsWith(Path.GetFullPath(root), StringComparison.OrdinalIgnoreCase))
+        var rootFull = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
+        if (fullZip.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(fullZip, rootFull, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Yedek, veri klasörünün İÇİNE alınamaz — başka bir konum seçin.");
 
         if (File.Exists(fullZip)) File.Delete(fullZip);

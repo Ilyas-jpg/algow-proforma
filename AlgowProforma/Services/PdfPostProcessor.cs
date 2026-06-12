@@ -32,8 +32,9 @@ public static class PdfPostProcessor
                 .Linearize()
                 .Save(tempPath);
 
-            File.Delete(pdfPath);
-            File.Move(tempPath, pdfPath);
+            // Tek adımda değiştir (MoveFileEx REPLACE_EXISTING) — Delete+Move arasında süreç
+            // ölürse PDF tamamen kayboluyordu (kullanıcının az önce ürettiği dosya).
+            File.Move(tempPath, pdfPath, overwrite: true);
         }
         catch (Exception ex)
         {

@@ -104,6 +104,30 @@ public static class AtomicFile
         }
     }
 
+    /// <summary>Atomik bayt yazımı — metin varyantıyla aynı tmp+Replace disiplini.
+    /// CredentialStore .bin dosyaları (DPAPI'li SMTP şifresi / Gmail token) düz WriteAllBytes ile
+    /// yazılıyordu: yarıda kesilirse dosya bozulur, kullanıcı hesabı yeniden bağlamak zorunda kalır.</summary>
+    public static void WriteAllBytes(string path, byte[] bytes)
+    {
+        var dir = Path.GetDirectoryName(path);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+        var tmp = path + ".tmp";
+        using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            fs.Write(bytes, 0, bytes.Length);
+            fs.Flush(flushToDisk: true);
+        }
+        if (File.Exists(path))
+        {
+            try { File.Replace(tmp, path, null); }
+            catch (Exception) { File.Delete(path); File.Move(tmp, path); }
+        }
+        else
+        {
+            File.Move(tmp, path);
+        }
+    }
+
     /// <summary>Bozuk dosyayı, üzerine yazmadan önce .corrupt kopyasına al (kalıcı kayıp önleme).
     /// Sabit ad (overwrite) → tekrarlı açılışta .corrupt birikmez.</summary>
     public static void BackupCorrupt(string path)

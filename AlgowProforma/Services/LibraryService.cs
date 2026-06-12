@@ -10,7 +10,9 @@ namespace AlgowProforma.Services;
 public class LibraryService
 {
     private readonly CatalogService _catalogService = new();
-    private readonly PdfService _pdfService = new();
+    // PdfService BİLEREK field değil: ApplyTheme/ApplyLayout mutable instance-state taşır.
+    // Paylaşılan tek instance, arka-plan Save (Task.Run) ile UI'daki GenerateSingleProduct
+    // çakışınca tema/düzen state'i yarışıyordu — her operasyon kendi taze instance'ını kurar.
 
     public string LibraryPath { get; }
 
@@ -183,7 +185,7 @@ public class LibraryService
         var jsonPath = Path.Combine(LibraryPath, $"{baseName}.json");
 
         catalog.LastModified = DateTime.Now;
-        _pdfService.Generate(catalog, pdfPath);
+        new PdfService().Generate(catalog, pdfPath);
         _catalogService.Save(jsonPath, catalog);
 
         try { File.SetAttributes(jsonPath, FileAttributes.Hidden); } catch { }
@@ -208,7 +210,7 @@ public class LibraryService
             : (!string.IsNullOrWhiteSpace(product.Name) ? product.Name : "Urun");
         var baseName = MakeUniqueBaseName(SafeFileName(rawName), withJson: false, extension: ".png");
         var pngPath = Path.Combine(LibraryPath, $"{baseName}.png");
-        _pdfService.GenerateSingleProduct(catalog, product, pngPath);
+        new PdfService().GenerateSingleProduct(catalog, product, pngPath);
         return pngPath;
     }
 

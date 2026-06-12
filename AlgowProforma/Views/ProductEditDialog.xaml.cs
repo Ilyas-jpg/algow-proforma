@@ -22,6 +22,9 @@ public partial class ProductEditDialog : Window
         DataContext = Product;
         TitleText.Text = string.IsNullOrWhiteSpace(seed.Name) ? "Yeni Ürün" : "Ürünü Düzenle";
         Product.PropertyChanged += OnProductChanged;
+        // Klon kaydedilince kataloğa GİRİYOR — handler sökülmezse kapanmış dialog (bitmap'leriyle)
+        // ürün yaşadıkça bellekte pinli kalır.
+        Closed += (_, _) => Product.PropertyChanged -= OnProductChanged;
         UpdateSaveState();
     }
 

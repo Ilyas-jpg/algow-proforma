@@ -80,6 +80,16 @@ public partial class QuoteEditorViewModel : ObservableObject
         _previewTimer.Start();
     }
 
+    /// <summary>Pencere kapanınca çağrılır — bekleyen debounce tick'i kapalı pencere üzerinde
+    /// render başlatmasın (timer Dispatcher'da yaşamaya devam ediyordu).</summary>
+    public void Shutdown()
+    {
+        _previewTimer?.Stop();
+        _previewTimer = null;
+        _previewSeq++;   // yoldaki render sonucu artık bind edilmez
+        UnhookQuote(Quote);
+    }
+
     private void RenderPreview()
     {
         IsPreviewLoading = true;
@@ -182,7 +192,10 @@ public partial class QuoteEditorViewModel : ObservableObject
     {
         // Status değişimi (gönderim/pano otomatiği) anında diske yazılır — editörü "kaydedilmemiş
         // değişiklik" moduna sokmamalı; PDF'e de basılmadığından önizleme yenilemesi gerektirmez.
-        if (e.PropertyName == nameof(Quote.Status)) return;
+        // UpdatedAt/QuoteNo da Save'in KENDİ mutasyonları: e-posta önizleme penceresi gönderim
+        // sonrası Save çağırınca UpdatedAt değişiyor, editör sahte "kaydedilmemiş değişiklik"
+        // uyarısına düşüyordu — kullanıcı girdisi olmayan alanlar dirty saymaz.
+        if (e.PropertyName is nameof(Quote.Status) or nameof(Quote.UpdatedAt) or nameof(Quote.QuoteNo)) return;
         HasUnsavedChanges = true;
         SchedulePreview();
     }
@@ -204,13 +217,69 @@ public partial class QuoteEditorViewModel : ObservableObject
     }
 
     // ---- komutlar ----
+
+    /// <summary>"TL"/"TRY"/"₺" tek aileye iner — karşılaştırma ve dönüşüm anahtarı.</summary>
+    private static string NormalizeCurrency(string? c) => (c ?? "TL").Trim().ToUpperInvariant() switch
+    {
+        "TL" or "TRY" or "₺" => "TL",
+        "USD" or "$" => "USD",
+        "EUR" or "€" => "EUR",
+        var other => other,
+    };
+
     [RelayCommand]
-    private void AddFromPriceBook()
+    private async System.Threading.Tasks.Task AddFromPriceBook()
     {
         if (SelectedPriceItem is null) { StatusText = "Havuzdan bir ürün seçin."; return; }
         var qty = AddQuantity <= 0 ? 1m : AddQuantity;
-        Quote.Lines.Add(SelectedPriceItem.ToQuoteLine(qty));
-        StatusText = $"Eklendi: {SelectedPriceItem.Name}";
+        var line = SelectedPriceItem.ToQuoteLine(qty);
+
+        // Havuz kalemi ile teklifin para birimi farklıysa SESSİZCE karıştırma (USD havuz fiyatı
+        // TL teklife sayı olarak girince tutar ~40× sapıyordu) — kullanıcıya sor, istenirse TCMB
+        // günlük satış kuruyla çevir.
+        var itemCur = NormalizeCurrency(SelectedPriceItem.Currency);
+        var quoteCur = NormalizeCurrency(Quote.Currency);
+        if (itemCur != quoteCur)
+        {
+            bool convertible = itemCur is "TL" or "USD" or "EUR" && quoteCur is "TL" or "USD" or "EUR";
+            if (!convertible)
+            {
+                var keep = MessageBox.Show(
+                    $"\"{SelectedPriceItem.Name}\" havuzda {itemCur}, teklif {quoteCur} — otomatik dönüşüm bu birim için yok.\n\n" +
+                    "Fiyat SAYI olarak aynen eklensin mi?",
+                    "Para Birimi Farklı", MessageBoxButton.OKCancel, MessageBoxImage.Warning);
+                if (keep != MessageBoxResult.OK) { StatusText = "Kalem eklenmedi."; return; }
+            }
+            else
+            {
+                var r = MessageBox.Show(
+                    $"\"{SelectedPriceItem.Name}\" havuzda {itemCur}, teklifin para birimi {quoteCur}.\n\n" +
+                    $"EVET → TCMB günlük satış kuruyla {quoteCur} karşılığına çevir\n" +
+                    $"HAYIR → fiyatı sayı olarak aynen al ({line.UnitPrice:N2} {quoteCur} yazılır)\n" +
+                    "İPTAL → kalemi ekleme",
+                    "Para Birimi Farklı", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+                if (r == MessageBoxResult.Cancel) { StatusText = "Kalem eklenmedi."; return; }
+                if (r == MessageBoxResult.Yes)
+                {
+                    try
+                    {
+                        StatusText = "TCMB kuru çekiliyor…";
+                        var rates = await TcmbRateService.FetchTodayAsync();
+                        decimal ToTl(string cur) => cur switch { "USD" => rates.UsdSelling, "EUR" => rates.EurSelling, _ => 1m };
+                        line.UnitPrice = Math.Round(line.UnitPrice * ToTl(itemCur) / ToTl(quoteCur), 2, MidpointRounding.AwayFromZero);
+                        StatusText = $"{itemCur}→{quoteCur} TCMB kuruyla çevrildi ({rates.DateText}).";
+                    }
+                    catch (Exception ex)
+                    {
+                        StatusText = "TCMB kuru alınamadı — kalem eklenmedi: " + ex.Message;
+                        return;
+                    }
+                }
+            }
+        }
+
+        Quote.Lines.Add(line);
+        if (itemCur == quoteCur) StatusText = $"Eklendi: {SelectedPriceItem.Name}";
     }
 
     [RelayCommand]

@@ -58,8 +58,8 @@
             </Grid>
         </Grid>
 
-        <!-- Önizleme listesi -->
-        <DataGrid Grid.Row="3" ItemsSource="{Binding Recipients}">
+        <!-- Önizleme listesi — alıcı ekleme yalnız üstteki kaynaklardan (hayalet satır yok) -->
+        <DataGrid Grid.Row="3" ItemsSource="{Binding Recipients}" CanUserAddRows="False">
             <DataGrid.Columns>
                 <DataGridCheckBoxColumn Header="" Binding="{Binding Selected}" Width="40" />
                 <DataGridTextColumn Header="Firma" Binding="{Binding Company}" Width="*" />

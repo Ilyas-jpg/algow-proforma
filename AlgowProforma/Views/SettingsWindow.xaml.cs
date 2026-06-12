@@ -54,10 +54,18 @@ public partial class SettingsWindow : Window
         var confirm = MessageBox.Show(this,
             "Seçilen yedek geri yüklenecek.\n\n" +
             "Mevcut veriniz SİLİNMEZ — \"pre-restore\" güvenlik kopyasına taşınır.\n" +
-            "İşlem sonrası uygulamayı yeniden başlatmanız gerekir.\n\nDevam edilsin mi?",
+            "İşlem sonrası uygulama OTOMATİK yeniden başlatılır.\n\nDevam edilsin mi?",
             "Yedekten Geri Yükle", MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (confirm != MessageBoxResult.Yes) return;
 
-        await _vm.RestoreBackupAsync(dlg.FileName);
+        var ok = await _vm.RestoreBackupAsync(dlg.FileName);
+        if (!ok) return;
+
+        // Restart artık otomatik: eski akışta kullanıcı yeniden başlatmayınca bellekteki eski
+        // veriyle çalışmaya devam edip geri yüklenen veriyi eziyordu (2 inceleme merceği bağımsız buldu).
+        MessageBox.Show(this,
+            "Veri geri yüklendi. Uygulama taze veriyle yeniden başlatılıyor.",
+            "Geri Yükleme Tamam", MessageBoxButton.OK, MessageBoxImage.Information);
+        App.RestartForDataReload();
     }
 }

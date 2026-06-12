@@ -222,13 +222,6 @@ public partial class BulkSendViewModel : ObservableObject
                 if (delayMs > 0) await Task.Delay(delayMs, ct);
             }
             StatusText = $"Tamamlandı — ✓ {sent} gönderildi · ✗ {fail} başarısız.";
-
-            // En az bir alıcıya çıktıysa kaynak teklif artık taslak değil — panoda Gönderildi görünür.
-            if (sent > 0 && SelectedQuote.Status == QuoteStatus.Taslak)
-            {
-                SelectedQuote.Status = QuoteStatus.Gonderildi;
-                try { _quotes.Save(SelectedQuote); } catch { /* durum güncellemesi gönderimi geri almaz */ }
-            }
         }
         catch (OperationCanceledException)
         {
@@ -240,6 +233,14 @@ public partial class BulkSendViewModel : ObservableObject
         }
         finally
         {
+            // En az bir alıcıya ÇIKTIYSA teklif artık taslak değil — iptal/hata yolunda da geçerli
+            // (eskiden yalnız başarı yolundaydı: 50 mail gitmiş, kullanıcı iptal etmiş, pano hâlâ
+            // Taslak gösteriyordu).
+            if (sent > 0 && SelectedQuote?.Status == QuoteStatus.Taslak)
+            {
+                SelectedQuote.Status = QuoteStatus.Gonderildi;
+                try { _quotes.Save(SelectedQuote); } catch { /* durum güncellemesi gönderimi geri almaz */ }
+            }
             if (smtp is not null) await smtp.CloseAsync();
             _cts.Dispose();
             _cts = null;

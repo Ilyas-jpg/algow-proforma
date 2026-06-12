@@ -15,6 +15,7 @@ public class ExcelImportOptions
     public int CodeColumn { get; set; } = 1;        // 1-based, 0 = skip
     public int NameColumn { get; set; } = 2;        // ürün adı / açıklama
     public int PriceColumn { get; set; } = 0;       // 0 = skip
+    public int CategoryColumn { get; set; } = 0;    // 0 = skip (katalog bölümü — kategori sayfaları)
     public int ImageColumn { get; set; } = 0;       // 0 = otomatik (satıra anchored görsel)
     public string Currency { get; set; } = "TL";
 }
@@ -25,6 +26,7 @@ public class ExcelImportPreviewRow
     public string Code { get; set; } = "";
     public string Name { get; set; } = "";
     public decimal? Price { get; set; }
+    public string Category { get; set; } = "";
 
     /// <summary>Dolu = görsel zaten diskte (materialize edilmiş). Önizleme aşamasında null kalır.</summary>
     public string? ImagePath { get; set; }
@@ -73,7 +75,9 @@ public static class ExcelImportService
         {
             var code = options.CodeColumn > 0 ? GetCellText(ws, row, options.CodeColumn) : "";
             var name = options.NameColumn > 0 ? GetCellText(ws, row, options.NameColumn) : "";
-            decimal? price = options.PriceColumn > 0 ? ParseDecimal(GetCellText(ws, row, options.PriceColumn)) : null;
+            var category = options.CategoryColumn > 0 ? GetCellText(ws, row, options.CategoryColumn) : "";
+            // H① fix: Number hücresi doğrudan okunur — string round-trip + ayraç sezgisi yalnız metinde.
+            decimal? price = options.PriceColumn > 0 ? ExcelDataService.CellDecimal(ws, row, options.PriceColumn) : null;
 
             // Önizleme disk'e DOKUNMAZ — kaynak referansı/baytlar bellekte taşınır,
             // yazım ToProduct (gerçek import) anında olur.
@@ -98,6 +102,7 @@ public static class ExcelImportService
                 Code = code.Trim(),
                 Name = name.Trim(),
                 Price = price,
+                Category = category.Trim(),
                 PendingImageSource = pendingSource,
                 PendingImageBytes = pendingBytes,
             });
@@ -112,6 +117,7 @@ public static class ExcelImportService
         Name = row.Name,
         Price = row.Price ?? 0m,
         Currency = currency,
+        Category = row.Category,
         ImagePath = MaterializeImage(row) ?? "",
     };
 
@@ -144,10 +150,6 @@ public static class ExcelImportService
         }
         catch { return cell.Value.ToString() ?? ""; }
     }
-
-    // H1 fix: invariant-first deneme Türkçe "12.500"ü (=12500) 12,5 yapıp fiyatı 1000 kat bozuyordu.
-    // Ayraç-analizli tek doğru kaynak ExcelDataService.ParseDecimal'e delege edilir.
-    private static decimal? ParseDecimal(string s) => ExcelDataService.ParseDecimal(s);
 
     private static Dictionary<int, byte[]> ExtractImagesByRow(IXLWorksheet ws)
     {

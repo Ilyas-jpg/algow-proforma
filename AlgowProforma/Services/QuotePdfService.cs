@@ -143,7 +143,11 @@ public class QuotePdfService
                 row.RelativeItem().AlignMiddle().Height(Compact ? 36 : 44).Element(e =>
                 {
                     if (!string.IsNullOrWhiteSpace(brand.LogoPath) && File.Exists(brand.LogoPath))
-                        e.AlignLeft().Image(PdfImageCache.Get(brand.LogoPath)).FitHeight();
+                        // H② fix: FitHeight genişliği sınırlamaz — geniş wordmark logo (örn. 10:1)
+                        // 44pt yüksekliğe ölçeklenince satırı taşırıp DocumentLayoutException atıyordu
+                        // (o markada TÜM teklif üretimi kırılır). Katalog deseni: MaxWidth + FitArea —
+                        // logo hem yükseklik hem genişlik kutusuna sığacak şekilde ölçeklenir.
+                        e.AlignLeft().AlignMiddle().MaxWidth(220).Image(PdfImageCache.Get(brand.LogoPath)).FitArea();
                     else
                         e.AlignLeft().Text(string.IsNullOrWhiteSpace(brand.Name) ? L.CompanyFallback : brand.Name)
                          .FontSize(Compact ? 15 : 18).Bold().FontColor(Pr);
@@ -216,13 +220,17 @@ public class QuotePdfService
         });
     }
 
+    /// <summary>EN proforma uluslararası tarih biçimi kullanır ("15 Jun 2026") — "15.06.2026"
+    /// ABD'li okuyucuda ay/gün karışıklığı yaratır. TR'de yerleşik dd.MM.yyyy korunur.</summary>
+    private string DateFmt => ReferenceEquals(L, En10n) ? "dd MMM yyyy" : "dd.MM.yyyy";
+
     private void MetaBox(IContainer c, Quote q)
     {
         c.Border(1).BorderColor(Line).Padding(Compact ? 9 : 12).Column(col =>
         {
             MetaRow(col, L.QuoteNo, string.IsNullOrWhiteSpace(q.QuoteNo) ? "—" : q.QuoteNo);
-            MetaRow(col, L.Date, q.Date.ToString("dd.MM.yyyy", Cul));
-            MetaRow(col, L.Validity, $"{q.ValidityDays} {L.DaysSuffix}  ({q.ValidUntil.ToString("dd.MM.yyyy", Cul)})");
+            MetaRow(col, L.Date, q.Date.ToString(DateFmt, Cul));
+            MetaRow(col, L.Validity, $"{q.ValidityDays} {L.DaysSuffix}  ({q.ValidUntil.ToString(DateFmt, Cul)})");
             MetaRow(col, L.Currency, q.Currency);
         });
     }
@@ -247,7 +255,7 @@ public class QuotePdfService
                 cols.ConstantColumn(52);    // miktar
                 cols.ConstantColumn(46);    // birim
                 cols.ConstantColumn(76);    // birim fiyat
-                cols.ConstantColumn(38);    // isk %
+                cols.ConstantColumn(46);    // isk % — EN "DISC %" başlığı 38pt'e sığmıyordu
                 cols.ConstantColumn(82);    // tutar
             });
 
@@ -416,9 +424,10 @@ public class QuotePdfService
 
     private string Money(decimal v, string currency)
     {
+        // EN proformada ₺ yerine ISO kodu "TRY" — ihracat alıcısının bankası/gümrüğü sembolü tanımayabilir.
         string sym = (currency ?? "TL").Trim().ToUpperInvariant() switch
         {
-            "TL" or "TRY" or "₺" => "₺",
+            "TL" or "TRY" or "₺" => ReferenceEquals(L, En10n) ? "TRY" : "₺",
             "USD" or "$" => "$",
             "EUR" or "€" => "€",
             _ => currency ?? "",

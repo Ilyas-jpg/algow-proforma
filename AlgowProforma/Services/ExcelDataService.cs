@@ -48,8 +48,8 @@ public static class ExcelDataService
                 Name = name.Trim(),
                 Description = (descC > 0 && descC != nameC) ? Cell(ws, row, descC).Trim() : "",
                 Unit = OrDefault(Cell(ws, row, unitC).Trim(), "adet"),
-                UnitPrice = ParseDecimal(Cell(ws, row, priceC)) ?? 0m,
-                VatRate = ParseDecimal(Cell(ws, row, vatC)) ?? 20m,
+                UnitPrice = CellDecimal(ws, row, priceC) ?? 0m,
+                VatRate = CellDecimal(ws, row, vatC) ?? 20m,
                 Category = Cell(ws, row, catC).Trim(),
                 Currency = OrDefault(Cell(ws, row, curC).Trim().ToUpperInvariant(), defaultCurrency),
             });
@@ -88,7 +88,7 @@ public static class ExcelDataService
     {
         using var wb = new XLWorkbook();
         var ws = wb.AddWorksheet("Ürün Kütüphanesi");
-        string[] headers = { "Kod", "Ürün Adı", "Fiyat", "Para Birimi" };
+        string[] headers = { "Kod", "Ürün Adı", "Fiyat", "Para Birimi", "Kategori" };
         for (int i = 0; i < headers.Length; i++) ws.Cell(1, i + 1).Value = headers[i];
         ws.Row(1).Style.Font.Bold = true;
 
@@ -99,6 +99,7 @@ public static class ExcelDataService
             ws.Cell(r, 2).Value = p.Name;
             ws.Cell(r, 3).Value = p.Price;
             ws.Cell(r, 4).Value = p.Currency;
+            ws.Cell(r, 5).Value = p.Category;
             r++;
         }
         ws.Columns().AdjustToContents();
@@ -217,6 +218,27 @@ public static class ExcelDataService
             return cell.GetString() ?? "";
         }
         catch { return cell.Value.ToString() ?? ""; }
+    }
+
+    /// <summary>
+    /// Sayısal alan okuma (fiyat/KDV). Hücre GERÇEK sayı ise (XLDataType.Number) değer doğrudan
+    /// alınır — string'e çevirip ParseDecimal ayraç sezgisine sokmak 3+ ondalıklı değeri
+    /// ("12.345" görünümü) Türkçe binlik sanıp 1000 kat şişiriyordu (H①). Sezgi yalnız METİN
+    /// hücreleri içindir.
+    /// </summary>
+    internal static decimal? CellDecimal(IXLWorksheet ws, int row, int col)
+    {
+        if (col <= 0) return null;
+        var cell = ws.Cell(row, col);
+        if (cell.IsEmpty()) return null;
+        try
+        {
+            if (cell.DataType == XLDataType.Number)
+                return cell.GetValue<decimal>();
+        }
+        catch { /* sayı okunamadı — metin yoluna düş */ }
+        try { return ParseDecimal(cell.GetString() ?? ""); }
+        catch { return null; }
     }
 
     /// <summary>

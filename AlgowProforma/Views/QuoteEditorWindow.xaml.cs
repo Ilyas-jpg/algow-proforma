@@ -15,6 +15,8 @@ public partial class QuoteEditorWindow : Window
         _vm = new QuoteEditorViewModel(existing);
         DataContext = _vm;
         Closing += OnClosing;
+        // Önizleme debounce timer'ı pencereyle ölmeli — kapalı pencere üzerinde render başlatmasın.
+        Closed += (_, _) => _vm.Shutdown();
     }
 
     // H5: kalemli/değişmiş teklif pencere X'iyle sessizce kaybolmasın.

@@ -13,6 +13,10 @@ namespace AlgowProforma.Services;
 /// eski format (tek JSON array — her mail tüm dosyayı yeniden yazardı, toplu gönderimde O(n²))
 /// ilk Append'te bir defaya mahsus JSONL'a göç eder. Yarım satır (çökme anı) okuyucuda atlanır —
 /// kayıp tek kayıtla sınırlı kalır.
+///
+/// Yıllık rotasyon: aktif dosyanın son yazımı geçmiş yıla aitse Append öncesi
+/// "email-send-log-{yıl}.json" arşivine devrilir — aktif dosya küçük kalır, Load tüm arşivleri
+/// birleştirir (Gönderim Geçmişi penceresi yılları kesintisiz görür).
 /// </summary>
 public class EmailLogService
 {
@@ -25,23 +29,80 @@ public class EmailLogService
 
     public List<EmailSendLog> Load()
     {
+        var list = new List<EmailSendLog>();
+        foreach (var path in ActivePlusArchives())
+        {
+            try { list.AddRange(Parse(File.ReadAllText(path))); }
+            catch { /* okunamayan arşiv kalanları engellemez */ }
+        }
+        return list.OrderByDescending(l => l.SentAt).ToList();
+    }
+
+    /// <summary>Aktif dosya + yıl arşivleri ("email-send-log-2025.json" ...).</summary>
+    private static IEnumerable<string> ActivePlusArchives()
+    {
         var path = AppPaths.EmailLogsFile;
-        if (!File.Exists(path)) return new();
-        string text;
-        try { text = File.ReadAllText(path); }
-        catch { return new(); }
-        return Parse(text).OrderByDescending(l => l.SentAt).ToList();
+        if (File.Exists(path)) yield return path;
+
+        var dir = Path.GetDirectoryName(path);
+        if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) yield break;
+        var stem = Path.GetFileNameWithoutExtension(path);
+        var ext = Path.GetExtension(path);
+        foreach (var f in Directory.GetFiles(dir, $"{stem}-*{ext}"))
+            yield return f;
     }
 
     public void Append(EmailSendLog log)
     {
         var path = AppPaths.EmailLogsFile;
+        RotateIfYearChanged(path);
         MigrateLegacyArray(path);
         var line = JsonSerializer.Serialize(log, LineOptions) + Environment.NewLine;
         // Çökme anında son satır '\n'siz yarım kalmış olabilir — üstüne yazmak yerine yeni satıra
         // başla; yoksa yarım satır SONRAKİ kaydı da zehirler (iki kayıt birden okunamaz olur).
         if (LastByteIsNotNewline(path)) line = Environment.NewLine + line;
         File.AppendAllText(path, line);
+    }
+
+    /// <summary>Aktif log geçmiş yıldan kalmaysa "{stem}-{yıl}{ext}" arşivine devir (yedeksiz ezme yok:
+    /// arşiv adı doluysa ardışık ek alır). Append yolunda tek LastWriteTime okuması — O(1) korunur.</summary>
+    private static void RotateIfYearChanged(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return;
+            int fileYear = File.GetLastWriteTime(path).Year;
+            if (fileYear >= DateTime.Now.Year) return;
+
+            var dir = Path.GetDirectoryName(path) ?? "";
+            var stem = Path.GetFileNameWithoutExtension(path);
+            var ext = Path.GetExtension(path);
+            var archive = Path.Combine(dir, $"{stem}-{fileYear}{ext}");
+            int n = 2;
+            while (File.Exists(archive)) archive = Path.Combine(dir, $"{stem}-{fileYear} ({n++}){ext}");
+            File.Move(path, archive);
+        }
+        catch { /* rotasyon başarısız — append aynı dosyaya devam eder, veri kaybolmaz */ }
+    }
+
+    /// <summary>Append başına TÜM dosyayı okumadan ilk anlamlı baytı yoklar (O(1) vaadi).</summary>
+    private static bool StartsWithArrayMarker(string path)
+    {
+        try
+        {
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            Span<byte> buf = stackalloc byte[64];
+            int read = fs.Read(buf);
+            for (int i = 0; i < read; i++)
+            {
+                byte b = buf[i];
+                if (b is (byte)' ' or (byte)'\t' or (byte)'\r' or (byte)'\n') continue;
+                if (i == 0 && b == 0xEF && read >= 3 && buf[1] == 0xBB && buf[2] == 0xBF) { i += 2; continue; } // BOM
+                return b == (byte)'[';
+            }
+            return false;
+        }
+        catch { return false; }
     }
 
     private static bool LastByteIsNotNewline(string path)
@@ -80,14 +141,18 @@ public class EmailLogService
         return list;
     }
 
-    /// <summary>Eski tek-array dosyayı bir defaya mahsus JSONL'a çevirir (atomik yazım).</summary>
+    /// <summary>Eski tek-array dosyayı bir defaya mahsus JSONL'a çevirir (atomik yazım).
+    /// Yeniden yazmadan ÖNCE orijinal ".pre-jsonl.bak" kopyasına alınır: array-parse başarısız olup
+    /// satır moduna düşülen KARIŞIK dosyada (array + ardına eklenmiş satırlar) array içindeki çok
+    /// satırlı kayıtlar kurtarılamaz — yedek olmadan rewrite onları kalıcı yutuyordu.</summary>
     private static void MigrateLegacyArray(string path)
     {
         try
         {
             if (!File.Exists(path)) return;
+            if (!StartsWithArrayMarker(path)) return;   // zaten JSONL — tam okuma YOK (O(1))
+
             var text = File.ReadAllText(path);
-            if (!text.TrimStart().StartsWith('[')) return;   // zaten JSONL
             var logs = Parse(text);
             if (logs.Count == 0 && text.Trim().Length > 2)
             {
@@ -95,6 +160,8 @@ public class EmailLogService
                 AtomicFile.BackupCorrupt(path);
                 return;
             }
+            try { File.Copy(path, path + ".pre-jsonl.bak", overwrite: true); }
+            catch { /* yedek alınamadıysa migrasyonu yine de durdurma — en kötüsü eski davranış */ }
             var sb = new StringBuilder();
             foreach (var l in logs.OrderBy(l => l.SentAt))   // dosya kronolojik akar, Load desc sıralar
                 sb.AppendLine(JsonSerializer.Serialize(l, LineOptions));

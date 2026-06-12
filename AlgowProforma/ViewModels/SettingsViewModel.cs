@@ -173,21 +173,26 @@ public partial class SettingsViewModel : ObservableObject
         finally { Busy = false; }
     }
 
-    public async Task RestoreBackupAsync(string zipPath)
+    /// <summary>true = geri yükleme başarılı (çağıran pencere otomatik restart'ı tetikler).
+    /// Eski akış yalnız "YENİDEN BAŞLATIN" yazıyordu — kullanıcı başlatmayınca eski veriyle
+    /// çalışmaya devam edip geri yüklenen veriyi eziyordu.</summary>
+    public async Task<bool> RestoreBackupAsync(string zipPath)
     {
-        if (Busy) return;
+        if (Busy) return false;
         Busy = true;
         StatusText = "Yedek geri yükleniyor…";
         try
         {
             var safety = await Task.Run(() => BackupService.RestoreBackup(zipPath));
             StatusText = string.IsNullOrEmpty(safety)
-                ? "Yedek geri yüklendi — uygulamayı YENİDEN BAŞLATIN."
-                : $"Yedek geri yüklendi (önceki veri: {System.IO.Path.GetFileName(safety)}) — uygulamayı YENİDEN BAŞLATIN.";
+                ? "Yedek geri yüklendi — uygulama yeniden başlatılıyor…"
+                : $"Yedek geri yüklendi (önceki veri: {System.IO.Path.GetFileName(safety)}) — uygulama yeniden başlatılıyor…";
+            return true;
         }
         catch (Exception ex)
         {
             StatusText = "Geri yükleme başarısız: " + ex.Message;
+            return false;
         }
         finally { Busy = false; }
     }

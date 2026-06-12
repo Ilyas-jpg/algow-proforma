@@ -79,7 +79,28 @@ public class QuoteServiceTests : IDisposable
 
         var auto = new Quote();
         _svc.Save(auto);
-        Assert.EndsWith("-0001", auto.QuoteNo);   // elle numara sayaç tüketmedi
+        Assert.EndsWith("-0001", auto.QuoteNo);   // farklı ön-ekli elle numara sayacı İTMEZ
+    }
+
+    [Fact]
+    public void CountersReset_DoesNotReissueExistingNumber()
+    {
+        new SettingsService().Save(new AppSettings { QuoteNoPrefix = "TKF" });
+        int year = DateTime.Today.Year;
+
+        var q1 = new Quote(); var q2 = new Quote();
+        _svc.Save(q1);
+        _svc.Save(q2);
+        Assert.Equal($"TKF-{year}-0002", q2.QuoteNo);
+
+        // counters.json kayboldu (yedekten kısmi dönüş / elle temizlik) — sayaç sıfırdan başlar.
+        File.Delete(AppPaths.CountersFile);
+
+        var q3 = new Quote();
+        _svc.Save(q3);
+
+        // Eski davranış: TKF-{yıl}-0001 İKİNCİ kez kesilirdi (iki müşteride aynı fiş no).
+        Assert.Equal($"TKF-{year}-0003", q3.QuoteNo);
     }
 
     [Fact]
@@ -99,7 +120,7 @@ public class QuoteServiceTests : IDisposable
     }
 
     [Fact]
-    public void Load_Missing_ReturnsNull_And_Delete_RemovesFile()
+    public void Load_Missing_ReturnsNull_And_Delete_MovesToTrash()
     {
         Assert.Null(_svc.Load("yok-boyle-bir-id"));
 
@@ -107,8 +128,11 @@ public class QuoteServiceTests : IDisposable
         _svc.Save(q);
         Assert.NotNull(_svc.Load(q.Id));
 
-        _svc.Delete(q.Id);
+        _svc.Delete(q);
         Assert.Null(_svc.Load(q.Id));
-        Assert.Empty(Directory.GetFiles(AppPaths.QuotesDir, q.Id + "*"));   // .tmp artığı da yok
+        Assert.Empty(Directory.GetFiles(AppPaths.QuotesDir, q.Id + "*"));   // kökten kalktı (.tmp artığı da yok)
+        // Kalıcı silme DEĞİL: JSON geri-dönülebilir .trash'te yaşıyor (30 gün purge penceresi).
+        var trash = Path.Combine(AppPaths.QuotesDir, ".trash");
+        Assert.True(File.Exists(Path.Combine(trash, q.Id + ".json")));
     }
 }

@@ -51,11 +51,27 @@ public partial class ExcelImportDialog : Window
         }
     }
 
+    /// <summary>Populate/AutoMap sırasında tetiklenen SelectionChanged'lerin her birinde Excel'i
+    /// yeniden okumamak için önizleme bastırılır; toplu işin sonunda BİR kez yenilenir.</summary>
+    private bool _suppressPreview;
+
     private void OnSheetChanged(object sender, SelectionChangedEventArgs e)
     {
         if (string.IsNullOrEmpty(_filePath) || SheetCombo.SelectedItem is null) return;
-        PopulateColumnCombos();
-        AutoMapColumns();
+        _suppressPreview = true;
+        try
+        {
+            PopulateColumnCombos();
+            AutoMapColumns();
+        }
+        finally { _suppressPreview = false; }
+        TryPreview();
+    }
+
+    /// <summary>Sütun eşlemesi değişti — önizleme bayat kalmasın (eski eşlemeyle içe aktarma tuzağı).</summary>
+    private void OnMappingChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressPreview || !IsLoaded) return;
         TryPreview();
     }
 
@@ -107,6 +123,7 @@ public partial class ExcelImportDialog : Window
         SetCombo(CodeCombo, headers);
         SetCombo(NameCombo, headers);
         SetCombo(PriceCombo, headers);
+        SetCombo(CategoryCombo, headers);
 
         var imgOptions = new List<string> { "Otomatik (gömülü görsel)" };
         for (int i = 1; i < headers.Count; i++) imgOptions.Add(headers[i] + "  (dosya yolu)");
@@ -137,7 +154,7 @@ public partial class ExcelImportDialog : Window
             int lastCol = range.LastColumn().ColumnNumber();
             int dataStart = hasHeader ? firstRow + 1 : firstRow;
 
-            int code = 0, name = 0, price = 0;
+            int code = 0, name = 0, price = 0, category = 0;
 
             // 1) Header keyword based detection
             if (hasHeader)
@@ -153,6 +170,9 @@ public partial class ExcelImportDialog : Window
                         code = idx;
                     else if (price == 0 && (h.Contains("fiyat") || h.Contains("price") || h.Contains("tutar") || h.Contains("ücret")))
                         price = idx;
+                    else if (category == 0 && (h.Contains("kategori") || h.Contains("grup") || h.Contains("bölüm")
+                                               || h.Contains("bolum") || h.Contains("category")))
+                        category = idx;
                     else if (name == 0 && (h.Contains("ürün ad") || h.Contains("urun ad") || h.Contains("ürünad")
                                            || h.Contains("ürün is") || h.Contains("isim") || h == "ad"
                                            || h.Contains("açıklama") || h.Contains("aciklama")
@@ -246,6 +266,7 @@ public partial class ExcelImportDialog : Window
             if (code < CodeCombo.Items.Count) CodeCombo.SelectedIndex = code;
             if (name < NameCombo.Items.Count) NameCombo.SelectedIndex = name;
             if (price < PriceCombo.Items.Count) PriceCombo.SelectedIndex = price;
+            if (category < CategoryCombo.Items.Count) CategoryCombo.SelectedIndex = category;
         }
         catch { }
     }
@@ -280,6 +301,7 @@ public partial class ExcelImportDialog : Window
             CodeColumn = ColumnIndex(CodeCombo),
             NameColumn = ColumnIndex(NameCombo),
             PriceColumn = ColumnIndex(PriceCombo),
+            CategoryColumn = ColumnIndex(CategoryCombo),
             ImageColumn = ImageCombo.SelectedIndex == 0 ? 0 : ImageCombo.SelectedIndex,
         };
 

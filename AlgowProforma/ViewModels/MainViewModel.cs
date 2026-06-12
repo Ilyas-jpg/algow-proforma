@@ -202,9 +202,14 @@ public partial class MainViewModel : ObservableObject
     /// Background thread'de kapak sayfası PNG render eder, UI thread'de Image control'e bind eder.
     /// Tasarım değişince + kapak görseli yüklenince/silinince çağrılır.
     /// </summary>
+    /// <summary>Bayat render guard'ı: hızlı ardışık tetiklemede (tema+tasarım+görsel) eski render
+    /// yenisinden SONRA dönerse önizlemeyi geri alıyordu — yalnız en güncel istek bind edilir.</summary>
+    private int _coverPreviewSeq;
+
     public void RefreshCoverPreview()
     {
         IsCoverPreviewLoading = true;
+        var seq = System.Threading.Interlocked.Increment(ref _coverPreviewSeq);
         // Canlı Catalog'u arka thread'e VERME — kullanıcı render sırasında düzenlerse race.
         // Klon UI thread'inde alınır; thread'e donmuş kopya gider.
         var catalogSnapshot = CatalogService.Clone(Catalog);
@@ -213,6 +218,7 @@ public partial class MainViewModel : ObservableObject
             var bmp = BytesToFrozenBitmap(new PdfService().GenerateCoverPreviewBytes(catalogSnapshot));
             System.Windows.Application.Current?.Dispatcher.Invoke(() =>
             {
+                if (seq != _coverPreviewSeq) return;   // daha yeni bir render yolda — bayatı atma
                 CoverPreviewImage = bmp;
                 IsCoverPreviewLoading = false;
             });
@@ -278,6 +284,14 @@ public partial class MainViewModel : ObservableObject
         catch { return null; }
     }
 
+    /// <summary>
+    /// Katalog grafının düzenleme sayacı — PDF üretimi (arka thread) sürerken yapılan edit'leri
+    /// tespit eder. Render başlamadan örneklenir; dönüşte sayaç değiştiyse IsDirty SIFIRLANMAZ ve
+    /// autosave SİLİNMEZ (eski davranış: render sırasındaki değişiklik "kaydedilmiş" sayılıp
+    /// kapanışta sessizce kayboluyordu).
+    /// </summary>
+    private long _editVersion;
+
     [RelayCommand]
     private void SelectLayout(string? layoutId)
     {
@@ -301,8 +315,6 @@ public partial class MainViewModel : ObservableObject
         }
         catch (Exception ex) { ShowError("Klasör açılamadı", ex.Message); }
     }
-
-    [ObservableProperty] private int _designBackgroundsRefresh;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WindowTitle))]
@@ -372,43 +384,8 @@ public partial class MainViewModel : ObservableObject
 
     public int ProductsPerLayoutPage => PageLayout.GetById(Catalog.LayoutId).Total;
 
-    [RelayCommand]
-    private void AddCustomPage(string? layoutId)
-    {
-        var id = string.IsNullOrWhiteSpace(layoutId) ? Catalog.LayoutId : layoutId;
-        Catalog.CustomPages.Add(new CustomPageEntry(id));
-        IsDirty = true;
-        OnPropertyChanged(nameof(CalculatedPageCount));
-    }
-
-    [RelayCommand]
-    private void RemoveCustomPage(CustomPageEntry? entry)
-    {
-        if (entry is null) return;
-        Catalog.CustomPages.Remove(entry);
-        IsDirty = true;
-        OnPropertyChanged(nameof(CalculatedPageCount));
-    }
-
-    [RelayCommand]
-    private void MoveCustomPageUp(CustomPageEntry? entry)
-    {
-        if (entry is null) return;
-        var i = Catalog.CustomPages.IndexOf(entry);
-        if (i <= 0) return;
-        Catalog.CustomPages.Move(i, i - 1);
-        IsDirty = true;
-    }
-
-    [RelayCommand]
-    private void MoveCustomPageDown(CustomPageEntry? entry)
-    {
-        if (entry is null) return;
-        var i = Catalog.CustomPages.IndexOf(entry);
-        if (i < 0 || i >= Catalog.CustomPages.Count - 1) return;
-        Catalog.CustomPages.Move(i, i + 1);
-        IsDirty = true;
-    }
+    // (AddCustomPage/RemoveCustomPage/MoveCustomPageUp/Down komutları kaldırıldı — 2026-05-22 Faz 30
+    // XAML temizliğinden beri hiçbir binding kullanmıyordu; sayfa yönetimi PagePlannerWindow'da.)
 
     [RelayCommand]
     private void OpenPagePlanner()
@@ -434,7 +411,9 @@ public partial class MainViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(UnassignedProducts));
         OnPropertyChanged(nameof(CalculatedPageCount));
+        _editVersion++;
         IsDirty = true;
+        ScheduleAutoSave();   // sayfa atamaları da çökme-kurtarma kapsamında
     }
 
     public void AssignProductToPage(CustomPageEntry page, Product product)
@@ -486,6 +465,10 @@ public partial class MainViewModel : ObservableObject
         catalog.Brand.PropertyChanged += OnGraphChanged;
         catalog.Brand.PropertyChanged += OnBrandChanged;
         catalog.Cover.PropertyChanged += OnGraphChanged;
+        // Kapak Stüdyosu elementleri + manuel sayfa listesi de autosave tetiklemeli — eskiden
+        // yalnız IsDirty elle set ediliyordu, 2 sn'lik debounce hiç başlamıyordu (çökmede kayıp).
+        catalog.Cover.Elements.CollectionChanged += OnAuxCollectionChanged;
+        catalog.CustomPages.CollectionChanged += OnAuxCollectionChanged;
         catalog.Products.CollectionChanged += OnProductsChanged;
         catalog.References.CollectionChanged += OnReferencesChanged;
         foreach (var p in catalog.Products) p.PropertyChanged += OnGraphChanged;
@@ -498,6 +481,8 @@ public partial class MainViewModel : ObservableObject
         catalog.Brand.PropertyChanged -= OnGraphChanged;
         catalog.Brand.PropertyChanged -= OnBrandChanged;
         catalog.Cover.PropertyChanged -= OnGraphChanged;
+        catalog.Cover.Elements.CollectionChanged -= OnAuxCollectionChanged;
+        catalog.CustomPages.CollectionChanged -= OnAuxCollectionChanged;
         catalog.Products.CollectionChanged -= OnProductsChanged;
         catalog.References.CollectionChanged -= OnReferencesChanged;
         foreach (var p in catalog.Products) p.PropertyChanged -= OnGraphChanged;
@@ -510,6 +495,15 @@ public partial class MainViewModel : ObservableObject
         // kendini tetiklemesine (2 sn'de bir sonsuz tam-JSON yazımı) ve gerçek kayıttan hemen
         // sonra IsDirty'nin geri true olmasına yol açıyordu (H2).
         if (e.PropertyName == nameof(Catalog.LastModified)) return;
+        _editVersion++;
+        IsDirty = true;
+        ScheduleAutoSave();
+        OnPropertyChanged(nameof(CalculatedPageCount));
+    }
+
+    private void OnAuxCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        _editVersion++;
         IsDirty = true;
         ScheduleAutoSave();
         OnPropertyChanged(nameof(CalculatedPageCount));
@@ -527,6 +521,7 @@ public partial class MainViewModel : ObservableObject
                 foreach (var page in Catalog.CustomPages) page.ProductIds.Remove(p.Id);
             }
         }
+        _editVersion++;
         IsDirty = true;
         ScheduleAutoSave();
         OnPropertyChanged(nameof(CalculatedPageCount));
@@ -537,6 +532,7 @@ public partial class MainViewModel : ObservableObject
     {
         if (e.NewItems is not null) foreach (Reference r in e.NewItems) r.PropertyChanged += OnGraphChanged;
         if (e.OldItems is not null) foreach (Reference r in e.OldItems) r.PropertyChanged -= OnGraphChanged;
+        _editVersion++;
         IsDirty = true;
         ScheduleAutoSave();
     }
@@ -623,12 +619,19 @@ public partial class MainViewModel : ObservableObject
             // thread'de koşar — büyük katalogda "yanıt vermiyor" yerine canlı pencere + spinner.
             IsGeneratingPdf = true;
             StatusMessage = "PDF üretiliyor…";
+            var versionAtSnapshot = _editVersion;
             var snapshot = CatalogService.Clone(Catalog);
             var entry = await System.Threading.Tasks.Task.Run(() => _libraryService.Save(snapshot));
 
             ActiveName = string.IsNullOrWhiteSpace(entry.LibraryLabel) ? entry.BrandName : entry.LibraryLabel;
-            IsDirty = false;
-            TryDeleteAutoSave(); // iş artık kütüphanede güvende — eski oturum geri-yükleme sorusunu önle
+            if (_editVersion == versionAtSnapshot)
+            {
+                // Render sırasında düzenleme olmadı — kütüphanedeki kopya günceli temsil ediyor.
+                IsDirty = false;
+                TryDeleteAutoSave(); // iş artık kütüphanede güvende — eski oturum geri-yükleme sorusunu önle
+            }
+            // Aksi hâlde IsDirty/autosave DOKUNULMAZ: render sürerken yapılan edit'ler hâlâ
+            // kaydedilmemiş durumda — kapanış uyarısı ve autosave korumaya devam eder.
             RefreshRecentEntries();
             StatusMessage = $"PDF üretildi ve kütüphaneye eklendi: {entry.DisplayTitle}";
             Process.Start(new ProcessStartInfo(entry.PdfPath) { UseShellExecute = true });
@@ -942,6 +945,15 @@ public partial class MainViewModel : ObservableObject
     }
 
     private static Window? ActiveWindow() => Application.Current?.MainWindow;
-    private static void ShowError(string title, string message) =>
-        MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+
+    /// <summary>Owner'lı hata kutusu — owner'sız MessageBox ana pencerenin ARKASINA düşebiliyor
+    /// (kullanıcı donmuş sanır). Owner yoksa (kapanış anı) owner'sız fallback.</summary>
+    private static void ShowError(string title, string message)
+    {
+        var owner = ActiveWindow();
+        if (owner is { IsLoaded: true })
+            MessageBox.Show(owner, message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+        else
+            MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+    }
 }

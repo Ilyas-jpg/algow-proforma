@@ -94,41 +94,27 @@ public class PdfService
                         .Skip(rp * ReferencesPerPage)
                         .Take(ReferencesPerPage)
                         .ToList();
-                    var page = rp + 1;
-                    doc.Page(p => RenderReferences(p, catalog, chunk, page, totalRefPages));
+                    doc.Page(p => RenderReferences(p, catalog, chunk));
                 }
             }
 
             // Manual modda Grid-tabanlı render: her sayfa kendi pozisyonlarıyla render edilir.
             // Otomatik modda eski Column-tabanlı yığma.
+            // Sayfa numaraları artık footer'da QuestPDF CurrentPageNumber/TotalPages ile basılır (H③)
+            // — buradaki akışlar yalnız sayfaları sıralar, numara hesabı taşımaz.
             if (catalog.UseCustomPageLayouts && catalog.CustomPages.Count > 0)
             {
                 var byId = catalog.Products.ToDictionary(p => p.Id, p => p);
-                var assignedIds = new HashSet<string>();
 
-                int totalPages = catalog.CustomPages.Count;
-                // Atanmamış ürünler için auto-flow sayfa sayısını da ekle
                 var unassigned = catalog.Products.Where(p =>
                     !catalog.CustomPages.Any(pg => pg.ProductIds.Contains(p.Id))).ToList();
-                if (unassigned.Count > 0)
-                {
-                    // Default layout ile kaç sayfa eklenir hesap
-                    var fallback = PageLayout.GetById(catalog.CustomPages[catalog.CustomPages.Count - 1].LayoutId);
-                    int perPage = Math.Max(1, fallback.Total);
-                    totalPages += (int)Math.Ceiling(unassigned.Count / (double)perPage);
-                }
 
-                int pageNum = 0;
                 foreach (var planned in catalog.CustomPages)
                 {
-                    pageNum++;
                     var layout = PageLayout.GetById(planned.LayoutId);
                     ApplyLayout(layout);
                     var placements = ComputeManualPlacements(planned, layout, byId);
-                    int currentPage = pageNum;
-                    int totalP = totalPages;
-                    doc.Page(p => RenderManualGridPage(p, catalog.Brand, placements, layout, currentPage, totalP));
-                    foreach (var id in planned.ProductIds) if (!string.IsNullOrEmpty(id)) assignedIds.Add(id);
+                    doc.Page(p => RenderManualGridPage(p, catalog.Brand, placements, layout));
                 }
 
                 // Atanmamış ürünler: son layout ile auto-flow
@@ -140,10 +126,8 @@ public class PdfService
                     var autoPages = PackElementsIntoPages(elements);
                     foreach (var slice in autoPages)
                     {
-                        pageNum++;
-                        int currentPage = pageNum;
-                        int totalP = totalPages;
-                        doc.Page(p => RenderMixedProductPage(p, catalog.Brand, slice, currentPage, totalP, showIntro: false));
+                        var s = slice;
+                        doc.Page(p => RenderMixedProductPage(p, catalog.Brand, s, showIntro: false));
                     }
                 }
             }
@@ -155,28 +139,17 @@ public class PdfService
                 // Mevcut sayfalama çekirdeğine (BuildPageElements/PackElementsIntoPages) DOKUNULMAZ —
                 // sadece grup başına çağrılır.
                 ApplyLayout(PageLayout.GetById(catalog.LayoutId));
-                var groups = BuildCategoryGroups(catalog.Products);
-                var packed = groups
-                    .Select(g => (g.Category, Pages: PackElementsIntoPages(BuildPageElements(g.Products))))
-                    .ToList();
-                int totalPages = packed.Sum(x => x.Pages.Count + (x.Category.Length > 0 ? 1 : 0));
-
-                int pageNumber = 0;
-                foreach (var (category, groupPages) in packed)
+                foreach (var (category, items) in BuildCategoryGroups(catalog.Products))
                 {
                     if (category.Length > 0)
                     {
-                        pageNumber++;
-                        int cur = pageNumber, tot = totalPages;
                         var cat = category;
-                        doc.Page(p => RenderCategoryDivider(p, catalog.Brand, cat, cur, tot));
+                        doc.Page(p => RenderCategoryDivider(p, catalog.Brand, cat));
                     }
-                    foreach (var slice in groupPages)
+                    foreach (var slice in PackElementsIntoPages(BuildPageElements(items)))
                     {
-                        pageNumber++;
-                        int cur = pageNumber, tot = totalPages;
                         var s = slice;
-                        doc.Page(p => RenderMixedProductPage(p, catalog.Brand, s, cur, tot, showIntro: false));
+                        doc.Page(p => RenderMixedProductPage(p, catalog.Brand, s, showIntro: false));
                     }
                 }
             }
@@ -185,12 +158,10 @@ public class PdfService
                 ApplyLayout(PageLayout.GetById(catalog.LayoutId));
                 var elements = BuildPageElements(catalog.Products);
                 var pages = PackElementsIntoPages(elements);
-                for (int i = 0; i < pages.Count; i++)
+                foreach (var slice in pages)
                 {
-                    var slice = pages[i];
-                    int pageNumber = i + 1;
-                    int totalPages = pages.Count;
-                    doc.Page(p => RenderMixedProductPage(p, catalog.Brand, slice, pageNumber, totalPages, showIntro: false));
+                    var s = slice;
+                    doc.Page(p => RenderMixedProductPage(p, catalog.Brand, s, showIntro: false));
                 }
             }
         })
@@ -313,13 +284,12 @@ public class PdfService
 
     private void RenderManualGridPage(
         PageDescriptor page, BrandInfo brand,
-        List<ManualPlacement> placements, PageLayout layout,
-        int pageNumber, int totalPages)
+        List<ManualPlacement> placements, PageLayout layout)
     {
         ApplyInnerPageDefaults(page);
         ApplyWatermark(page, brand);
         page.Header().Element(e => RenderInnerHeader(e, brand, "ÜRÜN KATALOĞU"));
-        page.Footer().Element(e => RenderInnerFooter(e, $"{pageNumber} / {totalPages}", brand));
+        page.Footer().Element(e => RenderInnerFooterPaged(e, brand));
 
         // Vertical padding 4 (eskiden 16 idi). Slim header/footer zaten görsel
         // ayrım veriyor; ekstra padding 3-satır manuel sayfayı taşırıyordu.
@@ -358,7 +328,10 @@ public class PdfService
                     }
                     else if (p.Product.HasTable && p.Product.Table is not null)
                     {
-                        e.Height(cellHeight).Element(c => RenderProductTableBlock(c, p.Product));
+                        // Manuel modda hücre yüksekliği sabit (kullanıcı atadı) — tablo hücreden
+                        // büyükse ShowEntire DocumentLayoutException atardı. ScaleToFit içerik
+                        // sığmıyorsa orantılı küçültür: veri eksiksiz kalır, üretim asla kırılmaz.
+                        e.Height(cellHeight).ScaleToFit().Element(c => RenderProductTableBlock(c, p.Product));
                     }
                     else if (p.Product.IsFeatured && layout.Columns >= 2)
                     {
@@ -375,7 +348,11 @@ public class PdfService
 
     private abstract record PageElement;
     private sealed record ProductRowElement(List<Product> Products) : PageElement;
-    private sealed record TableElement(Product Product) : PageElement;
+
+    /// <summary>Tablo bloğu — satır aralığıyla. Tek sayfaya sığmayan tablo (25+ satır) ShowEntire ile
+    /// DocumentLayoutException atıyordu (H③); artık satırlar sayfa bütçesine bölünür, devam blokları
+    /// görsel/spec satırını tekrarlamaz (başlık "devam" rozetiyle açılır).</summary>
+    private sealed record TableElement(Product Product, int RowStart, int RowCount, bool Continuation) : PageElement;
 
     // Walks products in user order, emitting full rows of regular cards and
     // full-width table blocks. Featured (2-col) products that don't fit the
@@ -407,7 +384,8 @@ public class PdfService
             {
                 queue.Remove(head);
                 FlushRow();
-                elements.Add(new TableElement(headProduct));
+                foreach (var chunk in SplitTableIntoChunks(headProduct))
+                    elements.Add(chunk);
                 continue;
             }
 
@@ -457,16 +435,39 @@ public class PdfService
     private const int PageContentHeightApprox = 760;
     private const int IntroBlockHeightApprox = 70;
     private const int TableBlockBaseHeightApprox = 210;
+    /// <summary>Devam bloğu görsel/spec satırı içermez: başlık bandı + aksan + tablo paddingleri.</summary>
+    private const int TableContinuationBaseHeightApprox = 80;
     private const int TableRowHeightApprox = 22;
     private const int RowGapApprox = 14;
 
-    private int EstimateTableBlockHeight(Product product)
+    /// <summary>Tabloyu sayfa bütçesine sığan satır parçalarına böler. Sığıyorsa tek parça döner.
+    /// (internal değil: yalnız BuildPageElements kullanır; davranış render-smoke testleriyle güvencede.)</summary>
+    private List<TableElement> SplitTableIntoChunks(Product product)
     {
-        var table = product.Table;
-        if (table is null) return TableBlockBaseHeightApprox;
-        var rowCount = table.Rows?.Count ?? 0;
-        var hasHeader = (table.Columns?.Count ?? 0) > 0;
-        return TableBlockBaseHeightApprox + (hasHeader ? TableRowHeightApprox : 0) + rowCount * TableRowHeightApprox;
+        var rows = product.Table?.Rows?.Count ?? 0;
+        bool hasHeader = (product.Table?.Columns?.Count ?? 0) > 0;
+        int header = hasHeader ? TableRowHeightApprox : 0;
+
+        int maxFirst = Math.Max(1, (PageContentHeightApprox - TableBlockBaseHeightApprox - header) / TableRowHeightApprox);
+        int maxCont = Math.Max(1, (PageContentHeightApprox - TableContinuationBaseHeightApprox - header) / TableRowHeightApprox);
+
+        var list = new List<TableElement>();
+        if (rows <= maxFirst)
+        {
+            list.Add(new TableElement(product, 0, rows, Continuation: false));
+            return list;
+        }
+        list.Add(new TableElement(product, 0, maxFirst, Continuation: false));
+        for (int start = maxFirst; start < rows; start += maxCont)
+            list.Add(new TableElement(product, start, Math.Min(maxCont, rows - start), Continuation: true));
+        return list;
+    }
+
+    private int EstimateTableBlockHeight(TableElement element)
+    {
+        var hasHeader = (element.Product.Table?.Columns?.Count ?? 0) > 0;
+        var baseH = element.Continuation ? TableContinuationBaseHeightApprox : TableBlockBaseHeightApprox;
+        return baseH + (hasHeader ? TableRowHeightApprox : 0) + element.RowCount * TableRowHeightApprox;
     }
 
     private List<List<PageElement>> PackElementsIntoPages(IList<PageElement> elements)
@@ -482,7 +483,7 @@ public class PdfService
             int h = element switch
             {
                 ProductRowElement => rowHeight,
-                TableElement t => EstimateTableBlockHeight(t.Product),
+                TableElement t => EstimateTableBlockHeight(t),
                 _ => 0,
             };
             int introCost = (!introUsed && pages.Count == 0 && current.All(e => e is not ProductRowElement)
@@ -1458,7 +1459,7 @@ public class PdfService
 </svg>";
 
     private void RenderReferences(PageDescriptor page, Catalog catalog,
-        IReadOnlyList<Reference> chunk, int pageNumber, int totalPages)
+        IReadOnlyList<Reference> chunk)
     {
         ApplyInnerPageDefaults(page);
         ApplyWatermark(page, catalog.Brand);
@@ -1493,7 +1494,7 @@ public class PdfService
             });
         });
 
-        page.Footer().Element(e => RenderInnerFooter(e, $"{pageNumber} / {totalPages}", catalog.Brand));
+        page.Footer().Element(e => RenderInnerFooterPaged(e, catalog.Brand));
     }
 
     private void RenderReferenceCard(IContainer container, Reference reference)
@@ -1525,7 +1526,9 @@ public class PdfService
     internal static List<(string Category, List<Product> Products)> BuildCategoryGroups(IEnumerable<Product> products)
     {
         var orderedCats = new List<(string Name, List<Product> Items)>();
-        var index = new Dictionary<string, List<Product>>(StringComparer.OrdinalIgnoreCase);
+        // OrdinalIgnoreCase Türkçe noktalı/noktasız İ'yi katlamaz: "İthal" ile "ithal" iki ayrı
+        // bölüm sayfası açıyordu. tr-TR kültürlü karşılaştırıcı I/ı/İ/i ailesini doğru eşler.
+        var index = new Dictionary<string, List<Product>>(StringComparer.Create(TrCulture, ignoreCase: true));
         var uncategorized = new List<Product>();
 
         foreach (var p in products)
@@ -1550,8 +1553,7 @@ public class PdfService
 
     /// <summary>Kategori bölüm başlık sayfası — tema paletiyle sade/iddiasız tasarım
     /// (23 temanın hepsinde güvenli): aksan etiketi + büyük kategori adı + ince çizgi.</summary>
-    private void RenderCategoryDivider(PageDescriptor page, BrandInfo brand, string category,
-        int pageNumber, int totalPages)
+    private void RenderCategoryDivider(PageDescriptor page, BrandInfo brand, string category)
     {
         ApplyInnerPageDefaults(page);
         ApplyWatermark(page, brand);
@@ -1561,19 +1563,20 @@ public class PdfService
         {
             col.Item().Text("BÖLÜM").FontFamily(BodyFont).FontSize(10).Bold()
                 .FontColor(AccentHex).LetterSpacing(0.22f);
+            // Uzun kategori adı sabit 34pt'te kart dışına sarkıyordu — başlıkla aynı AutoFit disiplini.
             col.Item().PaddingTop(10).Text(category)
-                .FontFamily(DisplayFont).FontSize(34).Bold().FontColor(TextHex);
+                .FontFamily(DisplayFont).FontSize(AutoFitFontSize(category, 34f, 24, 18f)).Bold().FontColor(TextHex);
             col.Item().PaddingTop(18).Width(64).LineHorizontal(3).LineColor(PrimaryHex);
             if (!string.IsNullOrWhiteSpace(brand.Name))
                 col.Item().PaddingTop(14).Text(brand.Name)
                     .FontFamily(BodyFont).FontSize(10).FontColor(MutedHex);
         });
 
-        page.Footer().Element(e => RenderInnerFooter(e, $"{pageNumber} / {totalPages}", brand));
+        page.Footer().Element(e => RenderInnerFooterPaged(e, brand));
     }
 
     private void RenderMixedProductPage(PageDescriptor page, BrandInfo brand,
-        List<PageElement> elements, int pageNumber, int totalPages, bool showIntro)
+        List<PageElement> elements, bool showIntro)
     {
         ApplyInnerPageDefaults(page);
         ApplyWatermark(page, brand);
@@ -1583,7 +1586,7 @@ public class PdfService
         int rowsCount = elements.Count(e => e is ProductRowElement);
         int tablesCount = elements.Count(e => e is TableElement);
         int introHeight = showIntro ? IntroBlockHeightApprox : 16;
-        int tablesHeight = elements.OfType<TableElement>().Sum(t => EstimateTableBlockHeight(t.Product) + 12);
+        int tablesHeight = elements.OfType<TableElement>().Sum(t => EstimateTableBlockHeight(t) + 12);
         int rowsHeight = rowsCount * rowHeight;
         int totalUsed = introHeight + tablesHeight + rowsHeight;
         int leftover = Math.Max(0, PageContentHeightApprox - totalUsed);
@@ -1625,7 +1628,8 @@ public class PdfService
                         cardIndex += row.Products.Count;
                         break;
                     case TableElement t:
-                        col.Item().PaddingVertical(6).Element(e => RenderProductTableBlock(e, t.Product));
+                        col.Item().PaddingVertical(6).Element(e =>
+                            RenderProductTableBlock(e, t.Product, t.RowStart, t.RowCount, t.Continuation));
                         break;
                 }
             }
@@ -1633,7 +1637,7 @@ public class PdfService
                 col.Item().Height(spacerAfterRows);
         });
 
-        page.Footer().Element(e => RenderInnerFooter(e, $"{pageNumber} / {totalPages}", brand));
+        page.Footer().Element(e => RenderInnerFooterPaged(e, brand));
     }
 
     private void RenderProductRowGrid(IContainer container, List<Product> products, int startIndex)
@@ -1810,58 +1814,73 @@ public class PdfService
         });
     }
 
+    /// <summary>Tam blok (tüm satırlar) — manuel mod / tek-ürün sayfası bu yoldan çağırır.</summary>
     private void RenderProductTableBlock(IContainer container, Product product)
+        => RenderProductTableBlock(container, product, 0, product.Table?.Rows?.Count ?? 0, continuation: false);
+
+    private void RenderProductTableBlock(IContainer container, Product product, int rowStart, int rowCount, bool continuation)
     {
         var table = product.Table ?? new ProductTable();
         var title = string.IsNullOrWhiteSpace(table.Title) ? product.Name : table.Title;
         var specs = table.Specs.Where(s => !string.IsNullOrWhiteSpace(s.Label) || !string.IsNullOrWhiteSpace(s.Value)).ToList();
         var columns = table.Columns.ToList();
-        var rows = table.Rows.ToList();
+        var allRows = table.Rows.ToList();
+        rowStart = Math.Clamp(rowStart, 0, allRows.Count);
+        var rows = allRows.Skip(rowStart).Take(Math.Max(0, rowCount)).ToList();
         bool hasImage = !string.IsNullOrWhiteSpace(product.ImagePath) && File.Exists(product.ImagePath);
 
         container.ShowEntire().Border(0.6f).BorderColor(BorderHex).Column(block =>
         {
-            block.Item().Background(PrimaryHex).PaddingHorizontal(14).PaddingVertical(8)
-                .Text(title?.ToUpper(TrCulture) ?? string.Empty)
-                .FontFamily(DisplayFont).FontSize(12).Bold().FontColor(White).LetterSpacing(0.4f);
+            block.Item().Background(PrimaryHex).PaddingHorizontal(14).PaddingVertical(8).Row(tr =>
+            {
+                tr.RelativeItem().Text(title?.ToUpper(TrCulture) ?? string.Empty)
+                    .FontFamily(DisplayFont).FontSize(12).Bold().FontColor(White).LetterSpacing(0.4f);
+                if (continuation)
+                    tr.AutoItem().AlignMiddle().Text("DEVAM")
+                        .FontFamily(BodyFont).FontSize(8).Bold().FontColor(White).LetterSpacing(0.2f);
+            });
 
             block.Item().Height(2).Background(AccentHex);
 
-            if (!string.IsNullOrWhiteSpace(product.Code))
+            // Devam bloğu görsel/spec/kod şeridini tekrarlamaz — sadece başlık + tablo satırları.
+            if (!continuation)
             {
-                block.Item().Background(SurfaceHex).PaddingHorizontal(14).PaddingVertical(5)
-                    .Text(product.Code)
-                    .FontFamily(BodyFont).FontSize(9.5f).SemiBold().FontColor(SecondaryHex).LetterSpacing(0.15f);
+                if (!string.IsNullOrWhiteSpace(product.Code))
+                {
+                    block.Item().Background(SurfaceHex).PaddingHorizontal(14).PaddingVertical(5)
+                        .Text(product.Code)
+                        .FontFamily(BodyFont).FontSize(9.5f).SemiBold().FontColor(SecondaryHex).LetterSpacing(0.15f);
+                }
+
+                block.Item().PaddingHorizontal(14).PaddingTop(10).PaddingBottom(6).Row(row =>
+                {
+                    row.ConstantItem(195).Height(135).Background(SurfaceHex).Padding(8)
+                        .AlignCenter().AlignMiddle().Element(e =>
+                        {
+                            if (hasImage)
+                                e.Image(PdfImageCache.Get(product.ImagePath)).FitArea();
+                            else
+                                e.Text("Görsel yok")
+                                    .FontFamily(BodyFont).FontSize(9).FontColor(MutedHex);
+                        });
+                    row.ConstantItem(16);
+                    row.RelativeItem().Column(specCol =>
+                    {
+                        foreach (var spec in specs)
+                        {
+                            specCol.Item().PaddingBottom(3).Row(r =>
+                            {
+                                r.ConstantItem(120).Text(spec.Label ?? string.Empty)
+                                    .FontFamily(BodyFont).FontSize(9).SemiBold().FontColor(MutedHex);
+                                r.RelativeItem().Text(spec.Value ?? string.Empty)
+                                    .FontFamily(BodyFont).FontSize(9.5f).FontColor(TextHex);
+                            });
+                        }
+                    });
+                });
             }
 
-            block.Item().PaddingHorizontal(14).PaddingTop(10).PaddingBottom(6).Row(row =>
-            {
-                row.ConstantItem(195).Height(135).Background(SurfaceHex).Padding(8)
-                    .AlignCenter().AlignMiddle().Element(e =>
-                    {
-                        if (hasImage)
-                            e.Image(PdfImageCache.Get(product.ImagePath)).FitArea();
-                        else
-                            e.Text("Görsel yok")
-                                .FontFamily(BodyFont).FontSize(9).FontColor(MutedHex);
-                    });
-                row.ConstantItem(16);
-                row.RelativeItem().Column(specCol =>
-                {
-                    foreach (var spec in specs)
-                    {
-                        specCol.Item().PaddingBottom(3).Row(r =>
-                        {
-                            r.ConstantItem(120).Text(spec.Label ?? string.Empty)
-                                .FontFamily(BodyFont).FontSize(9).SemiBold().FontColor(MutedHex);
-                            r.RelativeItem().Text(spec.Value ?? string.Empty)
-                                .FontFamily(BodyFont).FontSize(9.5f).FontColor(TextHex);
-                        });
-                    }
-                });
-            });
-
-            if (columns.Count > 0)
+            if (columns.Count > 0 && rows.Count > 0)
             {
                 block.Item().PaddingHorizontal(14).PaddingTop(6).PaddingBottom(10)
                     .Border(0.6f).BorderColor(BorderHex)
@@ -2042,6 +2061,36 @@ public class PdfService
                     .FontFamily(BodyFont).FontSize(9).FontColor(MutedHex);
                 row.AutoItem().AlignMiddle().Text(trailing)
                     .FontFamily(BodyFont).FontSize(9.5f).SemiBold().FontColor(TextHex);
+            });
+        });
+    }
+
+    /// <summary>
+    /// Sayfa numaralı footer — QuestPDF'in kendi CurrentPageNumber/TotalPages'ı (H③ fix).
+    /// Önceden hesaplanmış "x / y" string'i, beklenmedik taşma fazladan fiziksel sayfa açtığında
+    /// kayıyordu (iki sayfa aynı numarayı basar, toplam yanlış kalırdı). Dinamik sayaç belgenin
+    /// GERÇEK sayfa düzenini basar; numara artık kapak dahil tüm belge üzerinden akar — viewer'ın
+    /// kendi sayfa göstergesi ve durum çubuğu sayacıyla birebir aynı dili konuşur.
+    /// </summary>
+    private void RenderInnerFooterPaged(IContainer container, BrandInfo? brand = null)
+    {
+        container.Column(col =>
+        {
+            col.Item().PaddingHorizontal(36).Height(1).Background(BorderHex);
+            col.Item().Background(White).PaddingHorizontal(36).PaddingVertical(8).Row(row =>
+            {
+                var footerText = string.IsNullOrWhiteSpace(brand?.Name)
+                    ? string.Empty
+                    : (string.IsNullOrWhiteSpace(brand.Tagline) ? brand.Name : $"{brand.Name} · {brand.Tagline}");
+                row.RelativeItem().AlignMiddle().Text(footerText)
+                    .FontFamily(BodyFont).FontSize(9).FontColor(MutedHex);
+                row.AutoItem().AlignMiddle().Text(t =>
+                {
+                    t.DefaultTextStyle(s => s.FontFamily(BodyFont).FontSize(9.5f).SemiBold().FontColor(TextHex));
+                    t.CurrentPageNumber();
+                    t.Span(" / ");
+                    t.TotalPages();
+                });
             });
         });
     }

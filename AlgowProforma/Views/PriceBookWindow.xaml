@@ -28,11 +28,16 @@
             <TextBlock Text="Toplu %" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
             <TextBox Style="{StaticResource ModernTextBox}" Width="64" VerticalAlignment="Center"
                      Text="{Binding BulkPercent, UpdateSourceTrigger=PropertyChanged}" />
-            <Button Style="{StaticResource SecondaryButton}" Content="Uygula" Margin="6,0,0,0" Command="{Binding ApplyBulkCommand}"
+            <Button Style="{StaticResource SecondaryButton}" Content="Tümüne Uygula" Margin="6,0,0,0" Command="{Binding ApplyBulkCommand}"
                     ToolTip="Tüm listeye yüzde zam (+10) / indirim (-5)" />
+            <Button Style="{StaticResource SecondaryButton}" Content="Seçiliye Uygula" Margin="6,0,0,0"
+                    Command="{Binding ApplyBulkSelectedCommand}"
+                    CommandParameter="{Binding SelectedItems, ElementName=PriceGrid}"
+                    ToolTip="Yalnız seçili satırlara uygular — Ctrl/Shift ile çoklu satır seçebilirsiniz" />
         </StackPanel>
 
-        <DataGrid Grid.Row="2" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}">
+        <DataGrid x:Name="PriceGrid" Grid.Row="2" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}"
+                  SelectionMode="Extended">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Kod" Binding="{Binding Code}" Width="120" />
                 <DataGridTextColumn Header="Ad" Binding="{Binding Name}" Width="*" />

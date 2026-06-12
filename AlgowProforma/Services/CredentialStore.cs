@@ -25,7 +25,7 @@ public static class CredentialStore
     {
         var encrypted = ProtectedData.Protect(
             Encoding.UTF8.GetBytes(password ?? ""), optionalEntropy: null, scope: DataProtectionScope.CurrentUser);
-        File.WriteAllBytes(PasswordFile, encrypted);
+        AtomicFile.WriteAllBytes(PasswordFile, encrypted);   // yarım .bin = çözülemeyen credential
     }
 
     public static string? LoadPassword()
@@ -51,7 +51,7 @@ public static class CredentialStore
         var json = JsonSerializer.Serialize(credential, JsonStore.Options);
         var encrypted = ProtectedData.Protect(
             Encoding.UTF8.GetBytes(json), optionalEntropy: null, scope: DataProtectionScope.CurrentUser);
-        File.WriteAllBytes(GmailTokenFile, encrypted);
+        AtomicFile.WriteAllBytes(GmailTokenFile, encrypted);
     }
 
     public static GoogleGmailCredential? LoadGmailCredential()
@@ -77,7 +77,7 @@ public static class CredentialStore
         if (string.IsNullOrWhiteSpace(secret)) { ClearClientSecret(); return; }
         var encrypted = ProtectedData.Protect(
             Encoding.UTF8.GetBytes(secret), optionalEntropy: null, scope: DataProtectionScope.CurrentUser);
-        File.WriteAllBytes(ClientSecretFile, encrypted);
+        AtomicFile.WriteAllBytes(ClientSecretFile, encrypted);
     }
 
     public static string? LoadClientSecret()

@@ -40,11 +40,14 @@ public partial class CustomersViewModel : ObservableObject
     {
         items.CollectionChanged += (_, e) =>
         {
-            if (e.NewItems is not null) foreach (Customer c in e.NewItems) c.PropertyChanged += OnItemEdited;
+            // Önce -= sonra += : import'un Clear+yeniden-Add akışı aynı müşteriyi ikinci kez
+            // hook'luyordu (Clear=Reset, OldItems boş gelir — eski abonelik sökülmeden kalıyordu).
+            if (e.NewItems is not null)
+                foreach (Customer c in e.NewItems) { c.PropertyChanged -= OnItemEdited; c.PropertyChanged += OnItemEdited; }
             if (e.OldItems is not null) foreach (Customer c in e.OldItems) c.PropertyChanged -= OnItemEdited;
             HasUnsavedChanges = true;
         };
-        foreach (var c in items) c.PropertyChanged += OnItemEdited;
+        foreach (var c in items) { c.PropertyChanged -= OnItemEdited; c.PropertyChanged += OnItemEdited; }
     }
 
     private void OnItemEdited(object? sender, PropertyChangedEventArgs e) => HasUnsavedChanges = true;

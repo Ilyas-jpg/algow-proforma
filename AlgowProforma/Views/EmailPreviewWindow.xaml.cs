@@ -36,10 +36,10 @@ public partial class EmailPreviewWindow : Window
         SmtpButton.IsEnabled = CredentialStore.HasPassword;
         ProviderText.Text = GmailButton.IsEnabled
             ? $"Gmail: {_gmailCredential!.GoogleEmail}"
-            : (SmtpButton.IsEnabled ? $"SMTP: {_settings.Mail.FromEmail}" : "Gmail veya SMTP bagli degil");
+            : (SmtpButton.IsEnabled ? $"SMTP: {_settings.Mail.FromEmail}" : "Gmail veya SMTP bağlı değil");
         StatusText.Text = GmailButton.IsEnabled
-            ? "Gmail bagli. Gonderim Gmail API ile yapilabilir."
-            : "Gmail bagli degil. SMTP sifresi varsa fallback kullanilabilir.";
+            ? "Gmail bağlı. Gönderim Gmail API ile yapılabilir."
+            : "Gmail bağlı değil. SMTP şifresi varsa onunla gönderilebilir.";
     }
 
     private string BuildDefaultBody()
@@ -57,7 +57,7 @@ public partial class EmailPreviewWindow : Window
     {
         if (_gmailCredential is null || !_gmailCredential.IsConnected)
         {
-            StatusText.Text = "Gmail bagli degil.";
+            StatusText.Text = "Gmail bağlı değil.";
             return;
         }
 
@@ -84,7 +84,7 @@ public partial class EmailPreviewWindow : Window
         {
             var pw = CredentialStore.LoadPassword();
             if (string.IsNullOrWhiteSpace(pw))
-                return new MailSendResult { Success = false, Recipient = ToEmailBox.Text.Trim(), Error = "SMTP App Password yok." };
+                return new MailSendResult { Success = false, Recipient = ToEmailBox.Text.Trim(), Error = "SMTP App Password kayıtlı değil." };
 
             var svc = new MailService(_settings.Mail, pw);
             return await svc.SendOnceAsync(
@@ -101,57 +101,73 @@ public partial class EmailPreviewWindow : Window
     {
         if (!Services.EmailValidator.IsValid(ToEmailBox.Text))   // uygulama genelindeki tek doğrulayıcı
         {
-            StatusText.Text = "Gecerli bir alici e-postasi girin.";
+            StatusText.Text = "Geçerli bir alıcı e-postası girin.";
             return;
         }
         if (string.IsNullOrWhiteSpace(SubjectBox.Text))
         {
-            StatusText.Text = "Konu bos olamaz.";
+            StatusText.Text = "Konu boş olamaz.";
             return;
         }
         if (!File.Exists(_pdfPath))
         {
-            StatusText.Text = "PDF dosyasi bulunamadi: " + _pdfPath;
+            StatusText.Text = "PDF dosyası bulunamadı: " + _pdfPath;
             return;
         }
 
         GmailButton.IsEnabled = false;
         SmtpButton.IsEnabled = false;
-        StatusText.Text = provider == "gmail" ? "Gmail API ile gonderiliyor..." : "SMTP ile gonderiliyor...";
+        StatusText.Text = provider == "gmail" ? "Gmail API ile gönderiliyor…" : "SMTP ile gönderiliyor…";
 
-        var result = await send();
-        AppendLog(provider, result);
-        if (result.Success && _quote.Status == QuoteStatus.Taslak)
+        // async-void handler'lardan çağrılıyoruz: buradan kaçan HER istisna uygulamayı kapatır —
+        // üstelik mail GİTMİŞ olabilirken (örn. log diski dolu). Hata akışı pencerede kalır.
+        try
         {
-            // Teklif artık müşteride — pano Taslak yerine Gönderildi göstersin (anında kalıcı).
-            _quote.Status = QuoteStatus.Gonderildi;
-            try { new QuoteService().Save(_quote); } catch { /* durum güncellemesi gönderimi geri almaz */ }
+            var result = await send();
+            AppendLog(provider, result);
+            if (result.Success && _quote.Status == QuoteStatus.Taslak)
+            {
+                // Teklif artık müşteride — pano Taslak yerine Gönderildi göstersin (anında kalıcı).
+                _quote.Status = QuoteStatus.Gonderildi;
+                try { new QuoteService().Save(_quote); } catch { /* durum güncellemesi gönderimi geri almaz */ }
+            }
+            StatusText.Text = result.Success
+                ? $"Gönderildi: {result.Recipient}"
+                : $"Gönderilemedi: {result.Error}";
         }
-        StatusText.Text = result.Success
-            ? $"Gonderildi: {result.Recipient}"
-            : $"Gonderilemedi: {result.Error}";
-
-        GmailButton.IsEnabled = _gmailCredential?.IsConnected == true;
-        SmtpButton.IsEnabled = CredentialStore.HasPassword;
+        catch (Exception ex)
+        {
+            StatusText.Text = "Gönderim hatası: " + ex.Message;
+        }
+        finally
+        {
+            GmailButton.IsEnabled = _gmailCredential?.IsConnected == true;
+            SmtpButton.IsEnabled = CredentialStore.HasPassword;
+        }
     }
 
     private void AppendLog(string provider, MailSendResult result)
     {
-        new EmailLogService().Append(new EmailSendLog
+        // Log yazımı best-effort: gönderim geçmişi kaydedilemedi diye GİTMİŞ maili hata sayma.
+        try
         {
-            QuoteId = _quote.Id,
-            QuoteNo = _quote.QuoteNo,
-            Provider = provider,
-            FromEmail = provider == "gmail" ? (_gmailCredential?.GoogleEmail ?? "") : _settings.Mail.FromEmail,
-            ToEmail = ToEmailBox.Text.Trim(),
-            RecipientCompany = _quote.CustomerCompany,
-            RecipientContact = _quote.CustomerContact,
-            Subject = SubjectBox.Text.Trim(),
-            AttachmentFileName = _attachmentDisplayName,
-            Success = result.Success,
-            Error = result.Error ?? "",
-            SentAt = DateTime.Now,
-        });
+            new EmailLogService().Append(new EmailSendLog
+            {
+                QuoteId = _quote.Id,
+                QuoteNo = _quote.QuoteNo,
+                Provider = provider,
+                FromEmail = provider == "gmail" ? (_gmailCredential?.GoogleEmail ?? "") : _settings.Mail.FromEmail,
+                ToEmail = ToEmailBox.Text.Trim(),
+                RecipientCompany = _quote.CustomerCompany,
+                RecipientContact = _quote.CustomerContact,
+                Subject = SubjectBox.Text.Trim(),
+                AttachmentFileName = _attachmentDisplayName,
+                Success = result.Success,
+                Error = result.Error ?? "",
+                SentAt = DateTime.Now,
+            });
+        }
+        catch { /* geçmiş penceresinde eksik kayıt olur; gönderim sonucu kullanıcıya yine gösterilir */ }
     }
 
     private void OnClose(object sender, RoutedEventArgs e) => Close();
