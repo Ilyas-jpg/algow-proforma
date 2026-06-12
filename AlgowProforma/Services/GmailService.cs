@@ -28,6 +28,7 @@ public class GmailService
         string bodyText,
         string? attachmentPath,
         string? attachmentDisplayName = null,
+        bool bccSelf = false,
         CancellationToken ct = default)
     {
         try
@@ -47,7 +48,8 @@ public class GmailService
                 subject,
                 bodyText,
                 attachmentPath,
-                attachmentDisplayName);
+                attachmentDisplayName,
+                bccSelf);
 
             using var stream = new MemoryStream();
             await msg.WriteToAsync(stream, ct);
@@ -78,11 +80,15 @@ public class GmailService
         string subject,
         string bodyText,
         string? attachmentPath,
-        string? attachmentDisplayName = null)
+        string? attachmentDisplayName = null,
+        bool bccSelf = false)
     {
         var msg = new MimeMessage();
         msg.From.Add(new MailboxAddress(fromName ?? "", fromEmail));
         msg.To.Add(new MailboxAddress(toName ?? "", toEmail));
+        // Ayarlar'daki "BCC arşiv" Gmail yolunda da uygulanır (SMTP yolu MailService'te zaten yapıyor).
+        // Gmail API raw MIME'daki Bcc'yi teslim edip header'ı alıcı kopyasından düşürür.
+        if (bccSelf) msg.Bcc.Add(new MailboxAddress(fromName ?? "", fromEmail));
         msg.Subject = subject;
 
         var builder = new BodyBuilder

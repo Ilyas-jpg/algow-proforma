@@ -7,7 +7,7 @@
 ;   ISCC installer/AlgowProforma.iss
 
 #define AppName         "Algow Proforma PDF"
-#define AppVersion      "1.3.1"
+#define AppVersion      "1.3.2"
 #define AppPublisher    "AlgowAI"
 #define AppExeName      "AlgowProforma.exe"
 #define SourceDir       "..\publish\win-x64"

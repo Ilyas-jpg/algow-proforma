@@ -36,6 +36,15 @@ public partial class CoverDesignerViewModel : ObservableObject
         };
         if (dlg.ShowDialog() != true) return;
 
+        // 20MB sınırı burada da geçerli — ana ürün/logo akışındaki ImagePicker bu kontrolü yapıyordu,
+        // kapak stüdyosu doğrudan kopyalayıp limiti baypas ediyordu (dev TIFF → bellek/render şişmesi).
+        if (!ImportLimits.IsImageSizeOk(dlg.FileName, out var sizeError))
+        {
+            System.Windows.MessageBox.Show(sizeError, "Görsel çok büyük",
+                System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         // Resmi ImageStorage'a kopyala (göreceli olmayan kalıcı path)
         var ext = Path.GetExtension(dlg.FileName);
         var targetPath = ImageStorage.CreateNewPath(ext);

@@ -41,4 +41,13 @@ public class CatalogService
         var json = JsonSerializer.Serialize(catalog, JsonOptions);
         AtomicFile.WriteAllText(path, json);   // atomik (R-1): autosave/katalog yazımı yarıda kalsa bozulmaz
     }
+
+    /// <summary>
+    /// Persistence serializer'ı üzerinden DERİN klon. Arka-thread render'a canlı (UI-bağlı) Catalog
+    /// vermek yerine bunun çıktısı verilir — kullanıcı render sırasında düzenlerse race oluşmaz.
+    /// El yazımı klonun "yeni property unutulur" riski yok: kaydedilen her şey klonlanır.
+    /// </summary>
+    public static Catalog Clone(Catalog catalog) =>
+        JsonSerializer.Deserialize<Catalog>(JsonSerializer.Serialize(catalog, JsonOptions), JsonOptions)
+            ?? throw new InvalidOperationException("Katalog klonlanamadı.");
 }

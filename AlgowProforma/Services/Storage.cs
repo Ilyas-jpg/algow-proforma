@@ -84,7 +84,14 @@ public static class AtomicFile
         var dir = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
         var tmp = path + ".tmp";
-        File.WriteAllText(tmp, contents);   // .NET default = UTF-8 BOM'suz (mevcut davranışla birebir)
+        // UTF-8 BOM'suz (File.WriteAllText default'uyla birebir) + Flush(true): içerik Replace'ten
+        // ÖNCE fiziksel diske iner — güç kesintisinde "yeni ada geçmiş ama içi boş/yarım" dosya kalmaz.
+        var bytes = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(contents);
+        using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
+        {
+            fs.Write(bytes, 0, bytes.Length);
+            fs.Flush(flushToDisk: true);
+        }
         if (File.Exists(path))
         {
             // File.Replace atomik. Hidden/kilit edge'inde fallback: Delete+Move (yine de tmp güvende).

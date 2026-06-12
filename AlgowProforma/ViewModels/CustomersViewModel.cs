@@ -23,12 +23,46 @@ public partial class CustomersViewModel : ObservableObject
 
     public ICollectionView ItemsView { get; }
 
+    /// <summary>Kayda yansımamış değişiklik var mı — pencere kapanış uyarısı buna bakar.</summary>
+    public bool HasUnsavedChanges { get; private set; }
+
     public CustomersViewModel()
     {
         foreach (var c in _service.Load()) Items.Add(c);
+        HookItems(Items);
+        HasUnsavedChanges = false;   // yükleme sırasındaki Add'ler değişiklik sayılmaz
         ItemsView = CollectionViewSource.GetDefaultView(Items);
         ItemsView.Filter = Filter;
         StatusText = Items.Count == 0 ? "Müşteri yok — Excel'den içe aktarın veya elle ekleyin." : $"{Items.Count} müşteri.";
+    }
+
+    private void HookItems(ObservableCollection<Customer> items)
+    {
+        items.CollectionChanged += (_, e) =>
+        {
+            if (e.NewItems is not null) foreach (Customer c in e.NewItems) c.PropertyChanged += OnItemEdited;
+            if (e.OldItems is not null) foreach (Customer c in e.OldItems) c.PropertyChanged -= OnItemEdited;
+            HasUnsavedChanges = true;
+        };
+        foreach (var c in items) c.PropertyChanged += OnItemEdited;
+    }
+
+    private void OnItemEdited(object? sender, PropertyChangedEventArgs e) => HasUnsavedChanges = true;
+
+    /// <summary>Kapanış uyarısının "Evet"i — kaydetmeyi dener, başarısızsa pencere açık kalır.</summary>
+    public bool TrySaveForClose()
+    {
+        try
+        {
+            _service.Save(Items);
+            HasUnsavedChanges = false;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Kaydedilemedi: " + ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            return false;
+        }
     }
 
     partial void OnSearchTextChanged(string value) => ItemsView.Refresh();
@@ -66,6 +100,7 @@ public partial class CustomersViewModel : ObservableObject
     private void Save()
     {
         _service.Save(Items);
+        HasUnsavedChanges = false;
         StatusText = $"Kaydedildi · {Items.Count} müşteri.";
     }
 
@@ -85,6 +120,7 @@ public partial class CustomersViewModel : ObservableObject
             foreach (var c in working) Items.Add(c);
             ItemsView.Refresh();
             _service.Save(Items);
+            HasUnsavedChanges = false;   // import anında diske yazıldı
             StatusText = $"{imported.Count} satır okundu · toplam {Items.Count} (+{Items.Count - before} yeni).";
         }
         catch (Exception ex)

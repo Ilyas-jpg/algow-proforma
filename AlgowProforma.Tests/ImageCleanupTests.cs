@@ -47,4 +47,36 @@ public class ImageCleanupTests
         LibraryService.CollectImagePaths(cat, set);
         Assert.Empty(set);
     }
+
+    // ── Kök-taşınma dayanıklılığı: JSON'daki mutlak path eski kökü gösterse bile GUID dosya-adı
+    //    eşleşmesi görseli korur. Eski davranışta OneDrive KFM sonrası TÜM görseller trash'e giderdi.
+
+    [Fact]
+    public void IsReferenced_MatchesByGuidFileName_WhenDocumentsRootMoved()
+    {
+        var oldRef    = @"C:\Users\u\Documents\Algow Proforma Kataloglar\images\3f2a9c1d4b5e6f708192a3b4c5d6e7f8.png";
+        var movedFile = @"C:\Users\u\OneDrive\Belgeler\Algow Proforma Kataloglar\images\3f2a9c1d4b5e6f708192a3b4c5d6e7f8.png";
+        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { oldRef };
+        var names = LibraryService.BuildFileNameSet(paths);
+
+        Assert.DoesNotContain(movedFile, paths);                       // tam-path eşleşmesi boşa düşüyor…
+        Assert.True(LibraryService.IsReferenced(movedFile, paths, names)); // …ad eşleşmesi kurtarıyor
+    }
+
+    [Fact]
+    public void IsReferenced_StillFlagsTrueOrphans()
+    {
+        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { @"C:\root\images\aaaa1111.png" };
+        var names = LibraryService.BuildFileNameSet(paths);
+
+        Assert.False(LibraryService.IsReferenced(@"C:\root\images\bbbb2222.png", paths, names));
+    }
+
+    [Fact]
+    public void BuildFileNameSet_IsCaseInsensitive_AndSkipsBlank()
+    {
+        var names = LibraryService.BuildFileNameSet(new[] { @"C:\x\ABC.PNG", "", "   " });
+        Assert.Single(names);
+        Assert.Contains("abc.png", names);
+    }
 }

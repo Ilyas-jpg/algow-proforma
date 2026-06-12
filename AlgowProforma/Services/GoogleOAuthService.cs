@@ -123,9 +123,14 @@ public class GoogleOAuthService
         // PKCE (RFC 7636, S256): yetkilendirme kodu loopback'te ele geçirilse bile verifier olmadan
         // token'a çevrilemez. Masaüstü (public client) için standart koruma; Google destekler.
         var codeVerifier = CreateCodeVerifier();
-        var authUrl = BuildAuthUrl(settings.EffectiveClientId, redirectUri, scopes, state, includeOfflineAccess,
+
+        // Listener ÖNCE açılır: sabit port (8777) başka uygulamadaysa boş loopback portuna düşülür
+        // ve auth URL + token exchange GERÇEK redirect ile kurulur. Google "Masaüstü uygulaması"
+        // istemcisi 127.0.0.1'in herhangi bir portunu kabul eder (RFC 8252 loopback kuralı).
+        var (listener, actualRedirectUri) = StartListenerWithFallback(redirectUri);
+        using var _ = listener;
+        var authUrl = BuildAuthUrl(settings.EffectiveClientId, actualRedirectUri, scopes, state, includeOfflineAccess,
             CreateCodeChallenge(codeVerifier));
-        using var listener = StartListener(redirectUri);
 
         Process.Start(new ProcessStartInfo(authUrl) { UseShellExecute = true });
 
@@ -139,10 +144,42 @@ public class GoogleOAuthService
             ["client_secret"] = settings.EffectiveClientSecret,
             ["code"] = callback,
             ["grant_type"] = "authorization_code",
-            ["redirect_uri"] = redirectUri,
+            ["redirect_uri"] = actualRedirectUri,
             ["code_verifier"] = codeVerifier,
         };
         return await PostTokenAsync(form, ct);
+    }
+
+    /// <summary>Yapılandırılmış redirect'in portu doluysa boş loopback portuna düşer.</summary>
+    private static (HttpListener Listener, string ActualRedirectUri) StartListenerWithFallback(string redirectUri)
+    {
+        try
+        {
+            return (StartListener(redirectUri), redirectUri);
+        }
+        catch (HttpListenerException)
+        {
+            var fallback = new UriBuilder(redirectUri) { Port = GetFreeTcpPort() }.Uri.ToString();
+            try
+            {
+                return (StartListener(fallback), fallback);
+            }
+            catch (HttpListenerException ex)
+            {
+                throw new GoogleOAuthException(
+                    $"OAuth callback portu açılamadı ({redirectUri}): {ex.Message}. " +
+                    "Portu kullanan uygulamayı kapatın veya Ayarlar'daki redirect URI portunu değiştirin.");
+            }
+        }
+    }
+
+    private static int GetFreeTcpPort()
+    {
+        var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
+        probe.Start();
+        var port = ((IPEndPoint)probe.LocalEndpoint).Port;
+        probe.Stop();
+        return port;
     }
 
     private static string BuildAuthUrl(string clientId, string redirectUri, string scopes, string state, bool includeOfflineAccess, string codeChallenge)

@@ -19,10 +19,49 @@ public partial class PriceBookViewModel : ObservableObject
     [ObservableProperty] private decimal _bulkPercent;
     [ObservableProperty] private string _statusText = "";
 
+    /// <summary>Kayda yansımamış değişiklik var mı — pencere kapanış uyarısı buna bakar.
+    /// Toplu zam (ApplyBulk) dahil her ekleme/silme/hücre düzenlemesi işaretler.</summary>
+    public bool HasUnsavedChanges { get; private set; }
+
     public PriceBookViewModel()
     {
         foreach (var it in _service.Load()) Items.Add(it);
+        HookItems(Items);
+        HasUnsavedChanges = false;   // yükleme sırasındaki Add'ler değişiklik sayılmaz
         StatusText = Items.Count == 0 ? "Havuz boş — Excel'den içe aktarın veya elle ekleyin." : $"{Items.Count} ürün.";
+    }
+
+    // ImportExcel koleksiyonu YENİDEN ATAR — hook'ları yeni koleksiyona taşı.
+    partial void OnItemsChanged(ObservableCollection<PriceItem> value) => HookItems(value);
+
+    private void HookItems(ObservableCollection<PriceItem> items)
+    {
+        items.CollectionChanged += (_, e) =>
+        {
+            if (e.NewItems is not null) foreach (PriceItem it in e.NewItems) it.PropertyChanged += OnItemEdited;
+            if (e.OldItems is not null) foreach (PriceItem it in e.OldItems) it.PropertyChanged -= OnItemEdited;
+            HasUnsavedChanges = true;
+        };
+        foreach (var it in items) it.PropertyChanged += OnItemEdited;
+    }
+
+    private void OnItemEdited(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        => HasUnsavedChanges = true;
+
+    /// <summary>Kapanış uyarısının "Evet"i — kaydetmeyi dener, başarısızsa pencere açık kalır.</summary>
+    public bool TrySaveForClose()
+    {
+        try
+        {
+            _service.Save(Items);
+            HasUnsavedChanges = false;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Kaydedilemedi: " + ex.Message, "Hata", MessageBoxButton.OK, MessageBoxImage.Error);
+            return false;
+        }
     }
 
     [RelayCommand]
@@ -46,6 +85,7 @@ public partial class PriceBookViewModel : ObservableObject
     private void Save()
     {
         _service.Save(Items);
+        HasUnsavedChanges = false;
         StatusText = $"Kaydedildi · {Items.Count} ürün.";
     }
 
@@ -62,6 +102,7 @@ public partial class PriceBookViewModel : ObservableObject
             foreach (var imp in imported) PriceBookService.UpsertByCode(list, imp);
             Items = new ObservableCollection<PriceItem>(list);
             _service.Save(Items);
+            HasUnsavedChanges = false;   // import anında diske yazıldı
             StatusText = $"{imported.Count} satır okundu · toplam {Items.Count} (+{Items.Count - before} yeni).";
         }
         catch (Exception ex)

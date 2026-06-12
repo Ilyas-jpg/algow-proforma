@@ -33,13 +33,29 @@ internal static class PdfImageCache
 
         if (_cache.Count >= MaxEntries || System.Threading.Interlocked.Read(ref _approxBytes) >= MaxApproxBytes)
         {
+            // NOT: evict edilen Image'lar bilinçli olarak Dispose EDİLMEZ — eşzamanlı bir render
+            // (kapak önizleme / katalog üretimi / thumbnail) referansı hâlâ kullanıyor olabilir
+            // (use-after-dispose = crash). Bellek GC+finalizer ile döner; bütçe yeniden dolumu sınırlar.
             _cache.Clear();
             System.Threading.Interlocked.Exchange(ref _approxBytes, 0);
         }
-        if (_cache.TryAdd(path, new Entry(fi.LastWriteTimeUtc, fi.Length, img)))
+        var entry = new Entry(fi.LastWriteTimeUtc, fi.Length, img);
+        if (_cache.TryAdd(path, entry))
+        {
             System.Threading.Interlocked.Add(ref _approxBytes, fi.Length);
+        }
+        else if (_cache.TryGetValue(path, out var old))
+        {
+            // Değişen dosya: girdiyi tazele + sayaç farkını işle (eski drift: fark hiç işlenmiyordu,
+            // sayaç gerçek toplamdan kopup bütçe sıfırlamasını erken/geç tetikliyordu).
+            _cache[path] = entry;
+            System.Threading.Interlocked.Add(ref _approxBytes, fi.Length - old.Length);
+        }
         else
-            _cache[path] = new Entry(fi.LastWriteTimeUtc, fi.Length, img);   // değişen dosya: girdiyi tazele
+        {
+            _cache[path] = entry;   // yarış: eşzamanlı Clear araya girdi — girdi yeni sayılır
+            System.Threading.Interlocked.Add(ref _approxBytes, fi.Length);
+        }
         return img;
     }
 }

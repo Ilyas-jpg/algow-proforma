@@ -73,7 +73,8 @@ public partial class EmailPreviewWindow : Window
                 SubjectBox.Text.Trim(),
                 BodyBox.Text,
                 _pdfPath,
-                _attachmentDisplayName);
+                _attachmentDisplayName,
+                bccSelf: _settings.Mail.BccSelf);
         });
     }
 

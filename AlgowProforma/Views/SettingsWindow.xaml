@@ -59,7 +59,8 @@
 
                         <TextBlock Text="Not: GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET env degiskenleri ayar ekranindaki degerlerin onune gecer." Style="{StaticResource MutedText}" FontSize="11" Margin="0,8,0,0" />
 
-                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <!-- IsNotBusy: OAuth akışı sürerken çifte tıklama ikinci listener açmasın -->
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0" IsEnabled="{Binding IsNotBusy}">
                             <Button Style="{StaticResource SecondaryButton}" Content="Continue with Google" Click="OnGoogleSignIn" />
                             <Button Style="{StaticResource PrimaryButton}" Content="Connect Gmail / Workspace" Margin="8,0,0,0" Click="OnConnectGmail" />
                             <Button Style="{StaticResource SecondaryButton}" Content="Disconnect Gmail" Margin="8,0,0,0" Click="OnDisconnectGmail" />
@@ -122,7 +123,8 @@
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <TextBox Grid.Column="0" Style="{StaticResource ModernTextBox}" Text="{Binding TestEmail, UpdateSourceTrigger=PropertyChanged}" />
-                            <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="Test Gönder" Margin="8,0,0,0" Click="OnTestSend" />
+                            <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="Test Gönder" Margin="8,0,0,0"
+                                    Click="OnTestSend" IsEnabled="{Binding IsNotBusy}" />
                         </Grid>
                     </StackPanel>
                 </Border>

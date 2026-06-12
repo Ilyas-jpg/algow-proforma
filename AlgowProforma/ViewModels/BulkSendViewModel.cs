@@ -178,7 +178,7 @@ public partial class BulkSendViewModel : ObservableObject
 
                     var body = tmpl.FullBody(r.ContactName, r.Salutation);
                     var res = useGmail
-                        ? await gmail!.SendAsync(_settings.Google, gmailCred!, _settings.Mail.FromName, r.Email, r.TargetName, tmpl.Subject, body, pdfPath, displayName, ct)
+                        ? await gmail!.SendAsync(_settings.Google, gmailCred!, _settings.Mail.FromName, r.Email, r.TargetName, tmpl.Subject, body, pdfPath, displayName, _settings.Mail.BccSelf, ct)
                         : await smtp!.SendAsync(r.Email, r.TargetName, tmpl.Subject, body, pdfPath, ct, attachmentDisplayName: displayName);
 
                     if (res.Success) { r.Status = "✓ Gönderildi"; sent++; }

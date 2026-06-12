@@ -1015,7 +1015,12 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- PDF üretimi arka thread'de — spinner "yanıt vermiyor" hissini önler -->
+                    <ProgressBar Width="90" Height="6" Margin="0,0,10,0" IsIndeterminate="True"
+                                 Visibility="{Binding IsGeneratingPdf, Converter={StaticResource BoolToVisibility}}" />
+                    <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                </StackPanel>
                 <TextBlock Grid.Column="1" Style="{StaticResource MutedText}" VerticalAlignment="Center">
                     <Run Text="{Binding Catalog.Products.Count, Mode=OneWay}" />
                     <Run Text=" ürün · " />

@@ -25,8 +25,21 @@ public class ExcelImportPreviewRow
     public string Code { get; set; } = "";
     public string Name { get; set; } = "";
     public decimal? Price { get; set; }
+
+    /// <summary>Dolu = görsel zaten diskte (materialize edilmiş). Önizleme aşamasında null kalır.</summary>
     public string? ImagePath { get; set; }
-    public bool HasImage => !string.IsNullOrWhiteSpace(ImagePath);
+
+    /// <summary>Gömülü görselin bellekteki baytları — diske ANCAK gerçek import anında yazılır.
+    /// Eski davranış her önizlemede (combo değişimi dahil) TÜM görselleri diske basıyordu →
+    /// orphan birikimi + UI donması.</summary>
+    public byte[]? PendingImageBytes { get; set; }
+
+    /// <summary>Hücrede dosya-yolu verilen görselin kaynağı — kopya gerçek import anında alınır.</summary>
+    public string? PendingImageSource { get; set; }
+
+    public bool HasImage => !string.IsNullOrWhiteSpace(ImagePath)
+                            || PendingImageBytes is { Length: > 0 }
+                            || !string.IsNullOrWhiteSpace(PendingImageSource);
 }
 
 public static class ExcelImportService
@@ -62,17 +75,21 @@ public static class ExcelImportService
             var name = options.NameColumn > 0 ? GetCellText(ws, row, options.NameColumn) : "";
             decimal? price = options.PriceColumn > 0 ? ParseDecimal(GetCellText(ws, row, options.PriceColumn)) : null;
 
-            string? imagePath = null;
+            // Önizleme disk'e DOKUNMAZ — kaynak referansı/baytlar bellekte taşınır,
+            // yazım ToProduct (gerçek import) anında olur.
+            string? pendingSource = null;
+            byte[]? pendingBytes = null;
             if (options.ImageColumn > 0)
             {
                 var fromCell = GetCellText(ws, row, options.ImageColumn);
                 if (!string.IsNullOrWhiteSpace(fromCell) && File.Exists(fromCell))
-                    imagePath = SaveCopy(fromCell);
+                    pendingSource = fromCell;
             }
-            if (imagePath is null && imagesByRow.TryGetValue(row, out var bytes))
-                imagePath = SaveBytes(bytes);
+            if (pendingSource is null && imagesByRow.TryGetValue(row, out var bytes))
+                pendingBytes = bytes;
 
-            if (string.IsNullOrWhiteSpace(code) && string.IsNullOrWhiteSpace(name) && imagePath is null)
+            if (string.IsNullOrWhiteSpace(code) && string.IsNullOrWhiteSpace(name)
+                && pendingSource is null && pendingBytes is null)
                 continue;
 
             results.Add(new ExcelImportPreviewRow
@@ -81,7 +98,8 @@ public static class ExcelImportService
                 Code = code.Trim(),
                 Name = name.Trim(),
                 Price = price,
-                ImagePath = imagePath,
+                PendingImageSource = pendingSource,
+                PendingImageBytes = pendingBytes,
             });
         }
 
@@ -94,8 +112,24 @@ public static class ExcelImportService
         Name = row.Name,
         Price = row.Price ?? 0m,
         Currency = currency,
-        ImagePath = row.ImagePath ?? "",
+        ImagePath = MaterializeImage(row) ?? "",
     };
+
+    /// <summary>Bekleyen görseli ANCAK gerçek import anında diske yazar; sonucu row'a cache'ler
+    /// (çift çağrı = çift dosya olmaz). Yazım hatasında ürün görselsiz devam eder.</summary>
+    internal static string? MaterializeImage(ExcelImportPreviewRow row)
+    {
+        if (!string.IsNullOrWhiteSpace(row.ImagePath)) return row.ImagePath;
+        try
+        {
+            if (row.PendingImageBytes is { Length: > 0 })
+                return row.ImagePath = SaveBytes(row.PendingImageBytes);
+            if (!string.IsNullOrWhiteSpace(row.PendingImageSource) && File.Exists(row.PendingImageSource))
+                return row.ImagePath = SaveCopy(row.PendingImageSource!);
+        }
+        catch { /* disk dolu / kilitli — görselsiz import, satır verisi kaybolmaz */ }
+        return null;
+    }
 
     private static string GetCellText(IXLWorksheet ws, int row, int col)
     {

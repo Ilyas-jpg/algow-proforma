@@ -16,8 +16,8 @@ public class LibraryService
 
     public LibraryService()
     {
-        var documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        LibraryPath = Path.Combine(documents, "Algow Proforma Kataloglar");
+        // Tek kaynak AppPaths.LibraryRoot (üretimde = Belgeler\Algow Proforma Kataloglar).
+        LibraryPath = AppPaths.LibraryRoot;
         Directory.CreateDirectory(LibraryPath);
     }
 
@@ -76,10 +76,16 @@ public class LibraryService
         var trashDir = Path.Combine(imagesDir, ".trash");
         PurgeOldTrash(trashDir);
 
+        // Kök-taşınma dayanıklılığı: JSON'daki referanslar yazıldıkları günkü MUTLAK path'i taşır.
+        // Belgeler kökü taşınırsa (OneDrive KFM / kullanıcı taşıması) tam-path eşleşmesi TOPLUCA boşa
+        // düşer → tüm görseller trash'e gider, 14 günde kalıcı silinirdi. Dosya adları GUID
+        // (ImageStorage.CreateNewPath) olduğundan ad, çakışmasız ikinci kimliktir.
+        var referencedNames = BuildFileNameSet(referenced);
+
         int moved = 0;
         foreach (var file in Directory.GetFiles(imagesDir))   // alt klasör (.trash) dahil DEĞİL
         {
-            if (referenced.Contains(file)) continue;
+            if (IsReferenced(file, referenced, referencedNames)) continue;
             try
             {
                 Directory.CreateDirectory(trashDir);
@@ -108,6 +114,22 @@ public class LibraryService
         if (c.References != null)
             foreach (var r in c.References) Add(r?.LogoPath);
     }
+
+    /// <summary>Referans path'lerinden dosya-adı kümesi çıkarır. (internal: kök-taşınma testleri)</summary>
+    internal static HashSet<string> BuildFileNameSet(IEnumerable<string> paths)
+    {
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var p in paths)
+        {
+            var n = Path.GetFileName(p);
+            if (!string.IsNullOrWhiteSpace(n)) names.Add(n);
+        }
+        return names;
+    }
+
+    /// <summary>Önce tam path, eşleşmezse GUID dosya-adı üzerinden referans kontrolü.</summary>
+    internal static bool IsReferenced(string file, HashSet<string> referencedPaths, HashSet<string> referencedNames)
+        => referencedPaths.Contains(file) || referencedNames.Contains(Path.GetFileName(file));
 
     /// <summary>14 günden eski .trash dosyalarını gerçekten siler (disk reclaim + güvenlik penceresi).</summary>
     private static void PurgeOldTrash(string trashDir)
@@ -214,12 +236,31 @@ public class LibraryService
 
     public void Delete(CatalogEntry entry)
     {
-        if (File.Exists(entry.PdfPath)) File.Delete(entry.PdfPath);
+        // Kalıcı silme yerine geri-dönülebilir taşıma: kütüphane kökündeki .trash'e iner,
+        // 14 günden eskiler purge edilir (images\.trash ile aynı disiplin). ListEntries yalnız
+        // kök *.pdf taradığından trash içeriği listede görünmez.
+        var trashDir = Path.Combine(LibraryPath, ".trash");
+        PurgeOldTrash(trashDir);
+
+        // Önce PDF (kilitlenme adayı — viewer'da açıksa burada fırlar, hiçbir şey taşınmamış olur).
+        MoveToTrash(entry.PdfPath, trashDir);
         if (File.Exists(entry.JsonPath))
         {
             try { File.SetAttributes(entry.JsonPath, FileAttributes.Normal); } catch { }
-            File.Delete(entry.JsonPath);
+            MoveToTrash(entry.JsonPath, trashDir);
         }
+    }
+
+    /// <summary>Dosyayı trash'e taşır; ad çakışmasında eskisini ezer. Kilitli dosyada fırlatır
+    /// (çağıran LibraryWindow zaten try/catch + kullanıcı mesajlı).</summary>
+    private static void MoveToTrash(string path, string trashDir)
+    {
+        if (!File.Exists(path)) return;
+        Directory.CreateDirectory(trashDir);
+        var dest = Path.Combine(trashDir, Path.GetFileName(path));
+        if (File.Exists(dest)) File.Delete(dest);
+        File.Move(path, dest);
+        try { File.SetLastWriteTime(dest, DateTime.Now); } catch { } // trash-zamanı = purge penceresi başlangıcı
     }
 
     public CatalogEntry? GetMostRecent() => ListEntries().FirstOrDefault();

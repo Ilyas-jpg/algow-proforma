@@ -16,6 +16,7 @@
 
     <Window.Resources>
         <conv:PathToImageConverter x:Key="PathToImage" />
+        <conv:ExcelRowToImageConverter x:Key="RowToImage" />
     </Window.Resources>
 
     <Border Background="{DynamicResource BackgroundBrush}"
@@ -168,7 +169,8 @@
 
                                         <Border Grid.Column="0" Width="56" Height="56"
                                                 Background="{DynamicResource SurfaceBrush}" CornerRadius="6">
-                                            <Image Source="{Binding ImagePath, Converter={StaticResource PathToImage}}"
+                                            <!-- Lazy-extract: görsel henüz diskte olmayabilir; converter bellekteki baytlardan da okur -->
+                                            <Image Source="{Binding ., Converter={StaticResource RowToImage}}"
                                                    Stretch="Uniform" Margin="4" />
                                         </Border>
                                         <TextBlock Grid.Column="2" Text="{Binding Code}"

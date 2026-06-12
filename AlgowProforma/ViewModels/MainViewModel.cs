@@ -205,7 +205,9 @@ public partial class MainViewModel : ObservableObject
     public void RefreshCoverPreview()
     {
         IsCoverPreviewLoading = true;
-        var catalogSnapshot = Catalog; // closure capture
+        // Canlı Catalog'u arka thread'e VERME — kullanıcı render sırasında düzenlerse race.
+        // Klon UI thread'inde alınır; thread'e donmuş kopya gider.
+        var catalogSnapshot = CatalogService.Clone(Catalog);
         System.Threading.Tasks.Task.Run(() =>
         {
             var bmp = BytesToFrozenBitmap(new PdfService().GenerateCoverPreviewBytes(catalogSnapshot));
@@ -550,8 +552,11 @@ public partial class MainViewModel : ObservableObject
         catch (Exception ex) { ShowError("PDF açılamadı", ex.Message); }
     }
 
+    /// <summary>PDF üretimi sürerken status bar'da spinner + buton kilidi (AsyncRelayCommand otomatik).</summary>
+    [ObservableProperty] private bool _isGeneratingPdf;
+
     [RelayCommand]
-    private void GeneratePdf()
+    private async System.Threading.Tasks.Task GeneratePdf()
     {
         try
         {
@@ -597,14 +602,22 @@ public partial class MainViewModel : ObservableObject
 
             Catalog.LibraryLabel = dialog.EnteredName;
 
-            var entry = _libraryService.Save(Catalog);
+            // Render UI-thread'i KİLİTLEMEZ: klon UI'da alınır (donmuş kopya), QuestPDF arka
+            // thread'de koşar — büyük katalogda "yanıt vermiyor" yerine canlı pencere + spinner.
+            IsGeneratingPdf = true;
+            StatusMessage = "PDF üretiliyor…";
+            var snapshot = CatalogService.Clone(Catalog);
+            var entry = await System.Threading.Tasks.Task.Run(() => _libraryService.Save(snapshot));
+
             ActiveName = string.IsNullOrWhiteSpace(entry.LibraryLabel) ? entry.BrandName : entry.LibraryLabel;
             IsDirty = false;
             TryDeleteAutoSave(); // iş artık kütüphanede güvende — eski oturum geri-yükleme sorusunu önle
+            RefreshRecentEntries();
             StatusMessage = $"PDF üretildi ve kütüphaneye eklendi: {entry.DisplayTitle}";
             Process.Start(new ProcessStartInfo(entry.PdfPath) { UseShellExecute = true });
         }
         catch (Exception ex) { ShowError("PDF üretilemedi", ex.Message); }
+        finally { IsGeneratingPdf = false; }
     }
 
     [RelayCommand]

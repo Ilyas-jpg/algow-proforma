@@ -15,7 +15,10 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _hasStoredPassword;
     [ObservableProperty] private string _testEmail = "";
     [ObservableProperty] private string _statusText = "";
+    [NotifyPropertyChangedFor(nameof(IsNotBusy))]
     [ObservableProperty] private bool _busy;
+    /// <summary>OAuth/test akışı sürerken buton kilidi — çifte tıklama ikinci listener/akış açmasın.</summary>
+    public bool IsNotBusy => !Busy;
     [ObservableProperty] private string _googleLoginStatus = "";
     [ObservableProperty] private string _gmailStatus = "";
     [ObservableProperty] private string _connectedGmailEmail = "";
@@ -59,6 +62,7 @@ public partial class SettingsViewModel : ObservableObject
 
     public async Task TestSendAsync(string? passwordFromBox)
     {
+        if (Busy) return;   // akış sürerken ikinci tıklama yok sayılır
         var pw = !string.IsNullOrWhiteSpace(passwordFromBox) ? passwordFromBox : CredentialStore.LoadPassword();
         if (string.IsNullOrWhiteSpace(pw)) { StatusText = "Once SMTP App Password girin."; return; }
 
@@ -83,6 +87,7 @@ public partial class SettingsViewModel : ObservableObject
 
     public async Task GoogleSignInAsync()
     {
+        if (Busy) return;   // ikinci tıklama ikinci OAuth listener'ı açmasın
         Busy = true;
         StatusText = "Google girisi icin tarayici aciliyor...";
         try
@@ -107,6 +112,7 @@ public partial class SettingsViewModel : ObservableObject
 
     public async Task ConnectGmailAsync()
     {
+        if (Busy) return;   // ikinci tıklama ikinci OAuth listener'ı açmasın
         Busy = true;
         StatusText = "Gmail gonderim izni icin tarayici aciliyor...";
         try
@@ -126,6 +132,7 @@ public partial class SettingsViewModel : ObservableObject
 
     public async Task DisconnectGmailAsync()
     {
+        if (Busy) return;
         Busy = true;
         try
         {

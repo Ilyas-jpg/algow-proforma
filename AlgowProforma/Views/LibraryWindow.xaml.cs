@@ -84,7 +84,7 @@ public partial class LibraryWindow : Window
     private void OnDelete(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: CatalogEntry entry }) return;
-        if (MessageBox.Show($"\"{entry.DisplayTitle}\" ({entry.CreatedAt:dd MMM yyyy HH:mm}) kütüphaneden silinsin mi?\nBu işlem geri alınamaz.",
+        if (MessageBox.Show($"\"{entry.DisplayTitle}\" ({entry.CreatedAt:dd MMM yyyy HH:mm}) kütüphaneden silinsin mi?\n14 gün boyunca kütüphane klasöründeki .trash içinden geri alınabilir.",
                 "Kütüphaneden Sil", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         try
         {

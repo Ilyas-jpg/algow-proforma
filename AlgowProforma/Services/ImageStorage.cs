@@ -5,13 +5,12 @@ namespace AlgowProforma.Services;
 
 public static class ImageStorage
 {
-    public static string Directory { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-        "Algow Proforma Kataloglar", "images");
+    // AppPaths.LibraryRoot'tan türetilir (üretimde birebir aynı yol). MyDocuments'ı burada ikinci
+    // kez hesaplamak "iki kaynaklı gerçek" üretiyordu; ayrıca expression-bodied olması testlerin
+    // OverrideLibraryRootForTests yönlendirmesini görsellere de uygular.
+    public static string Directory => Path.Combine(AppPaths.LibraryRoot, "images");
 
-    public static string CoversDirectory { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-        "Algow Proforma Kataloglar", "covers");
+    public static string CoversDirectory => Path.Combine(AppPaths.LibraryRoot, "covers");
 
     public static string CreateNewPath(string extension = ".png")
     {

@@ -149,6 +149,14 @@ public partial class QuoteEditorViewModel : ObservableObject
         StatusText = $"Kaydedildi: {Quote.QuoteNo}";
     }
 
+    /// <summary>Teklif PDF dosya adı. Revizyonlar "-rev{n}" eki alır — rev.1'in PDF'i orijinal
+    /// teklifin (aynı QuoteNo) PDF'inin üstüne yazmasın; iki dosya da arşivde yan yana dursun.</summary>
+    private string QuotePdfFileName()
+    {
+        var safeNo = string.IsNullOrWhiteSpace(Quote.QuoteNo) ? Quote.Id : Quote.QuoteNo;
+        return safeNo + (Quote.Revision > 0 ? $"-rev{Quote.Revision}" : "") + ".pdf";
+    }
+
     [RelayCommand]
     private void GeneratePdf()
     {
@@ -158,8 +166,7 @@ public partial class QuoteEditorViewModel : ObservableObject
             _quotes.Save(Quote); // numara + arşiv
             HasUnsavedChanges = false;
             OnPropertyChanged(nameof(Quote));
-            var safeNo = string.IsNullOrWhiteSpace(Quote.QuoteNo) ? Quote.Id : Quote.QuoteNo;
-            var path = Path.Combine(AppPaths.QuotesDir, safeNo + ".pdf");
+            var path = Path.Combine(AppPaths.QuotesDir, QuotePdfFileName());
             QuotePdfService.Generate(Quote, _brand, path, PdfTheme.GetById(new SettingsService().Load().QuoteThemeId));
             // Varsayılan PDF görüntüleyiciyle aç — msedge.exe hardcode'u Edge'siz makinede patlıyordu.
             Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
@@ -184,8 +191,7 @@ public partial class QuoteEditorViewModel : ObservableObject
             OnPropertyChanged(nameof(Quote));
 
             var settings = new SettingsService().Load();
-            var safeNo = string.IsNullOrWhiteSpace(Quote.QuoteNo) ? Quote.Id : Quote.QuoteNo;
-            var pdfPath = Path.Combine(AppPaths.QuotesDir, safeNo + ".pdf");
+            var pdfPath = Path.Combine(AppPaths.QuotesDir, QuotePdfFileName());
             QuotePdfService.Generate(Quote, _brand, pdfPath, PdfTheme.GetById(settings.QuoteThemeId));
             var attachmentName = settings.EmailTemplate.AttachmentName(Quote.CustomerCompany, DateTime.Today);
 
