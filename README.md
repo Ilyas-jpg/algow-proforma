@@ -63,4 +63,4 @@ dotnet publish AlgowProforma/AlgowProforma.csproj -c Release -r win-x64 --self-c
 
 ## Lisans
 
-Â© 2026 Ä°lyas Saltay â TÃ¼m haklarÄ± saklÄ±dÄ±r. AyrÄ±ntÄ±: [LICENSE](LICENSE)
+© 2026 İlyas Saltay — Tüm hakları saklıdır. Ayrıntı: [LICENSE](LICENSE)
