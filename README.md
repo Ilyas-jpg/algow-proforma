@@ -63,4 +63,4 @@ dotnet publish AlgowProforma/AlgowProforma.csproj -c Release -r win-x64 --self-c
 
 ## Lisans
 
-© 2026 AlgowAI. Tüm hakları saklıdır — açık kaynak lisansı değildir, ayrıntı: [LICENSE](LICENSE).
+[MIT](LICENSE) © 2026 İlyas Saltay
