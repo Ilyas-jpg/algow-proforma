@@ -1,21 +1,36 @@
-MIT License
-
 Copyright (c) 2026 İlyas Saltay
+TÜM HAKLARI SAKLIDIR — ALL RIGHTS RESERVED
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+────────────────────────────────────────────────────────────────────────────
+TÜRKÇE
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Bu depo ve tüm içeriği (kaynak kod, tasarımlar, görseller ve belgeler) İlyas
+Saltay'a aittir ve telif hakkı ile korunmaktadır. Depo yalnızca inceleme ve
+şeffaflık amacıyla herkese açık (görünür) tutulmaktadır. Bu bir AÇIK KAYNAK
+LİSANSI DEĞİLDİR.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Telif hakkı sahibinin önceden yazılı izni olmaksızın bu yazılımın veya herhangi
+bir bölümünün:
+  • kopyalanması, çoğaltılması veya dağıtılması,
+  • değiştirilmesi veya türev çalışma oluşturulması,
+  • ticari ya da ticari olmayan amaçla kullanılması, satılması veya yeniden
+    lisanslanması
+KESİNLİKLE YASAKTIR.
+
+İzin talepleri için: info@algow.net
+
+────────────────────────────────────────────────────────────────────────────
+ENGLISH
+
+Copyright (c) 2026 İlyas Saltay. All rights reserved.
+
+This repository and all of its contents (source code, designs, assets and
+documentation) are the property of İlyas Saltay and are protected by copyright
+law. The repository is made publicly visible for review and transparency
+purposes only. This is NOT an open-source license.
+
+Without the prior written permission of the copyright holder, you may NOT copy,
+reproduce, distribute, modify, create derivative works from, use (commercially
+or non-commercially), sell, or sublicense this software or any portion of it.
+
+For permission requests: info@algow.net
