@@ -54,6 +54,16 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>Toolbar dropdown butonu (Teklifler ▾ / Kayıtlar ▾) — ContextMenu'yu butonun ALTINDA açar
+    /// (sağ-tık menüsü gibi imlecte değil), gerçek bir menü düğmesi hissi verir.</summary>
+    private void OnDropdownButtonClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.ContextMenu is null) return;
+        btn.ContextMenu.PlacementTarget = btn;
+        btn.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        btn.ContextMenu.IsOpen = true;
+    }
+
     private void OnThemeToggleClick(object sender, RoutedEventArgs e)
         => Services.ThemeManager.Toggle();
 

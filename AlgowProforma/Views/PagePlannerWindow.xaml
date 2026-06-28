@@ -4,6 +4,8 @@
         xmlns:conv="clr-namespace:AlgowProforma.Converters"
         xmlns:m="clr-namespace:AlgowProforma.Models"
         Width="1280" Height="820" MinWidth="1100" MinHeight="700"
+        MaxWidth="{x:Static SystemParameters.MaximizedPrimaryScreenWidth}"
+        MaxHeight="{x:Static SystemParameters.MaximizedPrimaryScreenHeight}"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource BodyFont}"

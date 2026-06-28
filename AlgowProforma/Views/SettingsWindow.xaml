@@ -3,6 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Ayarlar — Algow Proforma PDF"
         Width="820" Height="860"
+        MinHeight="520"
+        MaxHeight="{x:Static SystemParameters.MaximizedPrimaryScreenHeight}"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource BodyFont}"
@@ -21,10 +23,17 @@
                 <!-- GOOGLE / GMAIL -->
                 <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16" Margin="0,0,0,16">
                     <StackPanel>
-                        <TextBlock Text="Google Workspace / Gmail" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" FontSize="14" Margin="0,0,0,10" />
+                        <TextBlock Text="Google Workspace / Gmail · gelişmiş" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" FontSize="14" Margin="0,0,0,4" />
+                        <TextBlock Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,10" TextWrapping="Wrap"
+                                   Text="Gmail API ile gönderim (kurumsal Google Workspace için). Google Cloud kurulumu gerektirir — hızlı başlangıçta aşağıdaki SMTP yolu yeterli. İki yoldan biri kâfi." />
                         <TextBlock Text="{Binding GoogleLoginStatus}" Style="{StaticResource MutedText}" Margin="0,0,0,4" />
                         <TextBlock Text="{Binding GmailStatus}" Style="{StaticResource MutedText}" Margin="0,0,0,10" />
 
+                        <TextBlock Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap">
+                            <Run Text="Client ID / Secret değerlerini " />
+                            <Hyperlink NavigateUri="https://console.cloud.google.com/apis/credentials" RequestNavigate="OnOpenLink">Google Cloud Console → Masaüstü OAuth istemcisi</Hyperlink>
+                            <Run Text=" oluşturarak alırsınız." />
+                        </TextBlock>
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0">
@@ -71,7 +80,9 @@
                 <!-- MAIL HESABI -->
                 <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16" Margin="0,0,0,16">
                     <StackPanel>
-                        <TextBlock Text="Mail Hesabı — Google Workspace SMTP" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" FontSize="14" Margin="0,0,0,12" />
+                        <TextBlock Text="Mail Hesabı — SMTP · önerilen, en hızlı" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" FontSize="14" Margin="0,0,0,4" />
+                        <TextBlock Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,12" TextWrapping="Wrap"
+                                   Text="Tek hesaptan göndermenin en kolay yolu: gönderen e-posta + Uygulama Şifresi. SMTP sunucu/port Gmail için hazır gelir, Google Cloud kurulumu gerekmez." />
 
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>
@@ -97,7 +108,7 @@
                             </StackPanel>
                         </Grid>
 
-                        <TextBlock Text="Kullanıcı Adı (genelde gönderen e-posta)" Style="{StaticResource MutedText}" Margin="0,10,0,0" />
+                        <TextBlock Text="Kullanıcı Adı (gönderen e-posta yazılınca otomatik dolar)" Style="{StaticResource MutedText}" Margin="0,10,0,0" />
                         <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0" Text="{Binding Settings.Mail.Username, UpdateSourceTrigger=PropertyChanged}" />
 
                         <TextBlock Text="Uygulama Şifresi (App Password)" Style="{StaticResource MutedText}" Margin="0,10,0,0" />
@@ -110,6 +121,11 @@
                             <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Sil" Margin="8,0,0,0" Click="OnClearPassword" />
                         </Grid>
                         <TextBlock Text="{Binding HasStoredPassword, StringFormat='Kayıtlı şifre: {0}'}" Style="{StaticResource MutedText}" FontSize="11" Margin="0,4,0,0" />
+                        <TextBlock Style="{StaticResource MutedText}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap">
+                            <Run Text="Gmail için: hesabınızda 2 Adımlı Doğrulamayı açın, sonra " />
+                            <Hyperlink NavigateUri="https://myaccount.google.com/apppasswords" RequestNavigate="OnOpenLink">Uygulama Şifresi oluşturun</Hyperlink>
+                            <Run Text=" ve buraya yapıştırın. Normal Gmail şifreniz SMTP'de çalışmaz." />
+                        </TextBlock>
 
                         <CheckBox Content="Her gönderimin kopyasını kendime gönder (BCC arşiv)" Margin="0,12,0,0"
                                   Foreground="{DynamicResource TextBrush}" IsChecked="{Binding Settings.Mail.BccSelf}" />

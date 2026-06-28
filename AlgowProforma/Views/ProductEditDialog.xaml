@@ -4,6 +4,8 @@
         xmlns:conv="clr-namespace:AlgowProforma.Converters"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         Width="780" Height="820"
+        MaxWidth="{x:Static SystemParameters.MaximizedPrimaryScreenWidth}"
+        MaxHeight="{x:Static SystemParameters.MaximizedPrimaryScreenHeight}"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"

@@ -30,6 +30,14 @@ public partial class SettingsWindow : Window
 
     private async void OnDisconnectGmail(object sender, RoutedEventArgs e) => await _vm.DisconnectGmailAsync();
 
+    /// <summary>Rehber linklerini (Uygulama Şifresi / Google Cloud Console) varsayılan tarayıcıda açar.</summary>
+    private void OnOpenLink(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true }); }
+        catch { /* tarayıcı açılamazsa sessiz geç */ }
+        e.Handled = true;
+    }
+
     private async void OnCreateBackup(object sender, RoutedEventArgs e)
     {
         var dlg = new Microsoft.Win32.SaveFileDialog

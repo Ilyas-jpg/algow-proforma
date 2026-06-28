@@ -9,6 +9,8 @@
         Title="{Binding WindowTitle}"
         Width="1280" Height="820"
         MinWidth="1080" MinHeight="640"
+        MaxWidth="{x:Static SystemParameters.MaximizedPrimaryScreenWidth}"
+        MaxHeight="{x:Static SystemParameters.MaximizedPrimaryScreenHeight}"
         WindowStartupLocation="CenterScreen"
         Icon="pack://application:,,,/Resources/AppIcon.ico"
         Background="{DynamicResource BackgroundBrush}"
@@ -259,7 +261,6 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Orientation="Horizontal" Grid.Column="0">
@@ -271,34 +272,24 @@
                     </StackPanel>
                 </StackPanel>
 
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button x:Name="ThemeToggleBtn" Style="{StaticResource IconButton}" Width="36" Height="36" Margin="0,0,8,0"
-                            Click="OnThemeToggleClick" ToolTip="Açık / koyu tema değiştir">
-                        <Path Data="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.39 5.39 0 0 1-7.54-7.54c-.44-.06-.9-.1-1.36-.1z"
-                              Width="17" Height="17" Stretch="Uniform"
-                              Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
-                    </Button>
-                    <Button Style="{StaticResource IconButton}" Width="36" Height="36" Margin="0,0,8,0"
-                            Command="{Binding OpenPdfFolderCommand}" ToolTip="PDF klasörünü Dosya Gezgini'nde aç">
-                        <Path Data="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
-                              Width="18" Height="18" Stretch="Uniform"
-                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                              StrokeThickness="1.6" Fill="Transparent"
-                              StrokeLineJoin="Round" />
-                    </Button>
-                    <Button Style="{StaticResource SecondaryButton}" Content="Yeni" Margin="0,0,8,0"
-                            Command="{Binding NewCatalogCommand}" ToolTip="Boş şablonla başla — Ctrl+N" />
-                    <Button Style="{StaticResource SecondaryButton}" Content="Aç" Margin="0,0,8,0"
-                            Command="{Binding OpenLatestPdfCommand}" ToolTip="En son PDF'i görüntüle — Ctrl+O" />
-                    <Button Style="{StaticResource SecondaryButton}" Content="Kütüphane" Margin="0,0,8,0"
+                <!-- Gruplu toolbar: katalog işlemleri · dropdown araçlar · yardımcı ikonlar · birincil eylem.
+                     WrapPanel güvenlik ağı kalır (çok dar pencerede 2. satıra sarar), ama dropdown'lar sayesinde
+                     öğe sayısı 13→9'a indi → normal/maximize boyutta tek satır, profesyonel masaüstü düzeni. -->
+                <WrapPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="16,0,0,0">
+
+                    <!-- Katalog işlemleri -->
+                    <Button Style="{StaticResource SecondaryButton}" Content="Yeni" Margin="0,0,8,4"
+                            Command="{Binding NewCatalogCommand}" ToolTip="Boş şablonla yeni katalog — Ctrl+N" />
+                    <Button Style="{StaticResource SecondaryButton}" Content="Aç" Margin="0,0,8,4"
+                            Command="{Binding OpenLatestPdfCommand}" ToolTip="En son üretilen PDF'i görüntüle — Ctrl+O" />
+                    <Button Style="{StaticResource SecondaryButton}" Content="Kütüphane" Margin="0,0,8,4"
                             Command="{Binding OpenLibraryCommand}" ToolTip="Tüm üretilmiş PDF'ler — Ctrl+L" />
-                    <Button x:Name="RecentBtn" Style="{StaticResource SecondaryButton}" Content="Son Kataloglar ▾" Margin="0,0,12,0"
-                            ToolTip="Son açılan kataloglar"
-                            Click="OnRecentButtonClick">
+                    <Button x:Name="RecentBtn" Style="{StaticResource SecondaryButton}" Content="Son ▾" Margin="0,0,8,4"
+                            ToolTip="Son açılan kataloglar" Click="OnRecentButtonClick">
                         <Button.ContextMenu>
                             <ContextMenu ItemsSource="{Binding RecentEntries}">
                                 <ContextMenu.ItemContainerStyle>
-                                    <Style TargetType="MenuItem">
+                                    <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
                                         <Setter Property="Header" Value="{Binding Name}" />
                                         <Setter Property="Command" Value="{Binding DataContext.LoadRecentCatalogCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                         <Setter Property="CommandParameter" Value="{Binding}" />
@@ -307,22 +298,61 @@
                             </ContextMenu>
                         </Button.ContextMenu>
                     </Button>
-                    <Border Width="1" Background="{DynamicResource BorderBrush}" Margin="0,6,12,6" />
-                    <Button Style="{StaticResource SecondaryButton}" Content="Teklif" Margin="0,0,8,0"
-                            Click="OnNewQuoteClick" ToolTip="Yeni fiyat teklifi oluştur" />
-                    <Button Style="{StaticResource SecondaryButton}" Content="Teklifler" Margin="0,0,8,0"
-                            Click="OnQuotesClick" ToolTip="Kayıtlı teklifler panosu — durum takibi (taslak / gönderildi / onaylandı)" />
-                    <Button Style="{StaticResource SecondaryButton}" Content="Toplu Gönderim" Margin="0,0,8,0"
-                            Click="OnBulkSendClick" ToolTip="Excel/CRM/elle alıcılara toplu teklif e-postası" />
-                    <Button Style="{StaticResource SecondaryButton}" Content="Fiyat Listesi" Margin="0,0,8,0"
-                            Click="OnPriceBookClick" ToolTip="Ürün ve birim fiyat havuzu" />
-                    <Button Style="{StaticResource SecondaryButton}" Content="Müşteriler" Margin="0,0,8,0"
-                            Click="OnCustomersClick" ToolTip="Müşteri / kişi listesi" />
-                    <Button Style="{StaticResource SecondaryButton}" Content="Ayarlar" Margin="0,0,12,0"
-                            Click="OnSettingsClick" ToolTip="Mail hesabı ve e-posta şablonu" />
-                    <Button Style="{StaticResource PrimaryButton}" Content="PDF Üret"
+
+                    <Border Width="1" Background="{DynamicResource BorderBrush}" Margin="4,6,12,6" />
+
+                    <!-- Teklif araçları (dropdown) -->
+                    <Button Style="{StaticResource SecondaryButton}" Content="Teklifler ▾" Margin="0,0,8,4"
+                            Click="OnDropdownButtonClick" ToolTip="Teklif oluştur, panoyu aç, toplu gönder">
+                        <Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Yeni Teklif…" Click="OnNewQuoteClick" />
+                                <MenuItem Header="Teklifler Panosu" Click="OnQuotesClick" />
+                                <Separator />
+                                <MenuItem Header="Toplu Gönderim" Click="OnBulkSendClick" />
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
+
+                    <!-- Kayıtlar (dropdown) -->
+                    <Button Style="{StaticResource SecondaryButton}" Content="Kayıtlar ▾" Margin="0,0,8,4"
+                            Click="OnDropdownButtonClick" ToolTip="Fiyat listesi ve müşteri kayıtları">
+                        <Button.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="Fiyat Listesi" Click="OnPriceBookClick" />
+                                <MenuItem Header="Müşteriler" Click="OnCustomersClick" />
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
+
+                    <Border Width="1" Background="{DynamicResource BorderBrush}" Margin="4,6,12,6" />
+
+                    <!-- Yardımcı ikonlar: tema · PDF klasörü · ayarlar -->
+                    <Button x:Name="ThemeToggleBtn" Style="{StaticResource IconButton}" Width="36" Height="36" Margin="0,0,4,4"
+                            Click="OnThemeToggleClick" ToolTip="Açık / koyu tema değiştir">
+                        <Path Data="M12 3a9 9 0 1 0 9 9c0-.46-.04-.92-.1-1.36a5.39 5.39 0 0 1-7.54-7.54c-.44-.06-.9-.1-1.36-.1z"
+                              Width="17" Height="17" Stretch="Uniform"
+                              Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                    </Button>
+                    <Button Style="{StaticResource IconButton}" Width="36" Height="36" Margin="0,0,4,4"
+                            Command="{Binding OpenPdfFolderCommand}" ToolTip="PDF klasörünü Dosya Gezgini'nde aç">
+                        <Path Data="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+                              Width="18" Height="18" Stretch="Uniform"
+                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.6" Fill="Transparent" StrokeLineJoin="Round" />
+                    </Button>
+                    <Button Style="{StaticResource IconButton}" Width="36" Height="36" Margin="0,0,12,4"
+                            Click="OnSettingsClick" ToolTip="Ayarlar — mail hesabı, e-posta şablonu, tema, yedek">
+                        <Path Data="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82z"
+                              Width="18" Height="18" Stretch="Uniform"
+                              Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              StrokeThickness="1.5" Fill="Transparent" StrokeLineJoin="Round" />
+                    </Button>
+
+                    <!-- Birincil eylem -->
+                    <Button Style="{StaticResource PrimaryButton}" Content="PDF Üret" Margin="0,0,0,4"
                             Command="{Binding GeneratePdfCommand}" ToolTip="Düzenlemeyi tamamla ve PDF üret — Ctrl+P" />
-                </StackPanel>
+                </WrapPanel>
             </Grid>
         </Border>
 

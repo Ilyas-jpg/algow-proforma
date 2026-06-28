@@ -19,6 +19,17 @@ public partial class MailAccount : ObservableObject
     [ObservableProperty] private bool _bccSelf = false;
     /// <summary>Toplu gönderimde dakikada en fazla kaç mail (spam/limit koruması).</summary>
     [ObservableProperty] private int _maxPerMinute = 20;
+
+    /// <summary>
+    /// Gönderen e-posta girilince SMTP kullanıcı adı boşsa otomatik dolar.
+    /// Gmail/Workspace SMTP'de kullanıcı adı = gönderen e-posta; en sık atlanan alan buydu.
+    /// Kullanıcı bilerek farklı bir ad yazmışsa (Username boş değilse) ezilmez.
+    /// </summary>
+    partial void OnFromEmailChanged(string value)
+    {
+        if (string.IsNullOrWhiteSpace(Username) && !string.IsNullOrWhiteSpace(value))
+            Username = value;
+    }
 }
 
 /// <summary>
