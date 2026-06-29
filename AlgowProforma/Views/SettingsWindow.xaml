@@ -23,56 +23,60 @@
                 <!-- GOOGLE / GMAIL -->
                 <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16" Margin="0,0,0,16">
                     <StackPanel>
-                        <TextBlock Text="Google Workspace / Gmail · gelişmiş" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" FontSize="14" Margin="0,0,0,4" />
-                        <TextBlock Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,10" TextWrapping="Wrap"
-                                   Text="Gmail API ile gönderim (kurumsal Google Workspace için). Google Cloud kurulumu gerektirir — hızlı başlangıçta aşağıdaki SMTP yolu yeterli. İki yoldan biri kâfi." />
+                        <TextBlock Text="Mail Gönderimi — Google ile Bağlan · önerilen" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" FontSize="14" Margin="0,0,0,4" />
+                        <TextBlock Style="{StaticResource MutedText}" FontSize="12" Margin="0,0,0,10" TextWrapping="Wrap"
+                                   Text="Gmail veya Google Workspace hesabınızla tek tıkla bağlanın — çoğu kullanıcı için tek gereken bu. 'Google ile Bağlan'a tıklayın, tarayıcıda hesabınızı seçip izin verin; başka bir ayar gerekmez." />
                         <TextBlock Text="{Binding GoogleLoginStatus}" Style="{StaticResource MutedText}" Margin="0,0,0,4" />
                         <TextBlock Text="{Binding GmailStatus}" Style="{StaticResource MutedText}" Margin="0,0,0,10" />
 
-                        <TextBlock Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap">
-                            <Run Text="Client ID / Secret değerlerini " />
-                            <Hyperlink NavigateUri="https://console.cloud.google.com/apis/credentials" RequestNavigate="OnOpenLink">Google Cloud Console → Masaüstü OAuth istemcisi</Hyperlink>
-                            <Run Text=" oluşturarak alırsınız." />
-                        </TextBlock>
-                        <Grid>
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Google Client ID" Style="{StaticResource MutedText}" />
-                                <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
-                                         Text="{Binding Settings.Google.ClientId, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Google Client Secret" Style="{StaticResource MutedText}" />
-                                <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
-                                         Text="{Binding Settings.Google.ClientSecret, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                        </Grid>
+                        <Expander Header="Gelişmiş — manuel/kurumsal kurulum (uygulamaya gömülü, genelde boş bırakın)"
+                                  Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,4">
+                            <StackPanel Margin="0,8,0,0">
+                                <TextBlock Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,8" TextWrapping="Wrap">
+                                    <Run Text="Client ID / Secret uygulamaya gömülüdür. Yalnızca kendi Google projenizi kullanmak isterseniz, " />
+                                    <Hyperlink NavigateUri="https://console.cloud.google.com/apis/credentials" RequestNavigate="OnOpenLink">Cloud Console → Masaüstü OAuth istemcisi</Hyperlink>
+                                    <Run Text=" değerlerini buraya girin." />
+                                </TextBlock>
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Google Client ID" Style="{StaticResource MutedText}" />
+                                        <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
+                                                 Text="{Binding Settings.Google.ClientId, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Google Client Secret" Style="{StaticResource MutedText}" />
+                                        <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
+                                                 Text="{Binding Settings.Google.ClientSecret, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                </Grid>
 
-                        <Grid Margin="0,10,0,0">
-                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="Login Redirect URI" Style="{StaticResource MutedText}" />
-                                <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
-                                         Text="{Binding Settings.Google.AuthRedirectUri, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="Gmail Redirect URI" Style="{StaticResource MutedText}" />
-                                <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
-                                         Text="{Binding Settings.Google.GmailRedirectUri, UpdateSourceTrigger=PropertyChanged}" />
-                            </StackPanel>
-                        </Grid>
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Login Redirect URI" Style="{StaticResource MutedText}" />
+                                        <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
+                                                 Text="{Binding Settings.Google.AuthRedirectUri, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Gmail Redirect URI" Style="{StaticResource MutedText}" />
+                                        <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
+                                                 Text="{Binding Settings.Google.GmailRedirectUri, UpdateSourceTrigger=PropertyChanged}" />
+                                    </StackPanel>
+                                </Grid>
 
-                        <TextBlock Text="Izin verilen domainler (opsiyonel, virgulle ayrilir)" Style="{StaticResource MutedText}" Margin="0,10,0,0" />
-                        <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
-                                 Text="{Binding Settings.Google.AllowedDomains, UpdateSourceTrigger=PropertyChanged}" />
+                                <TextBlock Text="Izin verilen domainler (opsiyonel, virgulle ayrilir)" Style="{StaticResource MutedText}" Margin="0,10,0,0" />
+                                <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
+                                         Text="{Binding Settings.Google.AllowedDomains, UpdateSourceTrigger=PropertyChanged}" />
 
-                        <TextBlock Text="Not: GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET env degiskenleri ayar ekranindaki degerlerin onune gecer." Style="{StaticResource MutedText}" FontSize="11" Margin="0,8,0,0" />
+                                <TextBlock Text="Not: GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET env degiskenleri buradaki degerlerin onune gecer." Style="{StaticResource MutedText}" FontSize="11" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </Expander>
 
                         <!-- IsNotBusy: OAuth akışı sürerken çifte tıklama ikinci listener açmasın -->
                         <StackPanel Orientation="Horizontal" Margin="0,12,0,0" IsEnabled="{Binding IsNotBusy}">
-                            <Button Style="{StaticResource SecondaryButton}" Content="Continue with Google" Click="OnGoogleSignIn" />
-                            <Button Style="{StaticResource PrimaryButton}" Content="Connect Gmail / Workspace" Margin="8,0,0,0" Click="OnConnectGmail" />
-                            <Button Style="{StaticResource SecondaryButton}" Content="Disconnect Gmail" Margin="8,0,0,0" Click="OnDisconnectGmail" />
+                            <Button Style="{StaticResource PrimaryButton}" Content="Google ile Bağlan" Click="OnConnectGmail" />
+                            <Button Style="{StaticResource SecondaryButton}" Content="Bağlantıyı Kes" Margin="8,0,0,0" Click="OnDisconnectGmail" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -80,9 +84,9 @@
                 <!-- MAIL HESABI -->
                 <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16" Margin="0,0,0,16">
                     <StackPanel>
-                        <TextBlock Text="Mail Hesabı — SMTP · önerilen, en hızlı" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" FontSize="14" Margin="0,0,0,4" />
+                        <TextBlock Text="Alternatif — SMTP / Uygulama Şifresi (gelişmiş)" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" FontSize="14" Margin="0,0,0,4" />
                         <TextBlock Style="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,12" TextWrapping="Wrap"
-                                   Text="Tek hesaptan göndermenin en kolay yolu: gönderen e-posta + Uygulama Şifresi. SMTP sunucu/port Gmail için hazır gelir, Google Cloud kurulumu gerekmez." />
+                                   Text="Yalnızca 'Google ile Bağlan' işe yaramazsa kullanın. Gmail için 2 Adımlı Doğrulama + Uygulama Şifresi gerekir — çoğu kullanıcının buna ihtiyacı olmaz." />
 
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="120"/></Grid.ColumnDefinitions>

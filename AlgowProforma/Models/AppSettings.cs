@@ -98,13 +98,22 @@ public partial class GoogleOAuthSettings : ObservableObject
     // Effective* = env-aware HESAPLANAN görünümler — kalıcılığa girmez. JsonIgnore şart:
     // System.Text.Json get-only public property'leri de YAZAR; EffectiveClientSecret üzerinden
     // düz-metin secret settings.json'a sızıyordu (SettingsServiceTests yakaladı, 2026-06-12).
+    // Öncelik: env var > Ayarlar (settings.json) > gömülü OAuthDefaults (dağıtım makinesinde
+    // skip-worktree ile doldurulur). Müşteri makinesinde artık env/.bat gerekmez — exe'ye gömülü
+    // client ile "Google ile bağlan" doğrudan çalışır. Boş gömülüyse eski davranış (env/Ayarlar) korunur.
     [JsonIgnore]
     public string EffectiveClientId =>
-        Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? ClientId;
+        FirstNonEmpty(Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID"), ClientId, OAuthDefaults.ClientId);
 
     [JsonIgnore]
     public string EffectiveClientSecret =>
-        Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? ClientSecret;
+        FirstNonEmpty(Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET"), ClientSecret, OAuthDefaults.ClientSecret);
+
+    private static string FirstNonEmpty(params string?[] values)
+    {
+        foreach (var v in values) if (!string.IsNullOrWhiteSpace(v)) return v!;
+        return "";
+    }
 
     [JsonIgnore]
     public string EffectiveAuthRedirectUri =>
