@@ -19,7 +19,6 @@ public partial class QuoteEditorViewModel : ObservableObject
     private readonly QuoteService _quotes = new();
     private readonly PriceBookService _priceBook = new();
     private readonly CustomerService _customers = new();
-    private readonly BrandInfo _brand;
 
     [ObservableProperty] private Quote _quote;
     [ObservableProperty] private ObservableCollection<PriceItem> _priceBookItems = new();
@@ -36,9 +35,6 @@ public partial class QuoteEditorViewModel : ObservableObject
 
     public QuoteEditorViewModel(Quote? existing = null)
     {
-        // Teklif PDF'i kalıcı marka profilini kullanır (logo/firma/iletişim) — yoksa boş default.
-        _brand = BrandProfileService.Load() ?? Catalog.CreateDefault().Brand;
-
         foreach (var p in _priceBook.Load().Where(p => p.IsActive)) PriceBookItems.Add(p);
         foreach (var c in _customers.Load()) Customers2.Add(c);
 
@@ -95,7 +91,7 @@ public partial class QuoteEditorViewModel : ObservableObject
         IsPreviewLoading = true;
         var seq = ++_previewSeq;
         var snapshot = Quote.Clone();           // canlı Quote arka thread'e verilmez (race)
-        var brand = _brand;
+        var brand = LoadBrand();                // M2: her render'da taze marka (Ayarlar'da değişmiş olabilir)
         System.Threading.Tasks.Task.Run(() =>
         {
             var theme = PdfTheme.GetById(new SettingsService().Load().QuoteThemeId);
@@ -217,6 +213,10 @@ public partial class QuoteEditorViewModel : ObservableObject
     }
 
     // ---- komutlar ----
+
+    /// <summary>Marka profilini HER üretimde TAZE okur — editör açıkken Ayarlar'dan marka değişirse
+    /// (M2) eski logo/firma/adresle PDF/mail çıkmasın (white-label'da yanlış marka = yanlış kimlik).</summary>
+    private static BrandInfo LoadBrand() => BrandProfileService.Load() ?? Catalog.CreateDefault().Brand;
 
     /// <summary>"TL"/"TRY"/"₺" tek aileye iner — karşılaştırma ve dönüşüm anahtarı.</summary>
     private static string NormalizeCurrency(string? c) => (c ?? "TL").Trim().ToUpperInvariant() switch
@@ -366,7 +366,7 @@ public partial class QuoteEditorViewModel : ObservableObject
             HasUnsavedChanges = false;
             OnPropertyChanged(nameof(Quote));
             var path = Path.Combine(AppPaths.QuotesDir, QuotePdfFileName());
-            QuotePdfService.Generate(Quote, _brand, path, PdfTheme.GetById(new SettingsService().Load().QuoteThemeId));
+            QuotePdfService.Generate(Quote, LoadBrand(), path, PdfTheme.GetById(new SettingsService().Load().QuoteThemeId));
             // Varsayılan PDF görüntüleyiciyle aç — msedge.exe hardcode'u Edge'siz makinede patlıyordu.
             Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
             StatusText = $"PDF üretildi: {Path.GetFileName(path)}";
@@ -391,7 +391,7 @@ public partial class QuoteEditorViewModel : ObservableObject
 
             var settings = new SettingsService().Load();
             var pdfPath = Path.Combine(AppPaths.QuotesDir, QuotePdfFileName());
-            QuotePdfService.Generate(Quote, _brand, pdfPath, PdfTheme.GetById(settings.QuoteThemeId));
+            QuotePdfService.Generate(Quote, LoadBrand(), pdfPath, PdfTheme.GetById(settings.QuoteThemeId));
             var attachmentName = settings.EmailTemplate.AttachmentName(Quote.CustomerCompany, DateTime.Today);
 
             var win = new EmailPreviewWindow(Quote, pdfPath, attachmentName)
@@ -413,7 +413,7 @@ public partial class QuoteEditorViewModel : ObservableObject
         if (Quote.Lines.Count == 0) { StatusText = "Önce kalem ekleyin."; return; }
         try
         {
-            System.Windows.Clipboard.SetText(QuoteTextService.Build(Quote, _brand));
+            System.Windows.Clipboard.SetText(QuoteTextService.Build(Quote, LoadBrand()));
             StatusText = "Teklif metni panoya kopyalandı (WhatsApp/mail için).";
         }
         catch { StatusText = "Panoya kopyalanamadı."; }

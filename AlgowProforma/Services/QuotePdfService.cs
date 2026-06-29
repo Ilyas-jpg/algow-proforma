@@ -419,8 +419,10 @@ public class QuotePdfService
         _ => "",
     };
 
-    private string Num(decimal v) =>
-        (v == Math.Truncate(v)) ? ((long)v).ToString(Cul) : v.ToString("#,##0.##", Cul);
+    // L1: decimal→long cast checked'tir → ~9.2e18 üstü tam-sayı tutarda OverflowException atıp metin/
+    // önizleme üretimini kırardı. Tek format yeterli: tam sayıda ondalık basmaz, miktarda 4 haneye
+    // kadar gösterir (L2: "#,##0.##" 3+ ondalıklı miktarı 2'ye yuvarlıyordu).
+    private string Num(decimal v) => v.ToString("#,##0.####", Cul);
 
     private string Money(decimal v, string currency)
     {

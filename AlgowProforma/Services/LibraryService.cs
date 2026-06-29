@@ -88,6 +88,10 @@ public class LibraryService
         foreach (var file in Directory.GetFiles(imagesDir))   // alt klasör (.trash) dahil DEĞİL
         {
             if (IsReferenced(file, referenced, referencedNames)) continue;
+            // Yarış koruması: yeni yüklenmiş ama henüz hiçbir JSON'a/kütüphaneye bağlanmamış görsel
+            // (Excel import materialize / kapak ekleme) bu anlık taramada "öksüz" görünebilir. Son
+            // 5 dk içinde oluşturulanı bu turda atla — gerçekten öksüzse sonraki temizlik alır.
+            try { if (File.GetCreationTime(file) > DateTime.Now.AddMinutes(-5)) continue; } catch { }
             try
             {
                 Directory.CreateDirectory(trashDir);

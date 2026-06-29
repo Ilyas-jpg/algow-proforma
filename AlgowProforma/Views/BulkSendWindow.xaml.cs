@@ -16,6 +16,7 @@ public partial class BulkSendWindow : Window
         DataContext = _vm;
         Closing += OnClosing;
         _vm.PropertyChanged += OnVmPropertyChanged;
+        Closed += (_, _) => _vm.PropertyChanged -= OnVmPropertyChanged;   // L3: tutarlı abonelik temizliği
     }
 
     // H3: gönderim sürerken pencere kapatılırsa döngü görünmez devam ediyordu —

@@ -69,7 +69,18 @@ public static class BackupService
         }
         catch
         {
-            try { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); } catch { }
+            // Yarım açılan kökü ne pahasına olursa olsun yoldan çek: silinemezse (AV/Explorer kilidi)
+            // benzersiz ".failed-restore" adına taşı ki güvenlik kopyası geri konabilsin — kullanıcının
+            // orijinal verisi asla erişilemez/yarım kök altında kalmasın.
+            if (Directory.Exists(root))
+            {
+                try { Directory.Delete(root, recursive: true); }
+                catch
+                {
+                    try { Directory.Move(root, root + ".failed-restore-" + DateTime.Now.ToString("yyyyMMdd-HHmmss")); }
+                    catch { }
+                }
+            }
             if (safety.Length > 0 && !Directory.Exists(root))
                 try { Directory.Move(safety, root); } catch { }
             throw;

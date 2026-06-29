@@ -91,4 +91,33 @@ public class BackupServiceTests
         }
         finally { if (File.Exists(zipPath)) File.Delete(zipPath); }
     }
+
+    // L4: zip-slip (kök dışına kaçan entry) reddedilmeli — .NET 8 ExtractToDirectory koruması var,
+    // bir refactor bunu sessizce kaldırmasın diye davranışı pinle. Kök DIŞINA dosya yazılmamalı.
+    [Fact]
+    public void RestoreBackup_RejectsZipSlipEntry()
+    {
+        using var tmp = new TempLibraryRoot();
+        Seed();
+        var zipPath = Path.Combine(Path.GetTempPath(), "alg-slip-" + Guid.NewGuid().ToString("N") + ".zip");
+        var escapeTarget = Path.Combine(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(AppPaths.LibraryRoot))!, "alg-zipslip-escape.txt");
+        try
+        {
+            using (var zip = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+            {
+                zip.CreateEntry("data/settings.json");                 // ValidateBackupZip'i geçsin
+                var evil = zip.CreateEntry("../alg-zipslip-escape.txt"); // kök dışına kaç
+                using var s = evil.Open();
+                s.WriteByte(1);
+            }
+
+            Assert.ThrowsAny<Exception>(() => BackupService.RestoreBackup(zipPath));
+            Assert.False(File.Exists(escapeTarget));   // kök dışına HİÇBİR dosya yazılmadı
+        }
+        finally
+        {
+            if (File.Exists(zipPath)) File.Delete(zipPath);
+            try { if (File.Exists(escapeTarget)) File.Delete(escapeTarget); } catch { }
+        }
+    }
 }

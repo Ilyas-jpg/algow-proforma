@@ -83,7 +83,10 @@ public partial class MainViewModel : ObservableObject
             }
             else
             {
-                try { File.Delete(path); } catch { }
+                // L2: kalıcı silmek yerine geri-dönülebilir yan-ada taşı — yanlış "Hayır" tıkıyla
+                // kurtarılabilir oturum kalıcı uçmasın (uygulama genelindeki .trash disipliniyle tutarlı).
+                try { File.Move(path, path + ".discarded-" + DateTime.Now.ToString("yyyyMMdd-HHmmss"), overwrite: true); }
+                catch { try { File.Delete(path); } catch { } }
                 StatusMessage = "Önceki oturum atıldı.";
             }
         }
@@ -144,6 +147,8 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    private int _autoSaveFails;
+
     private void TryAutoSave()
     {
         if (!IsDirty) return;
@@ -159,9 +164,16 @@ public partial class MainViewModel : ObservableObject
                 BrandProfileService.Save(Catalog.Brand);
                 _brandDirty = false;
             }
+            _autoSaveFails = 0;
             StatusMessage = $"Otomatik kaydedildi: {DateTime.Now:HH:mm}";
         }
-        catch { /* sessiz — auto-save UI kesintisi yapmaz */ }
+        catch
+        {
+            // L8: tamamen sessiz değil — ardışık başarısızlıkta (disk dolu/izin/OneDrive kilidi) tek sefer
+            // diskret uyar (modal değil); çökme + sürekli-başarısız autosave birleşince sessizce iş gitmesin.
+            if (++_autoSaveFails == 3)
+                StatusMessage = "⚠ Otomatik kayıt yapılamıyor — disk/izin/OneDrive durumunu kontrol edin.";
+        }
     }
 
     [ObservableProperty] private Catalog _catalog = Catalog.CreateDefault();

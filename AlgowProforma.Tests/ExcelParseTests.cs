@@ -30,6 +30,28 @@ public class ExcelParseTests
     [InlineData("abc")]
     public void ParseDecimal_Garbage_ReturnsNull(string input)
         => Assert.Null(ExcelDataService.ParseDecimal(input));
+
+    // L4: NumberStyles.Number → muhasebe parantez-negatifi ve exponent artık parse EDİLMEZ (fiyat
+    // alanında öngörülemez dönüşümler kapatıldı; "(100)" negatif fiyat clamp'e düşmeden reddedilir).
+    [Theory]
+    [InlineData("(100)")]
+    [InlineData("1,5E3")]
+    [InlineData("1.5e3")]
+    public void ParseDecimal_RejectsExoticNotation(string input)
+        => Assert.Null(ExcelDataService.ParseDecimal(input));
+
+    // M1/M2: Excel yüzde-formatlı KDV hücresi (%20 → 0.20 saklanır) %20 okunmalı (%0,2 DEĞİL),
+    // sonuç [0,100]'e clamp; muaf (0) ve sınır (%1) korunur.
+    [Theory]
+    [InlineData(0.20, 20)]
+    [InlineData(0.18, 18)]
+    [InlineData(20, 20)]
+    [InlineData(150, 100)]
+    [InlineData(-5, 0)]
+    [InlineData(0, 0)]
+    [InlineData(1, 1)]
+    public void NormalizeVatRate_FixesPercentFormatAndClamps(decimal input, decimal expected)
+        => Assert.Equal(expected, ExcelDataService.NormalizeVatRate(input));
 }
 
 /// <summary>Para belgesi girdi sınırları: negatif/taşkın değer eksi tutar üretemez (M fix).</summary>

@@ -45,7 +45,9 @@ public class ProductLibraryService
                 existing.Code = src.Code;
                 existing.Price = src.Price;
                 existing.Currency = src.Currency;
-                existing.ImagePath = src.ImagePath;
+                // L6: gelen boş ImagePath dolu kütüphane görselini EZMESİN (görselli ürünü görselsiz
+                // tekrar kaydetince görsel bağı kopar → CleanupOrphanImages .trash'e atardı). Boşsa koru.
+                if (!string.IsNullOrWhiteSpace(src.ImagePath)) existing.ImagePath = src.ImagePath;
                 existing.Category = src.Category;
                 existing.IsFeatured = src.IsFeatured;
                 existing.HasTable = src.HasTable;

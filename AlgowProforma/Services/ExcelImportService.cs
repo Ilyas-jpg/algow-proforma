@@ -171,31 +171,42 @@ public static class ExcelImportService
         return map;
     }
 
+    private static readonly string[] AllowedImageExts = { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp" };
+
     private static string SaveCopy(string sourcePath)
     {
+        var ext = Path.GetExtension(sourcePath).ToLowerInvariant();
+        // Güvenlik (L1): yalnız gerçek görsel uzantıları kopyalanır — kötü-niyetli .xlsx'in görsel-sütunu
+        // hücresine konmuş hassas yerel yol (örn. ...\.ssh\id_rsa) "ürün görseli" diye images\'a sızmasın.
+        if (Array.IndexOf(AllowedImageExts, ext) < 0)
+            throw new InvalidOperationException("Desteklenmeyen görsel türü: " + ext);
         Directory.CreateDirectory(ImageStorage.Directory);
-        var ext = Path.GetExtension(sourcePath);
-        if (string.IsNullOrEmpty(ext)) ext = ".png";
-        var target = Path.Combine(ImageStorage.Directory, $"{Guid.NewGuid():N}{ext.ToLowerInvariant()}");
+        var target = Path.Combine(ImageStorage.Directory, $"{Guid.NewGuid():N}{ext}");
         File.Copy(sourcePath, target, overwrite: false);
         return target;
     }
 
     private static string SaveBytes(byte[] bytes)
     {
+        // Güvenlik (L3): magic-byte tanınmıyorsa REDDET (eski sessiz ".png" fallback yok) — yalnız
+        // gerçek görsel baytı diske yazılır.
+        var ext = DetectImageExtension(bytes)
+            ?? throw new InvalidOperationException("Tanınmayan görsel formatı (gömülü resim).");
         Directory.CreateDirectory(ImageStorage.Directory);
-        var ext = DetectImageExtension(bytes);
         var target = Path.Combine(ImageStorage.Directory, $"{Guid.NewGuid():N}{ext}");
         File.WriteAllBytes(target, bytes);
         return target;
     }
 
-    private static string DetectImageExtension(byte[] b)
+    private static string? DetectImageExtension(byte[] b)
     {
         if (b.Length >= 8 && b[0] == 0x89 && b[1] == 0x50 && b[2] == 0x4E && b[3] == 0x47) return ".png";
         if (b.Length >= 3 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF) return ".jpg";
         if (b.Length >= 4 && b[0] == 0x47 && b[1] == 0x49 && b[2] == 0x46) return ".gif";
         if (b.Length >= 2 && b[0] == 0x42 && b[1] == 0x4D) return ".bmp";
-        return ".png";
+        // WebP: "RIFF"...."WEBP"
+        if (b.Length >= 12 && b[0] == 0x52 && b[1] == 0x49 && b[2] == 0x46 && b[3] == 0x46
+            && b[8] == 0x57 && b[9] == 0x45 && b[10] == 0x42 && b[11] == 0x50) return ".webp";
+        return null;   // tanınmayan → reddet (çağıran görselsiz devam eder)
     }
 }

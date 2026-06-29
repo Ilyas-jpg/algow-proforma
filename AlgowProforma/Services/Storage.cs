@@ -96,7 +96,7 @@ public static class AtomicFile
         {
             // File.Replace atomik. Hidden/kilit edge'inde fallback: Delete+Move (yine de tmp güvende).
             try { File.Replace(tmp, path, null); }
-            catch (Exception) { File.Delete(path); File.Move(tmp, path); }
+            catch (Exception) { File.Move(tmp, path, overwrite: true); }   // L1: tek atomik çağrı, "dosya yok" penceresi kapanır
         }
         else
         {
@@ -120,7 +120,7 @@ public static class AtomicFile
         if (File.Exists(path))
         {
             try { File.Replace(tmp, path, null); }
-            catch (Exception) { File.Delete(path); File.Move(tmp, path); }
+            catch (Exception) { File.Move(tmp, path, overwrite: true); }   // L1: tek atomik çağrı, "dosya yok" penceresi kapanır
         }
         else
         {

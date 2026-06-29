@@ -60,8 +60,8 @@ public static class QuoteTextService
         return sb.ToString();
     }
 
-    private static string Num(decimal v) =>
-        (v == Math.Truncate(v)) ? ((long)v).ToString(Tr) : v.ToString("#,##0.##", Tr);
+    // L1: decimal→long cast OverflowException riski (Build try/catch'siz → metin paylaşımı çökebilirdi).
+    private static string Num(decimal v) => v.ToString("#,##0.####", Tr);
 
     private static string Money(decimal v, string currency)
     {

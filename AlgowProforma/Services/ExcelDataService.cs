@@ -48,8 +48,8 @@ public static class ExcelDataService
                 Name = name.Trim(),
                 Description = (descC > 0 && descC != nameC) ? Cell(ws, row, descC).Trim() : "",
                 Unit = OrDefault(Cell(ws, row, unitC).Trim(), "adet"),
-                UnitPrice = CellDecimal(ws, row, priceC) ?? 0m,
-                VatRate = CellDecimal(ws, row, vatC) ?? 20m,
+                UnitPrice = Math.Max(0m, CellDecimal(ws, row, priceC) ?? 0m),
+                VatRate = ReadVatRate(ws, row, vatC),
                 Category = Cell(ws, row, catC).Trim(),
                 Currency = OrDefault(Cell(ws, row, curC).Trim().ToUpperInvariant(), defaultCurrency),
             });
@@ -271,10 +271,27 @@ public static class ExcelDataService
         else
             culture = inv;                                                   // düz tam sayı
 
-        return decimal.TryParse(s, NumberStyles.Any, culture, out var v) ? v : (decimal?)null;
+        // NumberStyles.Number (Any DEĞİL): exponent ("1,5E3"→1500) ve parantez-negatif "(100)"→-100
+        // yorumunu kapatır — fiyat alanında öngörülemez/istenmeyen dönüşümler. Binlik+ondalık+işaret yeter.
+        return decimal.TryParse(s, NumberStyles.Number, culture, out var v) ? v : (decimal?)null;
     }
 
     private static string OrDefault(string v, string d) => string.IsNullOrWhiteSpace(v) ? d : v;
+
+    /// <summary>KDV oranı okur. Excel'de hücre YÜZDE biçimliyse "%20" değil 0.20 saklanır; CellDecimal
+    /// bunu doğrudan 0.20 döndürünce KDV %0,2 olup EKSİK-KDV'li proforma çıkardı (M1). KDV oranı pratikte
+    /// 0 ile 1 arası olamaz (en düşük gerçek oran %1) → bu aralık kesinlikle yüzde-format, ×100 ile
+    /// düzeltilir. Sonuç [0,100]'e clamp'lenir (negatif/aşırı oran sızıntısı yok).</summary>
+    private static decimal ReadVatRate(IXLWorksheet ws, int row, int col)
+        => NormalizeVatRate(CellDecimal(ws, row, col) ?? 20m);
+
+    /// <summary>KDV oranını normalize eder: 0&lt;v&lt;1 ise yüzde-format kabul edip ×100 (M1 — Excel
+    /// "%20"→0.20 saklar), sonuç [0,100]'e clamp (M2). (internal: NormalizeVatRate testleri doğrular.)</summary>
+    internal static decimal NormalizeVatRate(decimal v)
+    {
+        if (v > 0m && v < 1m) v *= 100m;   // 0.20 (yüzde-format) → 20
+        return Math.Clamp(v, 0m, 100m);
+    }
 
     private static Salutation ParseSalutation(string s)
     {
