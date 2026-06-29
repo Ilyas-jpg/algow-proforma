@@ -8,6 +8,7 @@
         MinWidth="900" MinHeight="560"
         MaxWidth="{x:Static SystemParameters.MaximizedPrimaryScreenWidth}"
         MaxHeight="{x:Static SystemParameters.MaximizedPrimaryScreenHeight}"
+        WindowState="Maximized"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource BackgroundBrush}"
         FontFamily="{StaticResource BodyFont}"
@@ -21,23 +22,22 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
     </Window.Resources>
 
+    <!-- Sol form artık ScrollViewer içinde: 768px gibi dar ekranlarda kalem DataGrid'i ezilip
+         görünmez kalıyordu (sabit müşteri/şartlar blokları tüm alanı yiyordu). Form kaydırılır,
+         DataGrid MinHeight ile her zaman görünür, alt butonlar sabit kalır. -->
     <Grid Margin="24">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
-        <!-- Sol: mevcut editör (column 0 default) · Sağ: canlı PDF önizleme paneli -->
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="16" />
             <ColumnDefinition Width="330" />
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
 
-        <Border Grid.Column="2" Grid.Row="0" Grid.RowSpan="6"
+        <!-- Sağ: canlı PDF önizleme paneli (tam yükseklik) -->
+        <Border Grid.Column="2" Grid.Row="0" Grid.RowSpan="2"
                 Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="1" Padding="10">
             <Grid>
@@ -54,222 +54,226 @@
             </Grid>
         </Border>
 
-        <!-- Başlık + durum rozeti (durum panoda yönetilir; editör artık körü körüne değil) -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal">
-            <TextBlock Text="Fiyat Teklifi" Style="{StaticResource DisplayText}" FontSize="22" FontWeight="Bold" />
-            <Border Background="{StaticResource PrimaryBrush}" CornerRadius="4" Padding="10,4"
-                    Margin="14,2,0,0" VerticalAlignment="Center"
-                    ToolTip="Teklif durumu — gönderimde otomatik 'Gönderildi' olur; Teklifler panosundan elle değiştirilebilir">
-                <TextBlock Text="{Binding Quote.StatusLabel}" Foreground="White" FontSize="11" FontWeight="Bold" />
-            </Border>
-        </StackPanel>
-
-        <!-- Müşteri + teklif bilgileri -->
-        <Grid Grid.Row="1" Margin="0,14,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="24" />
-                <ColumnDefinition Width="380" />
-            </Grid.ColumnDefinitions>
-
-            <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="14">
-                <StackPanel>
-                    <TextBlock Text="MÜŞTERİ" Style="{StaticResource MutedText}" FontWeight="SemiBold" FontSize="11" />
-                    <Grid Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <ComboBox Grid.Column="0" ItemsSource="{Binding Customers2}" DisplayMemberPath="DisplayName"
-                                  SelectedItem="{Binding SelectedCustomer}" Height="34" />
-                        <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Uygula" Margin="8,0,0,0"
-                                Command="{Binding ApplySelectedCustomerCommand}" />
-                        <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="+ Yeni" Margin="8,0,0,0"
-                                Click="OnQuickAddCustomer"
-                                ToolTip="CRM'de olmayan müşteriyi editörden ayrılmadan ekle (kaydedilir ve uygulanır)" />
-                    </Grid>
-                    <!-- Snapshot alanları DÜZENLENEBİLİR: e-postası eksik müşteriye gönderim akışı
-                         eskiden tıkanıyordu (alanlar salt-okunur, Müşteriler ayrı modal). -->
-                    <Grid Margin="0,10,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="10" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <StackPanel Grid.Row="0" Grid.Column="0">
-                            <TextBlock Text="Firma" Style="{StaticResource MutedText}" FontSize="11" />
-                            <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,8"
-                                     Text="{Binding Quote.CustomerCompany, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-                        <StackPanel Grid.Row="0" Grid.Column="2">
-                            <TextBlock Text="Yetkili" Style="{StaticResource MutedText}" FontSize="11" />
-                            <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,8"
-                                     Text="{Binding Quote.CustomerContact, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="0">
-                            <TextBlock Text="E-posta" Style="{StaticResource MutedText}" FontSize="11" />
-                            <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
-                                     Text="{Binding Quote.CustomerEmail, UpdateSourceTrigger=PropertyChanged}"
-                                     ToolTip="E-posta gönderimi bu adrese yapılır — yalnız bu teklifin kopyasını değiştirir, CRM kartına dokunmaz" />
-                        </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="2">
-                            <TextBlock Text="Telefon" Style="{StaticResource MutedText}" FontSize="11" />
-                            <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
-                                     Text="{Binding Quote.CustomerPhone, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-                    </Grid>
-                    <TextBlock Margin="0,6,0,0" FontSize="11" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
-                               Text="{Binding Quote.CustomerAddress}" />
-                </StackPanel>
-            </Border>
-
-            <Border Grid.Column="2" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="14">
-                <StackPanel>
-                    <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Teklif No" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92" />
-                        <TextBlock Grid.Column="1" Text="{Binding Quote.QuoteNo, TargetNullValue='(kayıtta atanır)', FallbackValue='(kayıtta atanır)'}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                    </Grid>
-                    <Grid Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Geçerlilik (gün)" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92" />
-                        <TextBox Grid.Column="1" Style="{StaticResource ModernTextBox}" Text="{Binding Quote.ValidityDays, UpdateSourceTrigger=PropertyChanged}" />
-                    </Grid>
-                    <Grid Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Para Birimi" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92" />
-                        <ComboBox Grid.Column="1" Height="34" SelectedValue="{Binding Quote.Currency}" SelectedValuePath="Content">
-                            <ComboBoxItem Content="TL" />
-                            <ComboBoxItem Content="USD" />
-                            <ComboBoxItem Content="EUR" />
-                        </ComboBox>
-                    </Grid>
-                    <Grid Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Dil" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92"
-                                   ToolTip="EN: PROFORMA INVOICE — tüm PDF etiketleri İngilizce, sayı biçimi 1,234.56" />
-                        <ComboBox Grid.Column="1" Height="34" ItemsSource="{Binding LanguageOptions}"
-                                  DisplayMemberPath="Label" SelectedValuePath="Id"
-                                  SelectedValue="{Binding Quote.Language}" />
-                    </Grid>
-                    <Grid Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Şablon" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92"
-                                   ToolTip="PDF görünümü: Modern (renkli) · Kompakt (dar) · Sade (tek renk, yazıcı dostu)" />
-                        <ComboBox Grid.Column="1" Height="34" ItemsSource="{Binding TemplateOptions}"
-                                  DisplayMemberPath="Label" SelectedValuePath="Id"
-                                  SelectedValue="{Binding Quote.TemplateId}" />
-                    </Grid>
-                </StackPanel>
-            </Border>
-        </Grid>
-
-        <!-- Satır ekleme araç çubuğu -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,16,0,10">
-            <ComboBox Width="320" Height="34" ItemsSource="{Binding PriceBookItems}" DisplayMemberPath="Name"
-                      SelectedItem="{Binding SelectedPriceItem}" ToolTip="Fiyat havuzundan ürün" />
-            <TextBlock Text="Miktar" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="12,0,6,0" />
-            <TextBox Style="{StaticResource ModernTextBox}" Width="64" VerticalAlignment="Center"
-                     Text="{Binding AddQuantity, UpdateSourceTrigger=PropertyChanged}" />
-            <Button Style="{StaticResource SecondaryButton}" Content="Havuzdan Ekle" Margin="8,0,0,0" Command="{Binding AddFromPriceBookCommand}" />
-            <Button Style="{StaticResource SecondaryButton}" Content="Boş Satır" Margin="8,0,0,0" Command="{Binding AddBlankLineCommand}" />
-            <Button Style="{StaticResource SecondaryButton}" Content="Satır Sil" Margin="8,0,0,0" Command="{Binding RemoveLineCommand}" />
-        </StackPanel>
-
-        <!-- Kalemler — satır ekleme yalnız butonlardan (boş hayalet satır + ondan doğan ghost kalem yok) -->
-        <DataGrid Grid.Row="3" ItemsSource="{Binding Quote.Lines}" SelectedItem="{Binding SelectedLine}"
-                  CanUserAddRows="False">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Kod" Binding="{Binding Code}" Width="100" />
-                <DataGridTextColumn Header="Ad" Binding="{Binding Name}" Width="*" />
-                <DataGridTextColumn Header="Açıklama" Binding="{Binding Description}" Width="180" />
-                <DataGridTextColumn Header="Miktar" Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Width="70" />
-                <DataGridTextColumn Header="Birim" Binding="{Binding Unit}" Width="64" />
-                <DataGridTextColumn Header="Birim Fiyat" Binding="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged}" Width="92" />
-                <DataGridTextColumn Header="İsk %" Binding="{Binding DiscountPct, UpdateSourceTrigger=PropertyChanged}" Width="58" />
-                <DataGridTextColumn Header="KDV %" Binding="{Binding VatRate, UpdateSourceTrigger=PropertyChanged}" Width="58" />
-                <DataGridTextColumn Header="Tutar" Binding="{Binding LineNet, StringFormat=N2}" Width="100" IsReadOnly="True" />
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <!-- Şartlar + Toplamlar -->
-        <Grid Grid.Row="4" Margin="0,14,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="24" />
-                <ColumnDefinition Width="320" />
-            </Grid.ColumnDefinitions>
-
-            <StackPanel Grid.Column="0">
-                <TextBlock Text="Ödeme Koşulu" Style="{StaticResource MutedText}" />
-                <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,8" Text="{Binding Quote.PaymentTerms, UpdateSourceTrigger=PropertyChanged}" />
-                <Grid>
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="Teslim Süresi" Style="{StaticResource MutedText}" />
-                        <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0" Text="{Binding Quote.DeliveryTime, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="Teslim Yeri" Style="{StaticResource MutedText}" />
-                        <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0" Text="{Binding Quote.DeliveryPlace, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                </Grid>
-                <Grid Margin="0,8,0,0">
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="Kur Notu" Style="{StaticResource MutedText}" />
-                        <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
-                                 Text="{Binding Quote.ExchangeRateNote, UpdateSourceTrigger=PropertyChanged}" />
-                    </StackPanel>
-                    <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="TCMB Kurunu Çek"
-                            Margin="8,16,0,0" VerticalAlignment="Bottom" Command="{Binding FetchTcmbRatesCommand}"
-                            ToolTip="Günün TCMB döviz satış kurlarını (USD/EUR) kur notuna yazar" />
-                </Grid>
-                <TextBlock Text="Notlar" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
-                <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0" Height="48" AcceptsReturn="True" TextWrapping="Wrap"
-                         Text="{Binding Quote.Notes, UpdateSourceTrigger=PropertyChanged}" />
-            </StackPanel>
-
-            <Border Grid.Column="2" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="14">
-                <StackPanel>
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Genel İskonto" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" />
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <ComboBox Width="86" Height="30" ItemsSource="{Binding Source={StaticResource DiscountModes}}" SelectedItem="{Binding Quote.DiscountMode}" />
-                            <TextBox Style="{StaticResource ModernTextBox}" Width="70" Margin="6,0,0,0" Text="{Binding Quote.DiscountValue, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-                    </Grid>
-                    <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,2,0,8" />
-                    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Ara Toplam" Foreground="{DynamicResource MutedBrush}" />
-                        <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.LinesNet, StringFormat=N2}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" />
-                    </Grid>
-                    <Grid Margin="0,4,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="İskonto" Foreground="{DynamicResource MutedBrush}" />
-                        <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.GeneralDiscount, StringFormat=N2}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" />
-                    </Grid>
-                    <Grid Margin="0,4,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="KDV" Foreground="{DynamicResource MutedBrush}" />
-                        <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.VatTotal, StringFormat=N2}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" />
-                    </Grid>
-                    <Border Background="{StaticResource PrimaryBrush}" Margin="0,8,0,0" Padding="10,8">
-                        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="GENEL TOPLAM" Foreground="White" FontWeight="Bold" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.GrandTotal, StringFormat=N2}" Foreground="White" FontWeight="Bold" FontSize="16" />
-                        </Grid>
+        <!-- Sol: kaydırılabilir editör formu -->
+        <ScrollViewer Grid.Column="0" Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+            <StackPanel>
+                <!-- Başlık + durum rozeti -->
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Fiyat Teklifi" Style="{StaticResource DisplayText}" FontSize="22" FontWeight="Bold" />
+                    <Border Background="{StaticResource PrimaryBrush}" CornerRadius="4" Padding="10,4"
+                            Margin="14,2,0,0" VerticalAlignment="Center"
+                            ToolTip="Teklif durumu — gönderimde otomatik 'Gönderildi' olur; Teklifler panosundan elle değiştirilebilir">
+                        <TextBlock Text="{Binding Quote.StatusLabel}" Foreground="White" FontSize="11" FontWeight="Bold" />
                     </Border>
                 </StackPanel>
-            </Border>
-        </Grid>
 
-        <!-- Alt butonlar -->
-        <DockPanel Grid.Row="5" Margin="0,16,0,0">
+                <!-- Müşteri + teklif bilgileri -->
+                <Grid Margin="0,14,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="24" />
+                        <ColumnDefinition Width="380" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="14">
+                        <StackPanel>
+                            <TextBlock Text="MÜŞTERİ" Style="{StaticResource MutedText}" FontWeight="SemiBold" FontSize="11" />
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <ComboBox Grid.Column="0" ItemsSource="{Binding Customers2}" DisplayMemberPath="DisplayName"
+                                          SelectedItem="{Binding SelectedCustomer}" Height="34" />
+                                <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Uygula" Margin="8,0,0,0"
+                                        Command="{Binding ApplySelectedCustomerCommand}" />
+                                <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="+ Yeni" Margin="8,0,0,0"
+                                        Click="OnQuickAddCustomer"
+                                        ToolTip="CRM'de olmayan müşteriyi editörden ayrılmadan ekle (kaydedilir ve uygulanır)" />
+                            </Grid>
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <StackPanel Grid.Row="0" Grid.Column="0">
+                                    <TextBlock Text="Firma" Style="{StaticResource MutedText}" FontSize="11" />
+                                    <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,8"
+                                             Text="{Binding Quote.CustomerCompany, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="2">
+                                    <TextBlock Text="Yetkili" Style="{StaticResource MutedText}" FontSize="11" />
+                                    <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,8"
+                                             Text="{Binding Quote.CustomerContact, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="0">
+                                    <TextBlock Text="E-posta" Style="{StaticResource MutedText}" FontSize="11" />
+                                    <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
+                                             Text="{Binding Quote.CustomerEmail, UpdateSourceTrigger=PropertyChanged}"
+                                             ToolTip="E-posta gönderimi bu adrese yapılır — yalnız bu teklifin kopyasını değiştirir, CRM kartına dokunmaz" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="2">
+                                    <TextBlock Text="Telefon" Style="{StaticResource MutedText}" FontSize="11" />
+                                    <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
+                                             Text="{Binding Quote.CustomerPhone, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Margin="0,6,0,0" FontSize="11" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"
+                                       Text="{Binding Quote.CustomerAddress}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="14">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Teklif No" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92" />
+                                <TextBlock Grid.Column="1" Text="{Binding Quote.QuoteNo, TargetNullValue='(kayıtta atanır)', FallbackValue='(kayıtta atanır)'}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            </Grid>
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Geçerlilik (gün)" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92" />
+                                <TextBox Grid.Column="1" Style="{StaticResource ModernTextBox}" Text="{Binding Quote.ValidityDays, UpdateSourceTrigger=PropertyChanged}" />
+                            </Grid>
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Para Birimi" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92" />
+                                <ComboBox Grid.Column="1" Height="34" SelectedValue="{Binding Quote.Currency}" SelectedValuePath="Content">
+                                    <ComboBoxItem Content="TL" />
+                                    <ComboBoxItem Content="USD" />
+                                    <ComboBoxItem Content="EUR" />
+                                </ComboBox>
+                            </Grid>
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Dil" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92"
+                                           ToolTip="EN: PROFORMA INVOICE — tüm PDF etiketleri İngilizce, sayı biçimi 1,234.56" />
+                                <ComboBox Grid.Column="1" Height="34" ItemsSource="{Binding LanguageOptions}"
+                                          DisplayMemberPath="Label" SelectedValuePath="Id"
+                                          SelectedValue="{Binding Quote.Language}" />
+                            </Grid>
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Şablon" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Width="92"
+                                           ToolTip="PDF görünümü: Modern (renkli) · Kompakt (dar) · Sade (tek renk, yazıcı dostu)" />
+                                <ComboBox Grid.Column="1" Height="34" ItemsSource="{Binding TemplateOptions}"
+                                          DisplayMemberPath="Label" SelectedValuePath="Id"
+                                          SelectedValue="{Binding Quote.TemplateId}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Satır ekleme araç çubuğu -->
+                <StackPanel Orientation="Horizontal" Margin="0,16,0,10">
+                    <ComboBox Width="320" Height="34" ItemsSource="{Binding PriceBookItems}" DisplayMemberPath="Name"
+                              SelectedItem="{Binding SelectedPriceItem}" ToolTip="Fiyat havuzundan ürün" />
+                    <TextBlock Text="Miktar" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" Margin="12,0,6,0" />
+                    <TextBox Style="{StaticResource ModernTextBox}" Width="64" VerticalAlignment="Center"
+                             Text="{Binding AddQuantity, UpdateSourceTrigger=PropertyChanged}" />
+                    <Button Style="{StaticResource SecondaryButton}" Content="Havuzdan Ekle" Margin="8,0,0,0" Command="{Binding AddFromPriceBookCommand}" />
+                    <Button Style="{StaticResource PrimaryButton}" Content="+ Kalem Ekle" Margin="8,0,0,0" Command="{Binding AddBlankLineCommand}"
+                            ToolTip="Havuz boşken bile elle yeni kalem ekler — kalem tablosuna gelir, ad/fiyat/miktarı orada doldurun" />
+                    <Button Style="{StaticResource SecondaryButton}" Content="Satır Sil" Margin="8,0,0,0" Command="{Binding RemoveLineCommand}" />
+                </StackPanel>
+
+                <!-- Kalemler — DataGrid MinHeight ile dar ekranda da görünür; çok kalemde kendi içinde kayar -->
+                <DataGrid ItemsSource="{Binding Quote.Lines}" SelectedItem="{Binding SelectedLine}"
+                          CanUserAddRows="False" MinHeight="240" MaxHeight="460">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Kod" Binding="{Binding Code}" Width="100" />
+                        <DataGridTextColumn Header="Ad" Binding="{Binding Name}" Width="*" />
+                        <DataGridTextColumn Header="Açıklama" Binding="{Binding Description}" Width="180" />
+                        <DataGridTextColumn Header="Miktar" Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Width="70" />
+                        <DataGridTextColumn Header="Birim" Binding="{Binding Unit}" Width="64" />
+                        <DataGridTextColumn Header="Birim Fiyat" Binding="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged}" Width="92" />
+                        <DataGridTextColumn Header="İsk %" Binding="{Binding DiscountPct, UpdateSourceTrigger=PropertyChanged}" Width="58" />
+                        <DataGridTextColumn Header="KDV %" Binding="{Binding VatRate, UpdateSourceTrigger=PropertyChanged}" Width="58" />
+                        <DataGridTextColumn Header="Tutar" Binding="{Binding LineNet, StringFormat=N2}" Width="100" IsReadOnly="True" />
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Şartlar + Toplamlar -->
+                <Grid Margin="0,14,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="24" />
+                        <ColumnDefinition Width="320" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Ödeme Koşulu" Style="{StaticResource MutedText}" />
+                        <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,8" Text="{Binding Quote.PaymentTerms, UpdateSourceTrigger=PropertyChanged}" />
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Teslim Süresi" Style="{StaticResource MutedText}" />
+                                <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0" Text="{Binding Quote.DeliveryTime, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Teslim Yeri" Style="{StaticResource MutedText}" />
+                                <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0" Text="{Binding Quote.DeliveryPlace, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Grid>
+                        <Grid Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Kur Notu" Style="{StaticResource MutedText}" />
+                                <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0"
+                                         Text="{Binding Quote.ExchangeRateNote, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="TCMB Kurunu Çek"
+                                    Margin="8,16,0,0" VerticalAlignment="Bottom" Command="{Binding FetchTcmbRatesCommand}"
+                                    ToolTip="Günün TCMB döviz satış kurlarını (USD/EUR) kur notuna yazar" />
+                        </Grid>
+                        <TextBlock Text="Notlar" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
+                        <TextBox Style="{StaticResource ModernTextBox}" Margin="0,2,0,0" Height="48" AcceptsReturn="True" TextWrapping="Wrap"
+                                 Text="{Binding Quote.Notes, UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+
+                    <Border Grid.Column="2" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="14" VerticalAlignment="Top">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Genel İskonto" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <ComboBox Width="86" Height="30" ItemsSource="{Binding Source={StaticResource DiscountModes}}" SelectedItem="{Binding Quote.DiscountMode}" />
+                                    <TextBox Style="{StaticResource ModernTextBox}" Width="70" Margin="6,0,0,0" Text="{Binding Quote.DiscountValue, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
+                            <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,2,0,8" />
+                            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Ara Toplam" Foreground="{DynamicResource MutedBrush}" />
+                                <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.LinesNet, StringFormat=N2}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" />
+                            </Grid>
+                            <Grid Margin="0,4,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="İskonto" Foreground="{DynamicResource MutedBrush}" />
+                                <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.GeneralDiscount, StringFormat=N2}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" />
+                            </Grid>
+                            <Grid Margin="0,4,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="KDV" Foreground="{DynamicResource MutedBrush}" />
+                                <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.VatTotal, StringFormat=N2}" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" />
+                            </Grid>
+                            <Border Background="{StaticResource PrimaryBrush}" Margin="0,8,0,0" Padding="10,8">
+                                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="GENEL TOPLAM" Foreground="White" FontWeight="Bold" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Quote.Totals.GrandTotal, StringFormat=N2}" Foreground="White" FontWeight="Bold" FontSize="16" />
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Alt butonlar (her zaman görünür, sabit) -->
+        <DockPanel Grid.Column="0" Grid.Row="1" Margin="0,16,0,0">
             <TextBlock DockPanel.Dock="Left" Text="{Binding StatusText}" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" />
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Style="{StaticResource SecondaryButton}" Content="Revizyon Oluştur" Margin="0,0,8,0" Command="{Binding CreateRevisionCommand}" />

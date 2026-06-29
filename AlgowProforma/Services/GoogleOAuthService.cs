@@ -46,6 +46,12 @@ public class GoogleOAuthService
     // Tek paylaşımlı HttpClient — soket tükenmesini (her new'de yeni handler) önler. HttpClient thread-safe.
     private static readonly HttpClient _http = new();
 
+    // Loopback callback sayfaları — Algow markalı (koyu + altın). Çıplak HTML yerine kullanıcıya
+    // güven veren kapanış ekranı (OAuth sonrası tarayıcıda görünür).
+    private const string CallbackSuccessHtml = """<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Algow Proforma</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(1100px 560px at 50% -8%,#1b1b22,#0b0b0d);color:#f5f5f4}.card{text-align:center;padding:52px 44px;max-width:460px}.logo{font-size:28px;font-weight:800;letter-spacing:-.4px;background:linear-gradient(90deg,#f2c84b,#d99a26);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:34px}.badge{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#f2c84b,#d99a26);display:flex;align-items:center;justify-content:center;margin:0 auto 26px;box-shadow:0 10px 34px rgba(217,154,38,.4)}.badge svg{width:38px;height:38px}h1{font-size:23px;font-weight:700;margin-bottom:12px}p{font-size:15px;line-height:1.6;color:#a9a9b2}.hint{margin-top:30px;font-size:13px;color:#6e6e78;border-top:1px solid #26262e;padding-top:18px}</style></head><body><div class="card"><div class="logo">Algow Proforma</div><div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0b0d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></div><h1>Gmail bağlantısı tamamlandı</h1><p>Artık tekliflerinizi doğrudan uygulamadan e-posta ile gönderebilirsiniz.</p><div class="hint">Bu sekmeyi kapatıp uygulamaya dönebilirsiniz.</div></div></body></html>""";
+
+    private const string CallbackErrorHtml = """<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Algow Proforma</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(1100px 560px at 50% -8%,#1b1b22,#0b0b0d);color:#f5f5f4}.card{text-align:center;padding:52px 44px;max-width:460px}.logo{font-size:28px;font-weight:800;letter-spacing:-.4px;background:linear-gradient(90deg,#f2c84b,#d99a26);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:34px}.badge{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#f87171,#dc2626);display:flex;align-items:center;justify-content:center;margin:0 auto 26px;box-shadow:0 10px 34px rgba(220,38,38,.4)}.badge svg{width:36px;height:36px}h1{font-size:23px;font-weight:700;margin-bottom:12px}p{font-size:15px;line-height:1.6;color:#a9a9b2}.hint{margin-top:30px;font-size:13px;color:#6e6e78;border-top:1px solid #26262e;padding-top:18px}</style></head><body><div class="card"><div class="logo">Algow Proforma</div><div class="badge"><svg viewBox="0 0 24 24" fill="none" stroke="#0b0b0d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div><h1>Bağlantı tamamlanamadı</h1><p>Uygulamaya dönüp "Google ile Bağlan"ı tekrar deneyin.</p><div class="hint">Bu sekmeyi kapatabilirsiniz.</div></div></body></html>""";
+
     public async Task<GoogleUserInfo> SignInAsync(GoogleOAuthSettings settings, CancellationToken ct = default)
     {
         EnsureConfigured(settings, settings.EffectiveAuthRedirectUri);
@@ -69,6 +75,7 @@ public class GoogleOAuthService
         {
             GoogleSub = user.Sub,
             GoogleEmail = user.Email,
+            GoogleName = user.Name,
             AccessToken = token.AccessToken,
             RefreshToken = token.RefreshToken,
             TokenExpiresAt = DateTime.Now.AddSeconds(Math.Max(60, token.ExpiresIn)),
@@ -226,9 +233,7 @@ public class GoogleOAuthService
             var state = req.QueryString["state"];
 
             var ok = string.IsNullOrWhiteSpace(error) && !string.IsNullOrWhiteSpace(code) && state == expectedState;
-            var html = ok
-                ? "<html><body><h2>Algow Proforma bağlantısı tamamlandı.</h2><p>Bu sekmeyi kapatabilirsiniz.</p></body></html>"
-                : "<html><body><h2>Google bağlantısı tamamlanamadı.</h2><p>Uygulamaya dönüp tekrar deneyin.</p></body></html>";
+            var html = ok ? CallbackSuccessHtml : CallbackErrorHtml;
             var bytes = Encoding.UTF8.GetBytes(html);
             context.Response.ContentType = "text/html; charset=utf-8";
             context.Response.ContentLength64 = bytes.Length;

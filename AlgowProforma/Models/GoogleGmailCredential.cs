@@ -6,6 +6,7 @@ public class GoogleGmailCredential
 {
     public string GoogleSub { get; set; } = "";
     public string GoogleEmail { get; set; } = "";
+    public string GoogleName { get; set; } = "";   // bağlanan hesabın görünen adı → gönderen adı otomatiği
     public string AccessToken { get; set; } = "";
     public string RefreshToken { get; set; } = "";
     public DateTime TokenExpiresAt { get; set; }

@@ -120,8 +120,14 @@ public partial class SettingsViewModel : ObservableObject
             _service.Save(Settings);
             var credential = await new GoogleOAuthService().ConnectGmailAsync(Settings.Google);
             CredentialStore.SaveGmailCredential(credential);
+            // Gmail baglaninca gonderen bilgileri OTOMATIK dolar (kullanici elle girmesin) — yalniz bos olanlar.
+            if (string.IsNullOrWhiteSpace(Settings.Mail.FromEmail)) Settings.Mail.FromEmail = credential.GoogleEmail;
+            if (string.IsNullOrWhiteSpace(Settings.Mail.FromName))
+                Settings.Mail.FromName = string.IsNullOrWhiteSpace(credential.GoogleName) ? credential.GoogleEmail : credential.GoogleName;
+            if (string.IsNullOrWhiteSpace(TestEmail)) TestEmail = credential.GoogleEmail;
+            _service.Save(Settings);   // dolan gonderen bilgileri kalici
             RefreshGoogleStatus();
-            StatusText = $"Gmail baglandi: {credential.GoogleEmail}";
+            StatusText = $"Gmail baglandi: {credential.GoogleEmail} — gonderen bilgileri dolduruldu.";
         }
         catch (Exception ex)
         {
